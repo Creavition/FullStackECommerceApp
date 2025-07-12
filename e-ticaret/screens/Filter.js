@@ -18,14 +18,14 @@ import { fetchCategoriesFromAPI, checkApiStatus, categoryUtils } from '../utils/
 export default function Filter() {
     const navigation = useNavigation();
     const { sizeMap } = useProduct() || { sizeMap: {} };
-    const { filters, applyFilters } = useFilter() || { 
-        filters: { 
-            selectedCategory: null, 
-            selectedSize: null, 
-            minPrice: null, 
-            maxPrice: null 
-        }, 
-        applyFilters: () => {} 
+    const { filters, applyFilters } = useFilter() || {
+        filters: {
+            selectedCategory: null,
+            selectedSize: null,
+            minPrice: null,
+            maxPrice: null
+        },
+        applyFilters: () => { }
     };
     const { translations } = useLanguage() || { translations: {} };
     const { theme, isDarkMode } = useTheme() || { theme: {}, isDarkMode: false };
@@ -37,8 +37,8 @@ export default function Filter() {
     const [apiStatus, setApiStatus] = useState(true);
 
     // Kategori listesi (API'den gelen veya fallback)
-    const categories = apiCategories && apiCategories.length > 0 ? 
-        apiCategories.map(cat => cat && cat.categoryName ? cat.categoryName : cat) : 
+    const categories = apiCategories && apiCategories.length > 0 ?
+        apiCategories.map(cat => cat && cat.categoryName ? cat.categoryName : cat) :
         (sizeMap && typeof sizeMap === 'object' ? Object.keys(sizeMap) : ['Jacket', 'Pants', 'Shoes', 'T-Shirt']);
 
     const [selectedCategory, setSelectedCategory] = useState(filters?.selectedCategory || null);
@@ -56,7 +56,7 @@ export default function Filter() {
 
                 console.log('Loading categories for filter...');
                 const { categories, sizeMap } = await fetchCategoriesFromAPI();
-                
+
                 if (categories && categories.length > 0) {
                     setApiCategories(Array.isArray(categories) ? categories : []);
                     setApiSizeMap(sizeMap && typeof sizeMap === 'object' ? sizeMap : {});
@@ -106,17 +106,17 @@ export default function Filter() {
     // Seçili kategorinin bedenlerini al (API'den veya fallback'ten)
     const getSizesForCategory = (category) => {
         if (!category) return [];
-        
+
         // Önce API'den gelen verilerden kontrol et
         if (apiSizeMap && apiSizeMap[category] && Array.isArray(apiSizeMap[category])) {
             return apiSizeMap[category];
         }
-        
+
         // Fallback olarak context'ten al
         if (sizeMap && sizeMap[category] && Array.isArray(sizeMap[category])) {
             return sizeMap[category];
         }
-        
+
         // Son fallback - kategori tipine göre varsayılan bedenler
         const defaultSizes = {
             'Jacket': ['XS', 'S', 'M', 'L', 'XL'],
@@ -124,14 +124,14 @@ export default function Filter() {
             'Shoes': ['38', '39', '40', '41', '42'],
             'T-Shirt': ['XS', 'S', 'M', 'L', 'XL']
         };
-        
+
         return defaultSizes[category] || [];
     };
 
     // Kategori isimlerini çevir
     const getCategoryName = (category) => {
         if (!translations) return category;
-        
+
         switch (category) {
             case 'Jacket': return translations.jacket || 'Jacket';
             case 'Pants': return translations.pants || 'Pants';
@@ -172,10 +172,10 @@ export default function Filter() {
 
             {/* API Status Indicator */}
             <View style={styles.apiStatusContainer}>
-                <Ionicons 
-                    name={apiStatus ? "checkmark-circle" : "alert-circle"} 
-                    size={16} 
-                    color={apiStatus ? "#4CAF50" : "#FF6B35"} 
+                <Ionicons
+                    name={apiStatus ? "checkmark-circle" : "alert-circle"}
+                    size={16}
+                    color={apiStatus ? "#4CAF50" : "#FF6B35"}
                 />
                 <Text style={[styles.apiStatusText, { color: apiStatus ? "#4CAF50" : "#FF6B35" }]}>
                     {apiStatus ? "API Connected" : "Using Offline Data"}
@@ -323,8 +323,8 @@ export default function Filter() {
                             });
                         }
 
-                        // HomeScreen sayfasına navigate et
-                        navigation.navigate('HomeScreen');
+                        // Geri dön - hangi sayfadan geldiyse oraya
+                        navigation.goBack();
                     }}
                 >
                     <Text style={styles.buttonText}>{translations?.apply || 'Apply'}</Text>

@@ -20,15 +20,15 @@ export default function Search() {
     const navigation = useNavigation();
     const route = useRoute();
 
-    const { favoriteItems, toggleFavorite } = useFavorites() || { favoriteItems: {}, toggleFavorite: () => {} };
-    const { filters, updateFilters } = useFilter() || { 
-        filters: { 
-            minPrice: null, 
-            maxPrice: null, 
-            selectedCategory: null, 
-            selectedSize: null 
-        }, 
-        updateFilters: () => {} 
+    const { favoriteItems, toggleFavorite } = useFavorites() || { favoriteItems: {}, toggleFavorite: () => { } };
+    const { filters, updateFilters } = useFilter() || {
+        filters: {
+            minPrice: null,
+            maxPrice: null,
+            selectedCategory: null,
+            selectedSize: null
+        },
+        updateFilters: () => { }
     };
     const { translations, language } = useLanguage() || { translations: {}, language: 'en' };
     const { theme, isDarkMode } = useTheme() || { theme: {}, isDarkMode: false };
@@ -58,7 +58,7 @@ export default function Search() {
                 getAllProducts().catch(() => []), // Hata durumunda boş array
                 getCategories().catch(() => ['Jacket', 'Pants', 'Shoes', 'T-Shirt']) // Fallback
             ]);
-            
+
             // Güvenli veri kontrolü
             const safeProducts = Array.isArray(products) ? products : [];
             const safeCategories = Array.isArray(categoryList) ? categoryList : ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
@@ -77,7 +77,7 @@ export default function Search() {
                 console.error('Error testing API connection in Search:', testError);
                 setApiStatus(false);
             }
-            
+
             // Fallback verilerini ayarla
             setAllProducts([]);
             setCategories(['Jacket', 'Pants', 'Shoes', 'T-Shirt']);
@@ -100,7 +100,7 @@ export default function Search() {
         const ids = new Set();
         const categoryList = categories && categories.length > 0 ? categories : ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
         const products = allProducts || [];
-        
+
         categoryList.forEach(cat => {
             products.filter(p => p && p.category === cat)
                 .sort((a, b) => {
@@ -117,7 +117,7 @@ export default function Search() {
     const fastDeliveryProducts = useMemo(() => {
         const ids = new Set();
         const products = allProducts || [];
-        
+
         products.forEach(p => {
             if (p && p.id) {
                 const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
@@ -130,7 +130,7 @@ export default function Search() {
     const bestSellingProducts = useMemo(() => {
         const ids = new Set();
         const products = allProducts || [];
-        
+
         products.forEach(p => {
             if (p && p.id) {
                 const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
@@ -144,7 +144,7 @@ export default function Search() {
         const products = allProducts || [];
         return products.filter(item => {
             if (!item || !item.price || !item.name) return false;
-            
+
             const price = parseFloat(item.price.replace('₺', '').replace(',', '.'));
             return (
                 item.name.toLowerCase().includes(searchText.toLowerCase()) &&
@@ -155,7 +155,7 @@ export default function Search() {
             );
         }).sort((a, b) => {
             if (!a || !a.price || !b || !b.price) return 0;
-            
+
             const priceA = a && a.price ? parseFloat(a.price.replace('₺', '').replace(',', '.')) : 0;
             const priceB = b && b.price ? parseFloat(b.price.replace('₺', '').replace(',', '.')) : 0;
             switch (sortOption) {

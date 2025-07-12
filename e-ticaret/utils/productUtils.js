@@ -94,13 +94,13 @@ export const getSizeMap = async () => {
 export const getCategories = async () => {
     try {
         const { categories, sizeMap } = await fetchCategoriesFromAPI();
-        
+
         // Güvenlik kontrolü - sizeMap var mı ve object mi?
         if (sizeMap && typeof sizeMap === 'object') {
             const categoryNames = Object.keys(sizeMap);
             return categoryNames.length > 0 ? categoryNames : ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
         }
-        
+
         // categories array'i varsa kategori isimlerini al
         if (Array.isArray(categories)) {
             const categoryNames = categories
@@ -108,7 +108,7 @@ export const getCategories = async () => {
                 .map(cat => cat.categoryName);
             return categoryNames.length > 0 ? categoryNames : ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
         }
-        
+
         // Fallback
         return ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
     } catch (error) {
@@ -180,17 +180,17 @@ export const generateProducts = async () => {
     try {
         const language = await getCurrentLanguage();
         console.log('Generating products with API data...');
-        
+
         const { sizeMap } = await fetchCategoriesFromAPI();
-        
+
         // Güvenlik kontrolü - sizeMap var mı?
         if (!sizeMap || typeof sizeMap !== 'object') {
             console.log('No valid sizeMap, using fallback categories');
             return generateFallbackProducts(language);
         }
-        
+
         const categories = Object.keys(sizeMap);
-        
+
         if (categories.length === 0) {
             console.log('No categories found, using fallback');
             return generateFallbackProducts(language);
@@ -200,13 +200,13 @@ export const generateProducts = async () => {
 
         categories.forEach((category) => {
             const allSizes = sizeMap[category];
-            
+
             // Güvenlik kontrolü - allSizes array mi?
             if (!Array.isArray(allSizes) || allSizes.length === 0) {
                 console.log(`No sizes for category ${category}, skipping`);
                 return;
             }
-            
+
             // Her kategoriden 16 ürün oluştur
             for (let i = 1; i <= 16; i++) {
                 const availableSizes = getRandomSizes(allSizes); // Rastgele 3 beden
@@ -244,9 +244,9 @@ const generateFallbackProducts = (language = 'en') => {
         'Shoes': ['40', '42', '43', '44'],
         'T-Shirt': ['S', 'M', 'L', 'XL'],
     };
-    
+
     const products = [];
-    
+
     fallbackCategories.forEach((category) => {
         const allSizes = fallbackSizeMap[category];
         for (let i = 1; i <= 16; i++) {
@@ -265,7 +265,7 @@ const generateFallbackProducts = (language = 'en') => {
             });
         }
     });
-    
+
     console.log(`Generated ${products.length} fallback products`);
     return products;
 };

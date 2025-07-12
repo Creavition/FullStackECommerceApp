@@ -43,7 +43,7 @@ export default function Home() {
                 getAllProducts().catch(() => []), // Hata durumunda boş array
                 getCategories().catch(() => ['Jacket', 'Pants', 'Shoes', 'T-Shirt']) // Fallback
             ]);
-            
+
             // Güvenli veri kontrolü
             const safeProducts = Array.isArray(products) ? products : [];
             const safeCategories = Array.isArray(categoryList) ? categoryList : ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
@@ -62,7 +62,7 @@ export default function Home() {
                 console.error('Error testing API connection:', testError);
                 setApiStatus(false);
             }
-            
+
             // Fallback verilerini ayarla
             setAllProducts([]);
             setCategories(['Jacket', 'Pants', 'Shoes', 'T-Shirt']);
@@ -79,7 +79,7 @@ export default function Home() {
         const ids = new Set();
         const categoryList = categories && categories.length > 0 ? categories : ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
         const products = allProducts || [];
-        
+
         categoryList.forEach(cat => {
             products.filter(p => p && p.category === cat)
                 .sort((a, b) => {
@@ -96,7 +96,7 @@ export default function Home() {
     const fastDeliveryProducts = useMemo(() => {
         const ids = new Set();
         const products = allProducts || [];
-        
+
         products.forEach(p => {
             if (p && p.id) {
                 const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
@@ -109,7 +109,7 @@ export default function Home() {
     const bestSellingProducts = useMemo(() => {
         const ids = new Set();
         const products = allProducts || [];
-        
+
         products.forEach(p => {
             if (p && p.id) {
                 const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
