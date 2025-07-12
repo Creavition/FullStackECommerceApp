@@ -1,0 +1,31 @@
+# Git Language Detection Configuration
+
+# React Native / JavaScript
+e-ticaret/**/*.js linguist-language=JavaScript
+e-ticaret/**/*.jsx linguist-language=JavaScript
+e-ticaret/**/*.ts linguist-language=TypeScript
+e-ticaret/**/*.tsx linguist-language=TypeScript
+e-ticaret/**/*.json linguist-language=JSON
+
+# .NET / C#
+mobileAPI/**/*.cs linguist-language=C#
+mobileAPI/**/*.csproj linguist-language=XML
+mobileAPI/**/*.sln linguist-language=XML
+
+# Documentation
+*.md linguist-language=Markdown
+README.md linguist-documentation
+
+# Exclude generated files from language detection
+mobileAPI/bin/** linguist-generated=true
+mobileAPI/obj/** linguist-generated=true
+mobileAPI/Migrations/** linguist-generated=true
+e-ticaret/.expo/** linguist-generated=true
+e-ticaret/node_modules/** linguist-generated=true
+
+# Mark specific directories as documentation
+docs/** linguist-documentation
+
+# Force language detection for main directories
+e-ticaret/ linguist-language=JavaScript
+mobileAPI/ linguist-language=C#
