@@ -1,9 +1,9 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../contexts/FavoritesContext';
-import { getAllProducts } from '../utils/productUtils';
+import { getAllProducts, productUtils, toggleProductFavorite } from '../utils/productUtils';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -17,14 +17,22 @@ export default function Favorites() {
     const [allProducts, setAllProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Ürünleri yükle
+    // Ürünleri yükle - Sadece favori olanları al
     const loadProducts = useCallback(async () => {
         try {
             setLoading(true);
-            const products = await getAllProducts();
-            setAllProducts(products);
+
+            // Tüm ürünleri al
+            const allProducts = await getAllProducts();
+
+            // Sadece favori olanları filtrele
+            const favoriteProducts = allProducts.filter(p => p.isFavorite === true);
+
+            console.log(`Found ${favoriteProducts.length} favorite products`);
+            setAllProducts(favoriteProducts);
         } catch (error) {
-            console.error('Error loading products:', error);
+            console.error('Error loading favorite products:', error);
+            setAllProducts([]);
         } finally {
             setLoading(false);
         }
@@ -35,77 +43,52 @@ export default function Favorites() {
         loadProducts();
     }, [loadProducts, language]);
 
+    // Sayfa odaklandığında yeniden yükle (diğer sayfalardan gelen güncellemeleri almak için)
+    useFocusEffect(
+        useCallback(() => {
+            loadProducts();
+        }, [loadProducts])
+    );
+
+    // Favori ürünleri al - allProducts zaten filtrelenmiş favori ürünleri içeriyor
     const favoriteProducts = useMemo(() => {
-        return allProducts.filter(p => favoriteItems[p.id]);
-    }, [allProducts, favoriteItems]);
-
-    const parsePrice = (priceStr) => parseFloat(priceStr.replace('₺', '').replace(',', '.'));
-
-    // Flash Sale ürünlerini belirle (her kategoriden en ucuz 6 ürün)
-    const flashSaleProducts = useMemo(() => {
-        const categories = ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
-        const flashSaleIds = new Set();
-
-        categories.forEach(category => {
-            const categoryProducts = allProducts
-                .filter(product => product.category === category)
-                .sort((a, b) => parsePrice(a.price) - parsePrice(b.price))
-                .slice(0, 6);
-
-            categoryProducts.forEach(product => flashSaleIds.add(product.id));
-        });
-
-        return flashSaleIds;
+        return allProducts;
     }, [allProducts]);
 
-    // Fast Delivery ürünlerini belirle (Home.js ile aynı mantık)
-    const fastDeliveryProducts = useMemo(() => {
-        const ids = new Set();
-        allProducts.forEach(p => {
-            const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
-            if (Math.abs(hash) % 10 < 3) ids.add(p.id);
-        });
-        return ids;
-    }, [allProducts]);
-
+    // API'den gelen verilere göre ürünleri kategorize et - Favorites için basitleştir
     const handleProductPress = useCallback((product) => {
         navigation.navigate('ProductDetail', { product });
     }, [navigation]);
 
-    const handleFavoritePress = useCallback((productId) => {
-        toggleFavorite(productId);
-    }, [toggleFavorite]);
+    const handleFavoritePress = useCallback(async (productId) => {
+        const currentProduct = favoriteProducts.find(p => p.id === productId);
+        if (!currentProduct) return;
 
-    // Best Selling ürünlerini belirle (Home.js ile aynı mantık)
-    const bestSellingProducts = useMemo(() => {
-        const ids = new Set();
-        allProducts.forEach(p => {
-            const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
-            if (Math.abs(hash) % 10 >= 7) ids.add(p.id);
-        });
-        return ids;
-    }, [allProducts]);
+        // Anında UI'den kaldır
+        setAllProducts(prevProducts => prevProducts.filter(p => p.id !== productId));
+
+        // API'yi güncelle (background)
+        try {
+            await toggleProductFavorite(productId, true); // favorite'tan çıkar
+            console.log(`Product ${productId} removed from favorites`);
+        } catch (error) {
+            console.error('Failed to update favorite status:', error);
+            // API başarısızsa ürünü geri ekle
+            setAllProducts(prevProducts => [...prevProducts, currentProduct]);
+        }
+    }, [favoriteProducts]);
 
     const renderItem = useCallback(({ item }) => {
-        const isFavorite = favoriteItems[item.id];
-        const isFlashSale = flashSaleProducts.has(item.id);
-        const hasFastDelivery = fastDeliveryProducts.has(item.id);
-        const isBestSelling = bestSellingProducts.has(item.id);
-
         return (
             <ProductCard
                 item={item}
-                isFavorite={isFavorite}
-                isFlashSale={isFlashSale}
-                hasFastDelivery={hasFastDelivery}
-                isBestSelling={isBestSelling}
                 onProductPress={handleProductPress}
                 onFavoritePress={handleFavoritePress}
                 translations={translations}
                 isDarkMode={isDarkMode}
             />
         );
-    }, [favoriteItems, flashSaleProducts, fastDeliveryProducts, bestSellingProducts, handleProductPress, handleFavoritePress, translations, isDarkMode]);
+    }, [handleProductPress, handleFavoritePress, translations, isDarkMode]);
 
     if (loading) {
         return (

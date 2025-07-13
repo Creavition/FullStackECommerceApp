@@ -7,6 +7,62 @@ import { CartContext } from '../contexts/CartContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { categoryApi } from '../utils/categoryApi';
+import { productApi } from '../utils/productApi';
+import { logProductDetails, extractSizeInfo } from '../utils/productUtils';
+
+// Ürünün mevcut bedenlerini özellikle availableSize field'ından çıkaran helper fonksiyon
+const extractProductAvailableSizes = (product) => {
+    console.log('Extracting available sizes from product:', product);
+
+    // Öncelik sırası: availableSize -> availableSizes -> sizes -> size
+    if (product.availableSize && Array.isArray(product.availableSize)) {
+        console.log('Found availableSize array:', product.availableSize);
+        return product.availableSize;
+    } else if (product.availableSizes && Array.isArray(product.availableSizes)) {
+        console.log('Found availableSizes array:', product.availableSizes);
+        return product.availableSizes;
+    } else if (product.sizes && Array.isArray(product.sizes)) {
+        console.log('Found sizes array:', product.sizes);
+        return product.sizes;
+    } else if (product.size && typeof product.size === 'string') {
+        console.log('Found single size string:', product.size);
+        return [product.size];
+    } else if (product.sizeOptions && Array.isArray(product.sizeOptions)) {
+        console.log('Found sizeOptions array:', product.sizeOptions);
+        return product.sizeOptions;
+    }
+
+    console.log('No available sizes found in product');
+    return [];
+};
+
+// Category bilgisini categoryId ile çek
+const fetchCategoryByProductCategoryId = async (product) => {
+    try {
+        // Önce categoryId var mı kontrol et
+        if (product.categoryId) {
+            console.log(`Fetching category by categoryId: ${product.categoryId}`);
+            const category = await categoryApi.getCategory(product.categoryId);
+            return category;
+        }
+
+        // Eğer categoryId yoksa, category name ile arama yap
+        if (product.category) {
+            console.log(`Searching category by name: ${product.category}`);
+            const allCategories = await categoryApi.getAllCategories();
+            const foundCategory = allCategories.find(cat =>
+                cat.categoryName === product.category
+            );
+            return foundCategory;
+        }
+
+        console.log('No categoryId or category found in product');
+        return null;
+    } catch (error) {
+        console.error('Error fetching category:', error);
+        return null;
+    }
+};
 
 export default function ProductDetail({ route }) {
     const { product } = route.params;
@@ -21,99 +77,86 @@ export default function ProductDetail({ route }) {
     const [selectedSize, setSelectedSize] = useState(null);
     const [showGoToCart, setShowGoToCart] = useState(false);
     const [toastOpacity] = useState(new Animated.Value(0));
-    const [loading, setLoading] = useState(true);    // API'den kategori bedenlerini çek
+    const [loading, setLoading] = useState(true);
+    const [categoryData, setCategoryData] = useState(null); // Category bilgileri için    // API'den ürün ve kategori verilerini çek
     useEffect(() => {
-        const fetchCategorySizes = async () => {
+        const fetchProductAndCategoryData = async () => {
             try {
                 setLoading(true);
-                console.log(`Fetching sizes for category: ${product?.category || 'unknown'}`);
 
-                // Güvenlik kontrolü - product ve category var mı?
-                if (!product || !product.category) {
-                    console.log('No product or category found, using fallback data');
-                    setAllSizes(product?.allSizes || []);
-                    setAvailableSizes(product?.availableSizes || []);
-                    setSelectedSize(product?.availableSizes?.[0] || null);
-                    return;
+                // Debug için başlangıç product bilgilerini log'la
+                if (__DEV__) {
+                    console.log('=== ProductDetail Initial Data ===');
+                    logProductDetails(product);
                 }
 
-                // API'den tüm kategorileri çek ve product.category'ye uygun olanı bul
-                const categories = await categoryApi.getAllCategories();
-                console.log(`Found ${Array.isArray(categories) ? categories.length : 0} categories from API`);
+                console.log(`Fetching data for product: ${product?.name || product?.id}, categoryId: ${product?.categoryId || 'N/A'}`);
 
-                // Güvenlik kontrolü - categories array mi?
-                if (!Array.isArray(categories)) {
-                    console.log('Invalid categories data from API');
-                    setAllSizes(product?.allSizes || []);
-                    setAvailableSizes(product?.availableSizes || []);
-                    setSelectedSize(product?.availableSizes?.[0] || null);
-                    return;
+                // İlk olarak ürünün güncel verilerini API'den çek (isteğe bağlı)
+                let currentProduct = product;
+                if (product.id) {
+                    try {
+                        console.log(`Fetching fresh product data for ID: ${product.id}`);
+                        currentProduct = await productApi.getProductById(product.id);
+                        console.log('Fresh product data:', currentProduct);
+                    } catch (error) {
+                        console.log('Could not fetch fresh product data, using passed product:', error.message);
+                        currentProduct = product;
+                    }
                 }
 
-                const currentCategory = categories.find(cat =>
-                    cat && cat.categoryName === product.category
-                );
+                // Category bilgisini çek
+                const category = await fetchCategoryByProductCategoryId(currentProduct);
+                setCategoryData(category);
 
-                if (currentCategory && currentCategory.sizes && Array.isArray(currentCategory.sizes) && currentCategory.sizes.length > 0) {
-                    const sizes = currentCategory.sizes
-                        .filter(size => size && size.sizeName) // Güvenlik kontrolü
-                        .map(size => size.sizeName);
-                    console.log(`Found sizes for ${product.category}:`, sizes);
+                if (category) {
+                    console.log(`Found category data:`, category);
 
-                    setAllSizes(sizes);
+                    // Kategori için TÜM mevcut bedenler (allSizes - kategoriden gelir)
+                    const categorySizes = category.sizes && Array.isArray(category.sizes)
+                        ? category.sizes
+                            .filter(size => size && size.sizeName)
+                            .map(size => size.sizeName)
+                        : [];
 
-                    // Mevcut bedenler için rastgele 3 beden seç (demo amaçlı)
-                    if (sizes.length > 0) {
-                        const shuffled = [...sizes].sort(() => 0.5 - Math.random());
-                        const randomAvailable = shuffled.slice(0, Math.min(3, sizes.length));
-                        setAvailableSizes(randomAvailable);
-                        setSelectedSize(randomAvailable[0]);
+                    // Ürünün SADECE mevcut bedenleri (availableSizes - üründen gelir)
+                    const productAvailableSizes = extractProductAvailableSizes(currentProduct);
+
+                    console.log(`Category all sizes (${category.categoryName}):`, categorySizes);
+                    console.log(`Product available sizes:`, productAvailableSizes);
+
+                    // State'leri güncelle
+                    setAllSizes(categorySizes);
+                    setAvailableSizes(productAvailableSizes);
+
+                    // İlk mevcut bedeni seç
+                    if (productAvailableSizes.length > 0) {
+                        setSelectedSize(productAvailableSizes[0]);
                     } else {
-                        setAvailableSizes([]);
                         setSelectedSize(null);
                     }
                 } else {
-                    console.log(`No sizes found for ${product.category}, using fallback data`);
-                    // Fallback: eski verilerden kullan veya API'den varsayılan kategorileri oluştur
-                    if (categories.length === 0) {
-                        console.log('No categories found, trying to seed default categories...');
-                        try {
-                            await categoryApi.seedCategories();
-                            // Tekrar dene
-                            const seededCategories = await categoryApi.getAllCategories();
-                            const seededCategory = seededCategories.find(cat =>
-                                cat.categoryName === product.category
-                            );
-                            if (seededCategory && seededCategory.sizes) {
-                                const sizes = seededCategory.sizes.map(size => size.sizeName);
-                                setAllSizes(sizes);
-                                setAvailableSizes(sizes.slice(0, 3));
-                                setSelectedSize(sizes[0]);
-                                return;
-                            }
-                        } catch (seedError) {
-                            console.error('Error seeding categories:', seedError);
-                        }
-                    }
-
-                    // Hala çalışmazsa eski verilerden kullan
-                    setAllSizes(product.allSizes || []);
-                    setAvailableSizes(product.availableSizes || []);
-                    setSelectedSize(product.availableSizes?.[0] || null);
+                    console.log('No category found, using fallback data');
+                    // Kategori bulunamadıysa fallback
+                    const fallbackAvailableSizes = extractProductAvailableSizes(currentProduct);
+                    setAllSizes(fallbackAvailableSizes);
+                    setAvailableSizes(fallbackAvailableSizes);
+                    setSelectedSize(fallbackAvailableSizes[0] || null);
                 }
             } catch (error) {
-                console.error('Error fetching category sizes:', error);
-                // Hata durumunda eski verilerden kullan
-                setAllSizes(product.allSizes || []);
-                setAvailableSizes(product.availableSizes || []);
-                setSelectedSize(product.availableSizes?.[0] || null);
+                console.error('Error fetching product and category data:', error);
+                // Hata durumunda fallback
+                const fallbackAvailableSizes = extractProductAvailableSizes(product);
+                setAllSizes(fallbackAvailableSizes);
+                setAvailableSizes(fallbackAvailableSizes);
+                setSelectedSize(fallbackAvailableSizes[0] || null);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchCategorySizes();
-    }, [product.category]);
+        fetchProductAndCategoryData();
+    }, [product.id, product.categoryId]);
 
     const showToast = (message) => {
         // Toast'ı göster
@@ -130,6 +173,13 @@ export default function ProductDetail({ route }) {
                 useNativeDriver: true,
             })
         ]).start();
+    };
+
+    const handleGoToCart = () => {
+        // HomeScreen'e geri dön ve Cart tab'ını aç
+        navigation.navigate('HomeScreen', {
+            screen: 'Cart'
+        });
     };
 
     const handleAddToCart = () => {
@@ -158,11 +208,14 @@ export default function ProductDetail({ route }) {
         setShowGoToCart(true);
     };
 
-    const handleGoToCart = () => {
-        // HomeScreen'e geri dön ve Cart tab'ını aç
-        navigation.navigate('HomeScreen', {
-            screen: 'Cart'
-        });
+    const handleSizePress = (size) => {
+        const isAvailable = availableSizes.includes(size);
+        if (isAvailable) {
+            setSelectedSize(size);
+        } else {
+            // Mevcut olmayan beden için uyarı toast'ı
+            showToast(translations.sizeNotAvailable || 'Bu beden mevcut değil');
+        }
     };
 
     // Loading state
@@ -199,6 +252,24 @@ export default function ProductDetail({ route }) {
                 {translations.sizeOptions}
             </Text>
 
+            {/* Debug Info - Sadece development modunda */}
+            {__DEV__ && (
+                <View style={styles.debugContainer}>
+                    <Text style={[styles.debugText, { color: isDarkMode ? '#ccc' : '#666' }]}>
+                        Debug: Product ID: {product.id} | CategoryID: {product.categoryId || 'N/A'}
+                    </Text>
+                    <Text style={[styles.debugText, { color: isDarkMode ? '#ccc' : '#666' }]}>
+                        Category: {categoryData ? categoryData.categoryName : 'Loading...'} (ID: {categoryData ? categoryData.id : 'N/A'})
+                    </Text>
+                    <Text style={[styles.debugText, { color: isDarkMode ? '#ccc' : '#666' }]}>
+                        All Sizes (from Category): {allSizes.join(', ') || 'None'}
+                    </Text>
+                    <Text style={[styles.debugText, { color: isDarkMode ? '#ccc' : '#666' }]}>
+                        Available Sizes (from Product): {availableSizes.join(', ') || 'None'}
+                    </Text>
+                </View>
+            )}
+
             <View style={styles.sizeContainer}>
                 {allSizes.map((size) => {
                     const isAvailable = availableSizes.includes(size);
@@ -215,8 +286,9 @@ export default function ProductDetail({ route }) {
                                     backgroundColor: isSelected && isAvailable
                                         ? '#007BFF'
                                         : isDarkMode
-                                            ? (isAvailable ? '#444' : '#2a2a2a')
-                                            : (isAvailable ? '#f8f9fa' : '#f0f0f0')
+                                            ? (isAvailable ? '#444' : '#1a1a1a')
+                                            : (isAvailable ? '#f8f9fa' : '#e8e8e8'),
+                                    opacity: isAvailable ? 1 : 0.6
                                 },
                                 {
                                     borderColor: isSelected && isAvailable
@@ -226,8 +298,7 @@ export default function ProductDetail({ route }) {
                                             : (isAvailable ? '#007BFF' : '#d0d0d0')
                                 }
                             ]}
-                            onPress={() => isAvailable && setSelectedSize(size)}
-                            disabled={!isAvailable}
+                            onPress={() => handleSizePress(size)}
                         >
                             <Text style={[
                                 styles.sizeText,
@@ -244,19 +315,36 @@ export default function ProductDetail({ route }) {
                                 {size}
                             </Text>
 
-                            {/* İyileştirilmiş çarpı işareti */}
+                            {/* Mevcut olmayan bedenler için belirgin çarpı işareti */}
                             {!isAvailable && (
                                 <View style={[
                                     styles.crossContainer,
                                     {
-                                        backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.95)'
+                                        backgroundColor: 'rgba(255, 68, 68, 0.9)'
                                     }
                                 ]}>
                                     <Ionicons
                                         name="close"
-                                        size={14}
-                                        color="#ff4444"
+                                        size={16}
+                                        color="#fff"
                                         style={styles.crossIcon}
+                                    />
+                                </View>
+                            )}
+
+                            {/* Mevcut olan bedenler için tick işareti (seçili değilse) */}
+                            {isAvailable && !isSelected && (
+                                <View style={[
+                                    styles.tickContainer,
+                                    {
+                                        backgroundColor: isDarkMode ? 'rgba(0, 123, 255, 0.1)' : 'rgba(0, 123, 255, 0.1)'
+                                    }
+                                ]}>
+                                    <Ionicons
+                                        name="checkmark"
+                                        size={12}
+                                        color="#007BFF"
+                                        style={styles.tickIcon}
                                     />
                                 </View>
                             )}
@@ -398,7 +486,7 @@ const styles = StyleSheet.create({
     unavailableSizeBox: {
         backgroundColor: '#f5f5f5',
         borderColor: '#ddd',
-        opacity: 0.7,
+        opacity: 0.6,
         elevation: 1,
     },
     sizeText: {
@@ -423,27 +511,52 @@ const styles = StyleSheet.create({
     },
     crossContainer: {
         position: 'absolute',
-        top: -5,
-        right: -5,
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        borderRadius: 10,
-        padding: 2,
-        elevation: 5,
-        shadowColor: '#000',
+        top: -3,
+        right: -3,
+        backgroundColor: 'rgba(255, 68, 68, 0.9)',
+        borderRadius: 12,
+        padding: 3,
+        elevation: 6,
+        shadowColor: '#ff4444',
         shadowOffset: {
             width: 0,
             height: 2,
         },
-        shadowOpacity: 0.3,
-        shadowRadius: 2,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 68, 68, 0.3)',
-        width: 20,
-        height: 20,
+        shadowOpacity: 0.4,
+        shadowRadius: 3,
+        borderWidth: 2,
+        borderColor: '#fff',
+        width: 24,
+        height: 24,
         alignItems: 'center',
         justifyContent: 'center',
     },
     crossIcon: {
+        // Icon kendisi için ekstra stil gerekmiyor
+    },
+    tickContainer: {
+        position: 'absolute',
+        bottom: -3,
+        right: -3,
+        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+        borderRadius: 8,
+        padding: 1,
+        elevation: 2,
+        shadowColor: '#007BFF',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1,
+        borderWidth: 1,
+        borderColor: 'rgba(0, 123, 255, 0.3)',
+        width: 16,
+        height: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    tickIcon: {
         // Icon kendisi için ekstra stil gerekmiyor
     },
     buttonContainer: {
@@ -534,5 +647,14 @@ const styles = StyleSheet.create({
     loadingText: {
         fontSize: 16,
         fontWeight: '500',
+    },
+    debugContainer: {
+        marginBottom: 10,
+        paddingHorizontal: 10,
+    },
+    debugText: {
+        fontSize: 11,
+        textAlign: 'center',
+        fontStyle: 'italic',
     },
 });

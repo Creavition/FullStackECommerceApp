@@ -1,6 +1,6 @@
 // screens/FastDelivery.js
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
     View, Text, TextInput, StyleSheet, FlatList, StatusBar, TouchableOpacity
 } from 'react-native';
@@ -11,7 +11,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 import ProductCard from '../components/ProductCard';
-import { getAllProducts } from '../utils/productUtils';
+import { getAllProducts, productUtils, toggleProductFavorite } from '../utils/productUtils';
 
 export default function FastDelivery() {
     const navigation = useNavigation();
@@ -26,10 +26,19 @@ export default function FastDelivery() {
     const loadProducts = useCallback(async () => {
         setLoading(true);
         try {
-            const products = await getAllProducts();
+            // API'den Fast Delivery ürünlerini al
+            const products = await productUtils.getFastDeliveryProducts();
             setAllProducts(products);
         } catch (e) {
-            console.error(e);
+            console.error('Error loading fast delivery products:', e);
+            // Fallback: tüm ürünleri al ve filtrele
+            try {
+                const allProds = await getAllProducts();
+                setAllProducts(allProds);
+            } catch (fallbackError) {
+                console.error('Fallback failed:', fallbackError);
+                setAllProducts([]);
+            }
         } finally {
             setLoading(false);
         }
@@ -39,64 +48,69 @@ export default function FastDelivery() {
         loadProducts();
     }, [loadProducts]);
 
-    const flashSaleProducts = useMemo(() => {
-        const ids = new Set();
-        const categoryList = ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
-        categoryList.forEach(cat => {
-            allProducts.filter(p => p.category === cat)
-                .sort((a, b) => parseFloat(a.price.replace('₺', '').replace(',', '.')) - parseFloat(b.price.replace('₺', '').replace(',', '.')))
-                .slice(0, 6)
-                .forEach(p => ids.add(p.id));
-        });
-        return ids;
-    }, [allProducts]);
+    // Sayfa odaklandığında yeniden yükle (favorite durumlarını güncellemek için)
+    useFocusEffect(
+        useCallback(() => {
+            loadProducts();
+        }, [loadProducts])
+    );
 
-    const fastDeliveryProducts = useMemo(() => {
-        const ids = new Set();
-        allProducts.forEach(p => {
-            const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
-            if (Math.abs(hash) % 10 < 3) ids.add(p.id);
-        });
-        return ids;
-    }, [allProducts]);
+    // Sayfa odaklandığında yeniden yükle (favorite durumlarını güncellemek için)
+    useFocusEffect(
+        useCallback(() => {
+            loadProducts();
+        }, [loadProducts])
+    );
 
-    const bestSellingProducts = useMemo(() => {
-        const ids = new Set();
-        allProducts.forEach(p => {
-            const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
-            if (Math.abs(hash) % 10 >= 7) ids.add(p.id);
-        });
-        return ids;
-    }, [allProducts]);
-
+    // Fast Delivery ürünlerini al - API'den gelenler zaten fast delivery
     const fastDeliveryFilteredProducts = useMemo(() => {
+        // API'den gelen ürünler zaten fast delivery olarak işaretlenmiş
         return allProducts.filter(item =>
-            fastDeliveryProducts.has(item.id) &&
             item.name.toLowerCase().includes(searchText.toLowerCase())
         );
-    }, [allProducts, fastDeliveryProducts, searchText]);
+    }, [allProducts, searchText]);
 
     const handleProductPress = useCallback(product => {
         navigation.navigate('ProductDetail', { product });
     }, [navigation]);
 
-    const handleFavoritePress = useCallback(productId => {
-        toggleFavorite(productId);
-    }, [toggleFavorite]);
+    const handleFavoritePress = useCallback(async (productId) => {
+        const currentProduct = allProducts.find(p => p.id === productId);
+        if (currentProduct) {
+            // Önce UI'yi güncelle (optimistic update)
+            setAllProducts(prevProducts =>
+                prevProducts.map(p =>
+                    p.id === productId
+                        ? { ...p, isFavorite: !p.isFavorite }
+                        : p
+                )
+            );
+
+            const success = await toggleProductFavorite(productId, currentProduct.isFavorite);
+            if (!success) {
+                // API başarısızsa eski duruma geri al
+                setAllProducts(prevProducts =>
+                    prevProducts.map(p =>
+                        p.id === productId
+                            ? { ...p, isFavorite: currentProduct.isFavorite }
+                            : p
+                    )
+                );
+                // Fallback context'i de güncelle
+                toggleFavorite(productId);
+            }
+        }
+    }, [allProducts, toggleFavorite]);
 
     const renderItem = useCallback(({ item }) => (
         <ProductCard
             item={item}
-            isFavorite={!!favoriteItems[item.id]}
-            isFlashSale={flashSaleProducts.has(item.id)}
-            hasFastDelivery={fastDeliveryProducts.has(item.id)}
-            isBestSelling={bestSellingProducts.has(item.id)}
             onProductPress={handleProductPress}
             onFavoritePress={handleFavoritePress}
             translations={translations}
             isDarkMode={isDarkMode}
         />
-    ), [favoriteItems, flashSaleProducts, fastDeliveryProducts, bestSellingProducts, handleProductPress, handleFavoritePress, translations, isDarkMode]);
+    ), [handleProductPress, handleFavoritePress, translations, isDarkMode]);
 
     const keyExtractor = useCallback((item) => item.id, []);
 

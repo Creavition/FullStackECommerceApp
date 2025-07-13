@@ -10,7 +10,7 @@ import {
 import { useLanguage } from "../contexts/LanguageContext";
 import { useTheme } from "../contexts/ThemeContext";
 
-export default function SelectableOptions({ onSelect }) {
+export default function SelectableOptions({ onSelect, categories = [], sizeOptions = [] }) {
     const navigation = useNavigation();
     const { translations } = useLanguage();
     const { theme, isDarkMode } = useTheme();
@@ -96,7 +96,12 @@ export default function SelectableOptions({ onSelect }) {
                         borderColor: isDarkMode ? theme.border : 'black'
                     }
                 ]}
-                onPress={() => { navigation.navigate("Filter") }}
+                onPress={() => {
+                    navigation.navigate("Filter", {
+                        categories: categories,
+                        sizeOptions: sizeOptions
+                    })
+                }}
             >
                 <Ionicons
                     style={{ marginRight: 20 }}

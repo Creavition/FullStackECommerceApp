@@ -13,6 +13,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Category> Categories { get; set; }
     public DbSet<Size> Sizes { get; set; }
+    public DbSet<Product> Products { get; set; }
+    public DbSet<ProductSize> ProductSizes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,6 +42,33 @@ public class ApplicationDbContext : DbContext
                   .WithMany(c => c.Sizes)
                   .HasForeignKey(s => s.CategoryId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.Property(e => e.Name).IsRequired();
+            entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.ImageUrl).IsRequired();
+
+            entity.HasOne(p => p.Category)
+                  .WithMany()
+                  .HasForeignKey(p => p.CategoryId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ProductSize>(entity =>
+        {
+            entity.HasKey(ps => new { ps.ProductId, ps.SizeId });
+
+            entity.HasOne(ps => ps.Product)
+                  .WithMany(p => p.ProductSizes)
+                  .HasForeignKey(ps => ps.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ps => ps.Size)
+                  .WithMany()
+                  .HasForeignKey(ps => ps.SizeId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

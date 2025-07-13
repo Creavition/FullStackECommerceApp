@@ -1,6 +1,6 @@
-// screens/Home.js
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigation } from '@react-navigation/native';
+// screens/Home.js - Maximum update depth sorunu çözüldü
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
     View, Text, StyleSheet, FlatList, StatusBar, TouchableOpacity, ScrollView,
     Image
@@ -10,421 +10,375 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../contexts/FavoritesContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useFilter } from '../contexts/FilterContext';
 
 import ProductCardHorizontal from '../components/ProductCardHorizontal';
 
-import { getAllProducts, getCategories, categoryUtils, checkApiStatus } from '../utils/productUtils';
+import { getAllProducts, getCategories, parsePrice, toggleProductFavorite, logProductDetails } from '../utils/productUtils';
 
 export default function Home() {
     const navigation = useNavigation();
+    const isMounted = useRef(true);
 
     const { favoriteItems, toggleFavorite } = useFavorites();
     const { translations, language } = useLanguage();
     const { theme, isDarkMode } = useTheme();
+    const { updateFilters } = useFilter() || {};
 
     const [allProducts, setAllProducts] = useState([]);
-    const [categories, setCategories] = useState(['Jacket', 'Pants', 'Shoes', 'T-Shirt']); // Fallback kategoriler
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [apiStatus, setApiStatus] = useState(true);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-    // parsePrice fonksiyonunu useCallback ile memoize et
-    const parsePrice = useCallback((str) => parseFloat(str.replace('₺', '').replace(',', '.')), []);
-
-    // loadProducts fonksiyonunu dependency array'den parsePrice'ı kaldır
+    // Basit veri yükleme - dependency'leri sabitledik
     const loadProducts = useCallback(async () => {
+        if (!isMounted.current) return;
+
         setLoading(true);
         try {
-            // API durumunu kontrol et
-            const apiOk = checkApiStatus();
-            setApiStatus(apiOk);
-
-            // Kategorileri ve ürünleri paralel olarak yükle
             const [products, categoryList] = await Promise.all([
-                getAllProducts().catch(() => []), // Hata durumunda boş array
-                getCategories().catch(() => ['Jacket', 'Pants', 'Shoes', 'T-Shirt']) // Fallback
+                getAllProducts(),
+                getCategories()
             ]);
 
-            // Güvenli veri kontrolü
-            const safeProducts = Array.isArray(products) ? products : [];
-            const safeCategories = Array.isArray(categoryList) ? categoryList : ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
-
-            setAllProducts(safeProducts);
-            setCategories(safeCategories);
-
-            console.log(`Loaded ${safeProducts.length} products and ${safeCategories.length} categories`);
-        } catch (e) {
-            console.error('Error loading products:', e);
-            // Hata durumunda API'yi tekrar test et
-            try {
-                const testResult = await categoryUtils.testApiConnection();
-                setApiStatus(testResult);
-            } catch (testError) {
-                console.error('Error testing API connection:', testError);
-                setApiStatus(false);
+            if (isMounted.current) {
+                setAllProducts(products || []);
+                setCategories(categoryList || []);
+                setIsInitialLoad(false);
             }
-
-            // Fallback verilerini ayarla
-            setAllProducts([]);
-            setCategories(['Jacket', 'Pants', 'Shoes', 'T-Shirt']);
+        } catch (error) {
+            console.error('Error loading data:', error);
+            if (isMounted.current) {
+                setAllProducts([]);
+                setCategories([]);
+                setIsInitialLoad(false);
+            }
         } finally {
-            setLoading(false);
+            if (isMounted.current) {
+                setLoading(false);
+            }
         }
-    }, []); // parsePrice'ı dependency array'den kaldırdık
+    }, []); // Dependency array'i boş bıraktık
 
+    // İlk mount'ta yükle
     useEffect(() => {
-        loadProducts();
-    }, [loadProducts, language]);
+        if (isInitialLoad) {
+            loadProducts();
+        }
+    }, [isInitialLoad]); // Sadece isInitialLoad'a bağlı
 
+    // Dil değiştiğinde yeniden yükle
+    useEffect(() => {
+        if (!isInitialLoad) {
+            loadProducts();
+        }
+    }, [language]); // Sadece language'a bağlı
+
+    // Sayfa odaklandığında - sadece gerektiğinde yükle (optimize edilmiş)
+    useFocusEffect(
+        useCallback(() => {
+            // Sadece veriler tamamen boşsa yükle
+            if (allProducts.length === 0 && !loading) {
+                loadProducts();
+            }
+        }, [allProducts.length, loading])
+    );
+
+    // Cleanup fonksiyonu
+    useEffect(() => {
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
+
+    // Basit kategori filtreleme
     const flashSaleProducts = useMemo(() => {
-        const ids = new Set();
-        const categoryList = categories && categories.length > 0 ? categories : ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
         const products = allProducts || [];
-
-        categoryList.forEach(cat => {
-            products.filter(p => p && p.category === cat)
-                .sort((a, b) => {
-                    const priceA = a && a.price ? parseFloat(a.price.replace('₺', '').replace(',', '.')) : 0;
-                    const priceB = b && b.price ? parseFloat(b.price.replace('₺', '').replace(',', '.')) : 0;
-                    return priceA - priceB;
-                })
-                .slice(0, 6)
-                .forEach(p => p && p.id && ids.add(p.id));
-        });
-        return ids;
-    }, [allProducts, categories]);
+        return products.filter(p => p && p.badge_FlashSale);
+    }, [allProducts]);
 
     const fastDeliveryProducts = useMemo(() => {
-        const ids = new Set();
         const products = allProducts || [];
-
-        products.forEach(p => {
-            if (p && p.id) {
-                const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
-                if (Math.abs(hash) % 10 < 3) ids.add(p.id);
-            }
-        });
-        return ids;
+        return products.filter(p => p && p.label_FastDelivery);
     }, [allProducts]);
 
     const bestSellingProducts = useMemo(() => {
-        const ids = new Set();
         const products = allProducts || [];
-
-        products.forEach(p => {
-            if (p && p.id) {
-                const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
-                if (Math.abs(hash) % 10 >= 7) ids.add(p.id);
-            }
-        });
-        return ids;
+        return products.filter(p => p && p.badge_BestSelling);
     }, [allProducts]);
 
-    const fastDeliveryFilteredProducts = useMemo(() => {
-        const products = allProducts || [];
-        return products.filter(item => item && item.id && fastDeliveryProducts.has(item.id));
-    }, [allProducts, fastDeliveryProducts]);
-
-    const flashSaleFilteredProducts = useMemo(() => {
-        const products = allProducts || [];
-        return products.filter(item => item && item.id && flashSaleProducts.has(item.id));
-    }, [allProducts, flashSaleProducts]);
-
-    const bestSellingFilteredProducts = useMemo(() => {
-        const products = allProducts || [];
-        return products.filter(item => item && item.id && bestSellingProducts.has(item.id));
-    }, [allProducts, bestSellingProducts]);
-
-    const handleProductPress = useCallback(product => {
+    const handleProductPress = useCallback((product) => {
+        // Debug için product detaylarını log'la
+        if (__DEV__) {
+            logProductDetails(product);
+        }
         navigation.navigate('ProductDetail', { product });
     }, [navigation]);
 
-    const handleFavoritePress = useCallback(productId => {
-        toggleFavorite(productId, 'Home');
-    }, [toggleFavorite]);
+    // Basit favori toggle
+    const handleFavoritePress = useCallback(async (productId) => {
+        const currentProduct = allProducts.find(p => p.id === productId);
+        if (!currentProduct) return;
 
-    // Optimize horizontal renderItem with stable references
+        // Optimistic update
+        setAllProducts(prevProducts =>
+            prevProducts.map(p =>
+                p.id === productId
+                    ? { ...p, isFavorite: !p.isFavorite }
+                    : p
+            )
+        );
+
+        // API çağrısı
+        const success = await toggleProductFavorite(productId, currentProduct.isFavorite);
+        if (!success) {
+            // Başarısızsa geri al
+            setAllProducts(prevProducts =>
+                prevProducts.map(p =>
+                    p.id === productId
+                        ? { ...p, isFavorite: currentProduct.isFavorite }
+                        : p
+                )
+            );
+        }
+    }, [allProducts]);
+
+    // Kategori basma fonksiyonu - Filter context'i de güncelle - Optimized
+    const handleCategoryPress = useCallback((category) => {
+        console.log(`Home: Category pressed: ${category}`);
+
+        // Filter context'i güncelle
+        if (updateFilters && typeof updateFilters === 'function') {
+            updateFilters({
+                selectedCategory: category,
+                priceRange: { min: 0, max: 1000 },
+                selectedSizes: []
+            });
+        }
+
+        // Search sayfasına git - her seferinde yeni route ile
+        navigation.navigate('Search', {
+            selectedCategory: category,
+            timestamp: Date.now() // Her seferinde farklı bir param ekle
+        });
+    }, [navigation, updateFilters]);
+
+    // Render functions - sabit dependency'ler
     const renderHorizontalItem = useCallback(({ item }) => (
         <ProductCardHorizontal
             item={item}
-            isFavorite={!!favoriteItems[item.id]}
-            isFlashSale={flashSaleProducts.has(item.id)}
-            hasFastDelivery={fastDeliveryProducts.has(item.id)}
-            isBestSelling={bestSellingProducts.has(item.id)}
             onProductPress={handleProductPress}
             onFavoritePress={handleFavoritePress}
             translations={translations}
             isDarkMode={isDarkMode}
         />
-    ), [favoriteItems, flashSaleProducts, fastDeliveryProducts, bestSellingProducts, handleProductPress, handleFavoritePress, translations, isDarkMode]);
+    ), [handleProductPress, handleFavoritePress, translations, isDarkMode]);
 
-    // Optimize keyExtractor
-    const keyExtractorFast = useCallback((item) => `fast-${item.id}`, []);
-    const keyExtractorFlash = useCallback((item) => `flash-${item.id}`, []);
-    const keyExtractorBest = useCallback((item) => `best-${item.id}`, []);
+    const renderCategory = useCallback(({ item }) => (
+        <TouchableOpacity
+            style={[styles.categoryItem, { backgroundColor: theme.cardBackground }]}
+            onPress={() => handleCategoryPress(item)}
+        >
+            <Text style={[styles.categoryText, { color: theme.text }]}>{item}</Text>
+        </TouchableOpacity>
+    ), [handleCategoryPress, theme]);
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.statusBarBackground} />
-                <Ionicons name="refresh" size={40} color="#FF6B35" />
-                <Text style={styles.loadingText}>{translations.loading}</Text>
+            <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
+                <Text style={[styles.loadingText, { color: theme.text }]}>
+                    {translations.loading || 'Loading...'}
+                </Text>
             </View>
         );
     }
 
     return (
-        <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
-            <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.statusBarBackground} />
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar
+                backgroundColor={theme.primary}
+                barStyle={isDarkMode ? "light-content" : "dark-content"}
+            />
 
-            {/* Header */}
-            <View style={[styles.header, { backgroundColor: theme.surface || '#fff' }]}>
-                <View style={styles.headerContent}>
-                    <Image style={{ width: 60, height: 60, marginBottom: 10 }} source={require("../assets/images/KombinSepeti-logo-kucuk.png")} />
-                    <Text style={[styles.headerTitle, { color: theme.text }]}>{translations.welcomeToKombinSepeti}</Text>
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+                {/* Header */}
+                <View style={[styles.header, { backgroundColor: theme.primary }]}>
+                    <View style={styles.headerContent}>
+                        <Image source={require('../assets/images/KombinSepeti-logo-kucuk.png')} style={styles.logo} />
+                        <TouchableOpacity onPress={() => navigation.navigate('Search')}>
+                            <Ionicons name="search" size={24} color="white" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
 
-                    {/* API Status Indicator */}
-                    <View style={styles.apiStatusContainer}>
-                        <Ionicons
-                            name={apiStatus ? "checkmark-circle" : "alert-circle"}
-                            size={16}
-                            color={apiStatus ? "#4CAF50" : "#FF6B35"}
+                {/* Categories */}
+                <View style={styles.section}>
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                        {translations.categories || 'Categories'}
+                    </Text>
+                    <FlatList
+                        data={categories}
+                        renderItem={renderCategory}
+                        keyExtractor={(item, index) => `category-${index}-${item}`}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.categoriesList}
+                    />
+                </View>
+
+                {/* Flash Sale */}
+                {flashSaleProducts.length > 0 && (
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <View style={styles.sectionTitleContainer}>
+                                <Ionicons name="flash" size={20} color={theme.primary} style={styles.sectionIcon} />
+                                <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                                    {translations.flashSale || 'Flash Sale'}
+                                </Text>
+                            </View>
+                            <TouchableOpacity onPress={() => navigation.navigate('FlashSale')}>
+                                <Text style={[styles.seeAll, { color: theme.primary }]}>
+                                    {translations.seeAll || 'See All'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                        <FlatList
+                            data={flashSaleProducts.slice(0, 10)}
+                            renderItem={renderHorizontalItem}
+                            keyExtractor={item => `flash-${item.id}`}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
                         />
-                        <Text style={[styles.apiStatusText, { color: apiStatus ? "#4CAF50" : "#FF6B35" }]}>
-                            {apiStatus ? "API Connected" : "Using Offline Data"}
-                        </Text>
                     </View>
-                </View>
-            </View>
+                )}
 
-            {/* Fast Delivery Bölümü */}
-            {fastDeliveryFilteredProducts.length > 0 && (
-                <View style={[styles.specialSectionContainer, { backgroundColor: theme.surface || '#fff' }]}>
-                    <View style={[styles.sectionHeader, { backgroundColor: theme.surface || '#fff' }]}>
-                        <View style={styles.sectionHeaderLeft}>
-                            <Ionicons name="flash" size={24} color="#FF6B35" />
-                            <View>
-                                <Text style={[styles.sectionTitle, { color: theme.text }]}>{translations.fastDelivery}</Text>
-                                <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
-                                    {fastDeliveryFilteredProducts.length} {translations.products}
+                {/* Best Selling */}
+                {bestSellingProducts.length > 0 && (
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <View style={styles.sectionTitleContainer}>
+                                <Ionicons name="trending-up" size={20} color={theme.primary} style={styles.sectionIcon} />
+                                <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                                    {translations.bestSelling || 'Best Selling'}
                                 </Text>
                             </View>
+                            <TouchableOpacity onPress={() => navigation.navigate('BestSeller')}>
+                                <Text style={[styles.seeAll, { color: theme.primary }]}>
+                                    {translations.seeAll || 'See All'}
+                                </Text>
+                            </TouchableOpacity>
                         </View>
-                        <TouchableOpacity
-                            style={styles.viewAllButton}
-                            onPress={() => navigation.navigate('FastDelivery')}
-                        >
-                            <Text style={styles.viewAllText}>{translations.viewAll}</Text>
-                            <Ionicons name="chevron-forward" size={14} color="#fff" />
-                        </TouchableOpacity>
+                        <FlatList
+                            data={bestSellingProducts.slice(0, 10)}
+                            renderItem={renderHorizontalItem}
+                            keyExtractor={item => `best-${item.id}`}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                        />
                     </View>
-                    <FlatList
-                        data={fastDeliveryFilteredProducts}
-                        keyExtractor={keyExtractorFast}
-                        renderItem={renderHorizontalItem}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.horizontalList}
-                        removeClippedSubviews={true}
-                        maxToRenderPerBatch={5}
-                        windowSize={10}
-                        getItemLayout={(data, index) => ({
-                            length: 160,
-                            offset: 160 * index,
-                            index,
-                        })}
-                    />
-                </View>
-            )}
+                )}
 
-            {/* Flash Sale Bölümü */}
-            {flashSaleFilteredProducts.length > 0 && (
-                <View style={[styles.specialSectionContainer, { backgroundColor: theme.surface || '#fff' }]}>
-                    <View style={[styles.sectionHeader, { backgroundColor: theme.surface || '#fff' }]}>
-                        <View style={styles.sectionHeaderLeft}>
-                            <Ionicons name="flash-outline" size={24} color="#FF6B35" />
-                            <View>
-                                <Text style={[styles.sectionTitle, { color: theme.text }]}>{translations.flashSale}</Text>
-                                <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
-                                    {flashSaleFilteredProducts.length} {translations.products}
+                {/* Fast Delivery */}
+                {fastDeliveryProducts.length > 0 && (
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <View style={styles.sectionTitleContainer}>
+                                <Ionicons name="rocket" size={20} color={theme.primary} style={styles.sectionIcon} />
+                                <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                                    {translations.fastDelivery || 'Fast Delivery'}
                                 </Text>
                             </View>
-                        </View>
-                        <TouchableOpacity
-                            style={styles.viewAllButton}
-                            onPress={() => navigation.navigate('FlashSale')}
-                        >
-                            <Text style={styles.viewAllText}>{translations.viewAll}</Text>
-                            <Ionicons name="chevron-forward" size={14} color="#fff" />
-                        </TouchableOpacity>
-                    </View>
-                    <FlatList
-                        data={flashSaleFilteredProducts}
-                        keyExtractor={keyExtractorFlash}
-                        renderItem={renderHorizontalItem}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.horizontalList}
-                        removeClippedSubviews={true}
-                        maxToRenderPerBatch={5}
-                        windowSize={10}
-                        getItemLayout={(data, index) => ({
-                            length: 160,
-                            offset: 160 * index,
-                            index,
-                        })}
-                    />
-                </View>
-            )}
-
-            {/* Best Selling Bölümü */}
-            {bestSellingFilteredProducts.length > 0 && (
-                <View style={[styles.specialSectionContainer, { backgroundColor: theme.surface || '#fff' }]}>
-                    <View style={[styles.sectionHeader, { backgroundColor: theme.surface || '#fff' }]}>
-                        <View style={styles.sectionHeaderLeft}>
-                            <Ionicons name="trending-up" size={24} color="#FF6B35" />
-                            <View>
-                                <Text style={[styles.sectionTitle, { color: theme.text }]}>{translations.bestSeller}</Text>
-                                <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
-                                    {bestSellingFilteredProducts.length} {translations.products}
+                            <TouchableOpacity onPress={() => navigation.navigate('FastDelivery')}>
+                                <Text style={[styles.seeAll, { color: theme.primary }]}>
+                                    {translations.seeAll || 'See All'}
                                 </Text>
-                            </View>
+                            </TouchableOpacity>
                         </View>
-                        <TouchableOpacity
-                            style={styles.viewAllButton}
-                            onPress={() => navigation.navigate('BestSeller')}
-                        >
-                            <Text style={styles.viewAllText}>{translations.viewAll}</Text>
-                            <Ionicons name="chevron-forward" size={14} color="#fff" />
-                        </TouchableOpacity>
+                        <FlatList
+                            data={fastDeliveryProducts.slice(0, 10)}
+                            renderItem={renderHorizontalItem}
+                            keyExtractor={item => `fast-${item.id}`}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                        />
                     </View>
-                    <FlatList
-                        data={bestSellingFilteredProducts}
-                        keyExtractor={keyExtractorBest}
-                        renderItem={renderHorizontalItem}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.horizontalList}
-                        removeClippedSubviews={true}
-                        maxToRenderPerBatch={5}
-                        windowSize={10}
-                        getItemLayout={(data, index) => ({
-                            length: 160,
-                            offset: 160 * index,
-                            index,
-                        })}
-                    />
-                </View>
-            )}
-        </ScrollView>
+                )}
+            </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff'
     },
-    loadingContainer: {
-        flex: 1,
+    centered: {
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f8f9fa'
     },
-    loadingText: {
-        marginTop: 10,
-        fontSize: 16,
-        color: '#666',
-        fontWeight: '500'
+    scrollView: {
+        flex: 1,
     },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 15,
-        paddingTop: 20,
-        backgroundColor: '#fff',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        paddingTop: 50,
+        paddingBottom: 20,
+        paddingHorizontal: 20,
     },
     headerContent: {
-        flexDirection: 'column',
-        alignItems: "center",
-        justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#333',
-        marginLeft: 12,
-    },
-    apiStatusContainer: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        marginTop: 5,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 12,
-        backgroundColor: 'rgba(0,0,0,0.05)',
     },
-    apiStatusText: {
-        fontSize: 12,
-        fontWeight: '500',
-        marginLeft: 4,
+    logo: {
+        width: 120,
+        height: 40,
+        resizeMode: 'contain',
     },
-    specialSectionContainer: {
-        marginVertical: 8,
-        backgroundColor: '#fff',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+    section: {
+        marginVertical: 15,
+        paddingHorizontal: 15,
     },
     sectionHeader: {
         flexDirection: 'row',
-        alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        backgroundColor: '#fff'
+        alignItems: 'center',
+        marginBottom: 15,
     },
-    sectionHeaderLeft: {
+    sectionTitleContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+    },
+    sectionIcon: {
+        marginRight: 8,
     },
     sectionTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#333',
-        marginLeft: 12,
+        fontSize: 18,
+        fontWeight: 'bold',
     },
-    sectionSubtitle: {
-        fontSize: 13,
-        color: '#666',
-        marginLeft: 12,
-        marginTop: 2,
+    seeAll: {
+        fontSize: 14,
+        fontWeight: '500',
     },
-    viewAllButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FF6B35',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+    categoriesList: {
+        marginTop: 10,
+    },
+    categoryItem: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        marginRight: 10,
         borderRadius: 20,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.22,
+        shadowRadius: 2.22,
     },
-    viewAllText: {
-        fontSize: 12,
-        color: '#fff',
-        fontWeight: '600',
-        marginRight: 4,
+    categoryText: {
+        fontSize: 14,
+        fontWeight: '500',
     },
-    horizontalList: {
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        flexGrow: 1,
+    loadingText: {
+        fontSize: 16,
+        textAlign: 'center',
     },
 });

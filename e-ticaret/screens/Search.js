@@ -14,7 +14,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import SelectableOptions from '../components/SelectableOptions';
 import ProductCard from '../components/ProductCard';
 
-import { getAllProducts, getCategories, categoryUtils, checkApiStatus } from '../utils/productUtils';
+import { getAllProducts, getCategories, categoryUtils, checkApiStatus, toggleProductFavorite, parsePrice } from '../utils/productUtils';
 
 export default function Search() {
     const navigation = useNavigation();
@@ -42,10 +42,9 @@ export default function Search() {
 
     const { minPrice, maxPrice, selectedCategory, selectedSize } = filters || {};
 
-    // parsePrice fonksiyonunu useCallback ile memoize et
-    const parsePrice = useCallback((str) => parseFloat(str.replace('₺', '').replace(',', '.')), []);
+    // Güvenli fiyat parsing için utility kullan
 
-    // loadProducts fonksiyonunu dependency array'den parsePrice'ı kaldır
+    // loadProducts fonksiyonunu optimize et - stable dependency
     const loadProducts = useCallback(async () => {
         setLoading(true);
         try {
@@ -84,46 +83,83 @@ export default function Search() {
         } finally {
             setLoading(false);
         }
-    }, []); // parsePrice'ı dependency array'den kaldırdık
+    }, []); // Dependency array'i tamamen boş bırak - stable function
 
     useEffect(() => {
         loadProducts();
-    }, [loadProducts, language]);
+    }, [language]); // loadProducts'ı dependency'den çıkardık
 
+    // Route params'tan kategori al ve filter'a set et - Optimize edilmiş
     useEffect(() => {
-        if (route.params && updateFilters && typeof updateFilters === 'function') {
-            updateFilters(route.params);
-        }
-    }, [route.params, updateFilters]);
+        const { selectedCategory: routeCategory, timestamp } = route.params || {};
+        if (routeCategory && updateFilters && typeof updateFilters === 'function') {
+            console.log(`Search: Route params changed - Category: ${routeCategory}, Timestamp: ${timestamp}`);
 
+            // Her seferinde güncelle (timestamp sayesinde)
+            updateFilters({
+                selectedCategory: routeCategory,
+                priceRange: filters?.priceRange || { min: 0, max: 1000 },
+                selectedSizes: filters?.selectedSizes || []
+            });
+        }
+    }, [route.params?.selectedCategory, route.params?.timestamp]); // timestamp'i de dinle
+
+    // useMemo'ları stable hale getir
     const flashSaleProducts = useMemo(() => {
         const ids = new Set();
-        const categoryList = categories && categories.length > 0 ? categories : ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
         const products = allProducts || [];
 
-        categoryList.forEach(cat => {
-            products.filter(p => p && p.category === cat)
-                .sort((a, b) => {
-                    const priceA = a && a.price ? parseFloat(a.price.replace('₺', '').replace(',', '.')) : 0;
-                    const priceB = b && b.price ? parseFloat(b.price.replace('₺', '').replace(',', '.')) : 0;
-                    return priceA - priceB;
-                })
-                .slice(0, 6)
-                .forEach(p => p && p.id && ids.add(p.id));
-        });
+        // API'den gelen ürünlerin badge özelliği var mı kontrol et
+        const hasApiFlags = products.some(p => p && typeof p.badge_FlashSale === 'boolean');
+
+        if (hasApiFlags) {
+            // API verilerini kullan
+            products.forEach(p => {
+                if (p && p.id && p.badge_FlashSale === true) {
+                    ids.add(p.id);
+                }
+            });
+        } else {
+            // Fallback: computed logic
+            const categoryList = categories && categories.length > 0 ? categories : ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
+
+            categoryList.forEach(cat => {
+                products.filter(p => p && p.category === cat && p.price)
+                    .sort((a, b) => {
+                        const priceA = parsePrice(a.price);
+                        const priceB = parsePrice(b.price);
+                        return priceA - priceB;
+                    })
+                    .slice(0, 6)
+                    .forEach(p => p && p.id && ids.add(p.id));
+            });
+        }
         return ids;
-    }, [allProducts, categories]);
+    }, [allProducts]); // categories'i dependency'den çıkardık
 
     const fastDeliveryProducts = useMemo(() => {
         const ids = new Set();
         const products = allProducts || [];
 
-        products.forEach(p => {
-            if (p && p.id) {
-                const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
-                if (Math.abs(hash) % 10 < 3) ids.add(p.id);
-            }
-        });
+        // API'den gelen ürünlerin label özelliği var mı kontrol et
+        const hasApiFlags = products.some(p => p && typeof p.label_FastDelivery === 'boolean');
+
+        if (hasApiFlags) {
+            // API verilerini kullan
+            products.forEach(p => {
+                if (p && p.id && p.label_FastDelivery === true) {
+                    ids.add(p.id);
+                }
+            });
+        } else {
+            // Fallback: computed logic
+            products.forEach(p => {
+                if (p && p.id && typeof p.id === 'string') {
+                    const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
+                    if (Math.abs(hash) % 10 < 3) ids.add(p.id);
+                }
+            });
+        }
         return ids;
     }, [allProducts]);
 
@@ -131,63 +167,114 @@ export default function Search() {
         const ids = new Set();
         const products = allProducts || [];
 
-        products.forEach(p => {
-            if (p && p.id) {
-                const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
-                if (Math.abs(hash) % 10 >= 7) ids.add(p.id);
-            }
-        });
+        // API'den gelen ürünlerin label özelliği var mı kontrol et
+        const hasApiFlags = products.some(p => p && typeof p.label_BestSeller === 'boolean');
+
+        if (hasApiFlags) {
+            // API verilerini kullan
+            products.forEach(p => {
+                if (p && p.id && p.label_BestSeller === true) {
+                    ids.add(p.id);
+                }
+            });
+        } else {
+            // Fallback: computed logic
+            products.forEach(p => {
+                if (p && p.id && typeof p.id === 'string') {
+                    const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
+                    if (Math.abs(hash) % 10 >= 7) ids.add(p.id);
+                }
+            });
+        }
         return ids;
     }, [allProducts]);
 
+    // filteredProducts'ı optimize et - minimal dependencies
     const filteredProducts = useMemo(() => {
         const products = allProducts || [];
-        return products.filter(item => {
-            if (!item || !item.price || !item.name) return false;
+        const searchLower = searchText.toLowerCase();
 
-            const price = parseFloat(item.price.replace('₺', '').replace(',', '.'));
+        return products.filter(item => {
+            if (!item || !item.name) return false;
+
+            const price = parsePrice(item.price);
+
+            // Category filtreleme - API field'ı da kontrol et
+            const categoryMatch = !selectedCategory ||
+                item.category === selectedCategory ||
+                item.categoryName === selectedCategory;
+
+            // Size filtreleme - API field'larını da kontrol et
+            const sizeMatch = !selectedSize ||
+                (Array.isArray(item.availableSizes) && item.availableSizes.includes(selectedSize)) ||
+                (Array.isArray(item.sizes) && item.sizes.includes(selectedSize)) ||
+                (typeof item.size === 'string' && item.size === selectedSize);
+
             return (
-                item.name.toLowerCase().includes(searchText.toLowerCase()) &&
+                item.name.toLowerCase().includes(searchLower) &&
                 (!minPrice || price >= minPrice) &&
                 (!maxPrice || price <= maxPrice) &&
-                (!selectedCategory || item.category === selectedCategory) &&
-                (!selectedSize || (Array.isArray(item.availableSizes) && item.availableSizes.includes(selectedSize)))
+                categoryMatch &&
+                sizeMatch
             );
         }).sort((a, b) => {
-            if (!a || !a.price || !b || !b.price) return 0;
+            if (!a || !b) return 0;
 
-            const priceA = a && a.price ? parseFloat(a.price.replace('₺', '').replace(',', '.')) : 0;
-            const priceB = b && b.price ? parseFloat(b.price.replace('₺', '').replace(',', '.')) : 0;
+            const priceA = parsePrice(a.price);
+            const priceB = parsePrice(b.price);
+            const lowestPrice = translations?.lowestPrice;
+            const highestPrice = translations?.highestPrice;
+
             switch (sortOption) {
-                case translations?.lowestPrice: return priceA - priceB;
-                case translations?.highestPrice: return priceB - priceA;
+                case lowestPrice: return priceA - priceB;
+                case highestPrice: return priceB - priceA;
                 default: return 0;
             }
         });
-    }, [allProducts, searchText, minPrice, maxPrice, selectedCategory, selectedSize, sortOption, translations]);
+    }, [allProducts, searchText, minPrice, maxPrice, selectedCategory, selectedSize, sortOption, translations?.lowestPrice, translations?.highestPrice]); // translations'ı minimal'e indirdik
 
     const handleProductPress = useCallback(product => {
         navigation.navigate('ProductDetail', { product });
     }, [navigation]);
 
-    const handleFavoritePress = useCallback(productId => {
-        toggleFavorite(productId, 'Search');
-    }, [toggleFavorite]);
+    const handleFavoritePress = useCallback(async (productId) => {
+        const currentProduct = allProducts.find(p => p.id === productId);
+        if (currentProduct) {
+            // Önce UI'yi güncelle (optimistic update)
+            setAllProducts(prevProducts =>
+                prevProducts.map(p =>
+                    p.id === productId
+                        ? { ...p, isFavorite: !p.isFavorite }
+                        : p
+                )
+            );
+
+            const success = await toggleProductFavorite(productId, currentProduct.isFavorite);
+            if (!success) {
+                // API başarısızsa eski duruma geri al
+                setAllProducts(prevProducts =>
+                    prevProducts.map(p =>
+                        p.id === productId
+                            ? { ...p, isFavorite: currentProduct.isFavorite }
+                            : p
+                    )
+                );
+                // Fallback context'i de güncelle
+                toggleFavorite(productId, 'Search');
+            }
+        }
+    }, [allProducts, toggleFavorite]);
 
     // Optimize renderItem with stable references
     const renderItem = useCallback(({ item }) => (
         <ProductCard
             item={item}
-            isFavorite={!!favoriteItems[item.id]}
-            isFlashSale={flashSaleProducts.has(item.id)}
-            hasFastDelivery={fastDeliveryProducts.has(item.id)}
-            isBestSelling={bestSellingProducts.has(item.id)}
             onProductPress={handleProductPress}
             onFavoritePress={handleFavoritePress}
             translations={translations}
             isDarkMode={isDarkMode}
         />
-    ), [favoriteItems, flashSaleProducts, fastDeliveryProducts, bestSellingProducts, handleProductPress, handleFavoritePress, translations, isDarkMode]);
+    ), [handleProductPress, handleFavoritePress, translations, isDarkMode]);
 
     // Optimize getItemLayout
     const getItemLayout = useCallback((data, index) => ({
@@ -253,6 +340,8 @@ export default function Search() {
                     )}
                 </View>
                 <SelectableOptions
+                    categories={categories}
+                    sizeOptions={allProducts.length > 0 ? [...new Set(allProducts.flatMap(p => p.sizes || []))] : []}
                     onSelect={setSortOption}
                     onFilter={(min, max) => updateFilters && typeof updateFilters === 'function' ? updateFilters({ minPrice: min, maxPrice: max }) : null}
                 />

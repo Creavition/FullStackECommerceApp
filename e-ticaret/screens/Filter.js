@@ -12,11 +12,12 @@ import { useProduct } from '../contexts/ProductContext';
 import { useFilter } from '../contexts/FilterContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { fetchCategoriesFromAPI, checkApiStatus, categoryUtils } from '../utils/productUtils';
 
 export default function Filter() {
     const navigation = useNavigation();
+    const route = useRoute();
     const { sizeMap } = useProduct() || { sizeMap: {} };
     const { filters, applyFilters } = useFilter() || {
         filters: {
@@ -30,13 +31,16 @@ export default function Filter() {
     const { translations } = useLanguage() || { translations: {} };
     const { theme, isDarkMode } = useTheme() || { theme: {}, isDarkMode: false };
 
+    // Route params'tan gelen kategori ve size bilgileri
+    const { categories: routeCategories = [], sizeOptions: routeSizeOptions = [] } = route.params || {};
+
     // API'den gelen kategoriler için state'ler
-    const [apiCategories, setApiCategories] = useState([]);
+    const [apiCategories, setApiCategories] = useState(routeCategories.length > 0 ? routeCategories : []);
     const [apiSizeMap, setApiSizeMap] = useState({});
     const [loading, setLoading] = useState(true);
     const [apiStatus, setApiStatus] = useState(true);
 
-    // Kategori listesi (API'den gelen veya fallback)
+    // Kategori listesi (Route params'tan, API'den gelen veya fallback)
     const categories = apiCategories && apiCategories.length > 0 ?
         apiCategories.map(cat => cat && cat.categoryName ? cat.categoryName : cat) :
         (sizeMap && typeof sizeMap === 'object' ? Object.keys(sizeMap) : ['Jacket', 'Pants', 'Shoes', 'T-Shirt']);
@@ -103,11 +107,16 @@ export default function Filter() {
         setSelectedSize(size === selectedSize ? null : size);
     };
 
-    // Seçili kategorinin bedenlerini al (API'den veya fallback'ten)
+    // Seçili kategorinin bedenlerini al (Route params, API'den veya fallback'ten)
     const getSizesForCategory = (category) => {
         if (!category) return [];
 
-        // Önce API'den gelen verilerden kontrol et
+        // Önce route params'tan gelen size options'ları kontrol et
+        if (routeSizeOptions && routeSizeOptions.length > 0) {
+            return routeSizeOptions;
+        }
+
+        // Sonra API'den gelen verilerden kontrol et
         if (apiSizeMap && apiSizeMap[category] && Array.isArray(apiSizeMap[category])) {
             return apiSizeMap[category];
         }

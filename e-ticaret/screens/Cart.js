@@ -54,7 +54,29 @@ export default function Cart() {
     }
   }, [allProducts, language]);
 
-  const parsePrice = (priceStr) => parseFloat(priceStr.replace('₺', '').replace(',', '.'));
+  const parsePrice = (priceValue) => {
+    // Null/undefined kontrolü
+    if (!priceValue && priceValue !== 0) {
+      return 0;
+    }
+
+    // Eğer zaten sayıysa direkt döndür
+    if (typeof priceValue === 'number') {
+      return priceValue;
+    }
+
+    // String değilse 0 döndür
+    if (typeof priceValue !== 'string') {
+      return 0;
+    }
+
+    try {
+      return parseFloat(priceValue.replace('₺', '').replace(',', '.')) || 0;
+    } catch (error) {
+      console.error('parsePrice error:', error, 'for value:', priceValue);
+      return 0;
+    }
+  };
 
   // Flash Sale ürünlerini belirle (her kategoriden en ucuz 6 ürün)
   const flashSaleProducts = useMemo(() => {
@@ -63,7 +85,7 @@ export default function Cart() {
 
     categories.forEach(category => {
       const categoryProducts = allProducts
-        .filter(product => product.category === category)
+        .filter(product => product.category === category && product.price) // price kontrolü ekle
         .sort((a, b) => parsePrice(a.price) - parsePrice(b.price))
         .slice(0, 6);
 
@@ -77,6 +99,11 @@ export default function Cart() {
   const fastDeliveryProducts = useMemo(() => {
     const fastDeliveryIds = new Set();
     allProducts.forEach((product, index) => {
+      // Product ve id güvenlik kontrolü
+      if (!product || !product.id || typeof product.id !== 'string') {
+        return; // Bu ürünü atla
+      }
+
       const hash = product.id.split('').reduce((a, b) => {
         a = ((a << 5) - a) + b.charCodeAt(0);
         return a & a;
@@ -94,10 +121,20 @@ export default function Cart() {
 
     // Debug için item bilgilerini yazdır
     console.log(`Rendering item ${index}:`, {
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      priceType: typeof item.price,
       size: item.size,
       sizeType: typeof item.size,
-      hasSize: !!item.size
+      hasSize: !!item.size,
+      hasPrice: !!item.price
     });
+
+    // Price güvenlik kontrolü
+    if (!item.price) {
+      console.warn(`Item ${index} has no price:`, item);
+    }
 
     return (
       <View style={[styles.itemContainer, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}>
@@ -106,8 +143,16 @@ export default function Cart() {
           {/* Flash Sale or Best Selling Badge */}
           {isFlashSale ? (
             <View style={styles.flashSaleBadge}>
-              <Text style={styles.flashSaleText}>{translations.flashSale.split(' ')[0]}</Text>
-              <Text style={styles.flashSaleText}>{translations.flashSale.split(' ')[1]}</Text>
+              <Text style={styles.flashSaleText}>
+                {translations.flashSale && typeof translations.flashSale === 'string'
+                  ? translations.flashSale.split(' ')[0] || 'Flash'
+                  : 'Flash'}
+              </Text>
+              <Text style={styles.flashSaleText}>
+                {translations.flashSale && typeof translations.flashSale === 'string'
+                  ? translations.flashSale.split(' ')[1] || 'Sale'
+                  : 'Sale'}
+              </Text>
             </View>
           ) : (
             <View style={styles.bestSellingBadge}>
@@ -187,7 +232,7 @@ export default function Cart() {
               {translations.total}:
             </Text>
             <Text style={styles.subtotalValue}>
-              {(parseFloat(item.price.replace('₺', '').replace(',', '.')) * item.amount).toFixed(2)} ₺
+              {item.price ? (parsePrice(item.price) * item.amount).toFixed(2) : '0.00'} ₺
             </Text>
           </View>
         </View>
@@ -196,7 +241,11 @@ export default function Cart() {
   }, [flashSaleProducts, fastDeliveryProducts, decreaseAmount, increaseAmount, removeFromCart, translations, isDarkMode]);
 
   const total = cartItems.reduce((sum, item) => {
-    const price = parseFloat(item.price.replace('₺', '').replace(',', '.'));
+    if (!item.price) {
+      console.warn('Cart item has no price:', item);
+      return sum;
+    }
+    const price = parsePrice(item.price);
     return sum + (price * item.amount);
   }, 0);
 

@@ -1,6 +1,6 @@
 // screens/BestSeller.js
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
     View, Text, TextInput, StyleSheet, FlatList, StatusBar, TouchableOpacity
 } from 'react-native';
@@ -11,7 +11,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 import ProductCard from '../components/ProductCard';
-import { getAllProducts } from '../utils/productUtils';
+import { getAllProducts, productUtils, toggleProductFavorite } from '../utils/productUtils';
 
 export default function BestSeller() {
     const navigation = useNavigation();
@@ -26,10 +26,24 @@ export default function BestSeller() {
     const loadProducts = useCallback(async () => {
         setLoading(true);
         try {
+            // API'den best sellers'ı almaya çalış
+            const bestSellers = await productUtils.getBestSellers();
+
+            if (bestSellers && bestSellers.length > 0) {
+                console.log('Using API best sellers');
+                setAllProducts(bestSellers);
+            } else {
+                console.log('API best sellers not available, using all products');
+                const products = await getAllProducts();
+                // Fallback: badge_BestSelling true olan ürünleri filtrele
+                const filteredProducts = products.filter(p => p.badge_BestSelling);
+                setAllProducts(filteredProducts.length > 0 ? filteredProducts : products);
+            }
+        } catch (e) {
+            console.error('Error loading best sellers:', e);
+            // Hata durumunda tüm ürünleri yükle
             const products = await getAllProducts();
             setAllProducts(products);
-        } catch (e) {
-            console.error(e);
         } finally {
             setLoading(false);
         }
@@ -39,64 +53,61 @@ export default function BestSeller() {
         loadProducts();
     }, [loadProducts]);
 
-    const flashSaleProducts = useMemo(() => {
-        const ids = new Set();
-        const categoryList = ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
-        categoryList.forEach(cat => {
-            allProducts.filter(p => p.category === cat)
-                .sort((a, b) => parseFloat(a.price.replace('₺', '').replace(',', '.')) - parseFloat(b.price.replace('₺', '').replace(',', '.')))
-                .slice(0, 6)
-                .forEach(p => ids.add(p.id));
-        });
-        return ids;
-    }, [allProducts]);
+    // Sayfa odaklandığında yeniden yükle (favorite durumlarını güncellemek için)
+    useFocusEffect(
+        useCallback(() => {
+            loadProducts();
+        }, [loadProducts])
+    );
 
-    const fastDeliveryProducts = useMemo(() => {
-        const ids = new Set();
-        allProducts.forEach(p => {
-            const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
-            if (Math.abs(hash) % 10 < 3) ids.add(p.id);
-        });
-        return ids;
-    }, [allProducts]);
-
-    const bestSellingProducts = useMemo(() => {
-        const ids = new Set();
-        allProducts.forEach(p => {
-            const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
-            if (Math.abs(hash) % 10 >= 7) ids.add(p.id);
-        });
-        return ids;
-    }, [allProducts]);
-
+    // API'den gelen verilere göre ürünleri kategorize et - Best Sellers için basitleştir
     const bestSellingFilteredProducts = useMemo(() => {
         return allProducts.filter(item =>
-            bestSellingProducts.has(item.id) &&
             item.name.toLowerCase().includes(searchText.toLowerCase())
         );
-    }, [allProducts, bestSellingProducts, searchText]);
+    }, [allProducts, searchText]);
 
     const handleProductPress = useCallback(product => {
         navigation.navigate('ProductDetail', { product });
     }, [navigation]);
 
-    const handleFavoritePress = useCallback(productId => {
-        toggleFavorite(productId);
-    }, [toggleFavorite]);
+    const handleFavoritePress = useCallback(async (productId) => {
+        const currentProduct = allProducts.find(p => p.id === productId);
+        if (currentProduct) {
+            // Önce UI'yi güncelle (optimistic update)
+            setAllProducts(prevProducts =>
+                prevProducts.map(p =>
+                    p.id === productId
+                        ? { ...p, isFavorite: !p.isFavorite }
+                        : p
+                )
+            );
+
+            const success = await toggleProductFavorite(productId, currentProduct.isFavorite);
+            if (!success) {
+                // API başarısızsa eski duruma geri al
+                setAllProducts(prevProducts =>
+                    prevProducts.map(p =>
+                        p.id === productId
+                            ? { ...p, isFavorite: currentProduct.isFavorite }
+                            : p
+                    )
+                );
+                // Fallback context'i de güncelle
+                toggleFavorite(productId);
+            }
+        }
+    }, [allProducts, toggleFavorite]);
 
     const renderItem = useCallback(({ item }) => (
         <ProductCard
             item={item}
-            isFavorite={!!favoriteItems[item.id]}
-            isFlashSale={flashSaleProducts.has(item.id)}
-            hasFastDelivery={fastDeliveryProducts.has(item.id)}
-            isBestSelling={bestSellingProducts.has(item.id)}
             onProductPress={handleProductPress}
             onFavoritePress={handleFavoritePress}
             translations={translations}
             isDarkMode={isDarkMode}
         />
-    ), [favoriteItems, flashSaleProducts, fastDeliveryProducts, bestSellingProducts, handleProductPress, handleFavoritePress, translations, isDarkMode]);
+    ), [handleProductPress, handleFavoritePress, translations, isDarkMode]);
 
     const keyExtractor = useCallback((item) => item.id, []);
 
