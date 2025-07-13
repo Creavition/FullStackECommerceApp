@@ -7,12 +7,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { getAllProducts } from '../utils/productUtils';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useProduct } from '../contexts/ProductContext';
 
 export default function Cart() {
   const { cartItems, removeFromCart, increaseAmount, decreaseAmount, updateAllCartItemsLanguage } = useContext(CartContext);
   const navigation = useNavigation();
   const { translations, language } = useLanguage();
   const { theme, isDarkMode } = useTheme();
+  const { getImageUrl } = useProduct();
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -162,7 +164,12 @@ export default function Cart() {
           )}
 
           <View style={styles.imageContainer}>
-            <Image source={{ uri: item.image }} style={styles.productImage} />
+            <Image
+              source={{ uri: getImageUrl(item.frontImagePath || item.frontImageUrl || item.imageUrl || item.image) }}
+              style={styles.productImage}
+              defaultSource={require('../assets/images/icon.png')}
+              onError={(error) => console.log('Image load error:', error.nativeEvent.error)}
+            />
           </View>
 
           {/* Fast Delivery or BestSeller Label */}
@@ -238,7 +245,7 @@ export default function Cart() {
         </View>
       </View>
     );
-  }, [flashSaleProducts, fastDeliveryProducts, decreaseAmount, increaseAmount, removeFromCart, translations, isDarkMode]);
+  }, [flashSaleProducts, fastDeliveryProducts, decreaseAmount, increaseAmount, removeFromCart, translations, isDarkMode, getImageUrl]);
 
   const total = cartItems.reduce((sum, item) => {
     if (!item.price) {

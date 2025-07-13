@@ -3,6 +3,7 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity, StatusBar } from 'r
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../contexts/FavoritesContext';
+import { useProduct } from '../contexts/ProductContext';
 import { getAllProducts, productUtils, toggleProductFavorite } from '../utils/productUtils';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -12,48 +13,31 @@ import ProductCard from '../components/ProductCard';
 export default function Favorites() {
     const navigation = useNavigation();
     const { favoriteItems, favoriteSource, toggleFavorite } = useFavorites();
+    const { products, loading, fetchProducts, updateProductFavoriteStatus } = useProduct();
     const { translations, language } = useLanguage();
     const { theme, isDarkMode } = useTheme();
-    const [allProducts, setAllProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
 
-    // Ürünleri yükle - Sadece favori olanları al
-    const loadProducts = useCallback(async () => {
-        try {
-            setLoading(true);
+    // Ürünleri yükle - ProductContext'den favori olanları al
+    const favoriteProducts = useMemo(() => {
+        return products.filter(p => p.isFavorite === true);
+    }, [products]);
 
-            // Tüm ürünleri al
-            const allProducts = await getAllProducts();
-
-            // Sadece favori olanları filtrele
-            const favoriteProducts = allProducts.filter(p => p.isFavorite === true);
-
-            console.log(`Found ${favoriteProducts.length} favorite products`);
-            setAllProducts(favoriteProducts);
-        } catch (error) {
-            console.error('Error loading favorite products:', error);
-            setAllProducts([]);
-        } finally {
-            setLoading(false);
+    // Sayfa yüklendiğinde sadece bir kez yükle
+    useEffect(() => {
+        if (products.length === 0) {
+            fetchProducts();
         }
     }, []);
 
-    // Sayfa yüklendiğinde ve dil değiştiğinde ürünleri yükle
-    useEffect(() => {
-        loadProducts();
-    }, [loadProducts, language]);
-
-    // Sayfa odaklandığında yeniden yükle (diğer sayfalardan gelen güncellemeleri almak için)
+    // Sayfa odaklandığında sadece gerekirse yeniden yükle
     useFocusEffect(
         useCallback(() => {
-            loadProducts();
-        }, [loadProducts])
+            // Eğer ürünler yoksa veya çok az varsa yeniden yükle
+            if (products.length === 0) {
+                fetchProducts();
+            }
+        }, [products.length, fetchProducts])
     );
-
-    // Favori ürünleri al - allProducts zaten filtrelenmiş favori ürünleri içeriyor
-    const favoriteProducts = useMemo(() => {
-        return allProducts;
-    }, [allProducts]);
 
     // API'den gelen verilere göre ürünleri kategorize et - Favorites için basitleştir
     const handleProductPress = useCallback((product) => {
@@ -61,22 +45,19 @@ export default function Favorites() {
     }, [navigation]);
 
     const handleFavoritePress = useCallback(async (productId) => {
+        console.log(`Favorites: Toggling favorite for product ${productId}`);
+
         const currentProduct = favoriteProducts.find(p => p.id === productId);
         if (!currentProduct) return;
 
-        // Anında UI'den kaldır
-        setAllProducts(prevProducts => prevProducts.filter(p => p.id !== productId));
+        // Context'teki toggle fonksiyonunu kullan ve ProductContext'i güncelle
+        const newFavoriteStatus = await toggleFavorite(productId, 'Favorites', updateProductFavoriteStatus);
 
-        // API'yi güncelle (background)
-        try {
-            await toggleProductFavorite(productId, true); // favorite'tan çıkar
-            console.log(`Product ${productId} removed from favorites`);
-        } catch (error) {
-            console.error('Failed to update favorite status:', error);
-            // API başarısızsa ürünü geri ekle
-            setAllProducts(prevProducts => [...prevProducts, currentProduct]);
+        // Eğer API'den cevap gelmişse durumu logla
+        if (newFavoriteStatus !== null) {
+            console.log(`Favorites: Product ${productId} favorite status updated to: ${newFavoriteStatus}`);
         }
-    }, [favoriteProducts]);
+    }, [favoriteProducts, toggleFavorite, updateProductFavoriteStatus]);
 
     const renderItem = useCallback(({ item }) => {
         return (

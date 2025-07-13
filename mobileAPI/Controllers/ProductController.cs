@@ -31,7 +31,8 @@ namespace mobileAPI.Controllers
                     Id = p.Id,
                     Name = p.Name,
                     Price = p.Price,
-                    ImageUrl = p.ImageUrl,
+                    FrontImagePath = p.FrontImagePath,
+                    BackImagePath = p.BackImagePath,
                     IsFavorite = p.IsFavorite,
                     Badge_FlashSale = p.Badge_FlashSale,
                     Badge_BestSelling = p.Badge_BestSelling,
@@ -48,7 +49,7 @@ namespace mobileAPI.Controllers
             return Ok(products);
         }
 
-        // GET: api/Product/5
+        // GET: api/Product/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductResponse>> GetProduct(int id)
         {
@@ -61,15 +62,16 @@ namespace mobileAPI.Controllers
 
             if (product == null)
             {
-                return NotFound(new { message = "Product not found" });
+                return NotFound();
             }
 
-            var productResponse = new ProductResponse
+            var response = new ProductResponse
             {
                 Id = product.Id,
                 Name = product.Name,
                 Price = product.Price,
-                ImageUrl = product.ImageUrl,
+                FrontImagePath = product.FrontImagePath,
+                BackImagePath = product.BackImagePath,
                 IsFavorite = product.IsFavorite,
                 Badge_FlashSale = product.Badge_FlashSale,
                 Badge_BestSelling = product.Badge_BestSelling,
@@ -78,23 +80,17 @@ namespace mobileAPI.Controllers
                 CategoryId = product.CategoryId,
                 CategoryName = product.Category.CategoryName,
                 AvailableSizes = product.ProductSizes.Select(ps => ps.Size.SizeName).ToList(),
-                AverageRating = product.AverageRating,
-                ReviewCount = product.ReviewCount
+                AverageRating = product.Reviews.Count > 0 ? product.Reviews.Average(r => r.Rating) : 0,
+                ReviewCount = product.Reviews.Count
             };
 
-            return Ok(productResponse);
+            return Ok(response);
         }
 
-        // GET: api/Product/category/5
+        // GET: api/Product/category/{categoryId}
         [HttpGet("category/{categoryId}")]
         public async Task<ActionResult<IEnumerable<ProductResponse>>> GetProductsByCategory(int categoryId)
         {
-            var category = await _context.Categories.FindAsync(categoryId);
-            if (category == null)
-            {
-                return NotFound(new { message = "Category not found" });
-            }
-
             var products = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.ProductSizes)
@@ -106,7 +102,8 @@ namespace mobileAPI.Controllers
                     Id = p.Id,
                     Name = p.Name,
                     Price = p.Price,
-                    ImageUrl = p.ImageUrl,
+                    FrontImagePath = p.FrontImagePath,
+                    BackImagePath = p.BackImagePath,
                     IsFavorite = p.IsFavorite,
                     Badge_FlashSale = p.Badge_FlashSale,
                     Badge_BestSelling = p.Badge_BestSelling,
@@ -123,129 +120,40 @@ namespace mobileAPI.Controllers
             return Ok(products);
         }
 
-        // POST: api/Product/filter
-        [HttpPost("filter")]
-        public async Task<ActionResult<IEnumerable<ProductResponse>>> FilterProducts(ProductFilterRequest filter)
-        {
-            var query = _context.Products
-                .Include(p => p.Category)
-                .Include(p => p.ProductSizes)
-                .ThenInclude(ps => ps.Size)
-                .Include(p => p.Reviews)
-                .AsQueryable();
-
-            // Apply filters
-            if (filter.CategoryId.HasValue)
-            {
-                query = query.Where(p => p.CategoryId == filter.CategoryId.Value);
-            }
-
-            if (filter.MinPrice.HasValue)
-            {
-                query = query.Where(p => p.Price >= filter.MinPrice.Value);
-            }
-
-            if (filter.MaxPrice.HasValue)
-            {
-                query = query.Where(p => p.Price <= filter.MaxPrice.Value);
-            }
-
-            if (filter.SizeIds != null && filter.SizeIds.Any())
-            {
-                query = query.Where(p => p.ProductSizes.Any(ps => filter.SizeIds.Contains(ps.SizeId)));
-            }
-
-            if (filter.Badge_FlashSale.HasValue)
-            {
-                query = query.Where(p => p.Badge_FlashSale == filter.Badge_FlashSale.Value);
-            }
-
-            if (filter.Badge_BestSelling.HasValue)
-            {
-                query = query.Where(p => p.Badge_BestSelling == filter.Badge_BestSelling.Value);
-            }
-
-            if (filter.Label_BestSeller.HasValue)
-            {
-                query = query.Where(p => p.Label_BestSeller == filter.Label_BestSeller.Value);
-            }
-
-            if (filter.Label_FastDelivery.HasValue)
-            {
-                query = query.Where(p => p.Label_FastDelivery == filter.Label_FastDelivery.Value);
-            }
-
-            if (filter.IsFavorite.HasValue)
-            {
-                query = query.Where(p => p.IsFavorite == filter.IsFavorite.Value);
-            }
-
-            // Apply pagination
-            var totalCount = await query.CountAsync();
-            var products = await query
-                .Skip((filter.Page - 1) * filter.PageSize)
-                .Take(filter.PageSize)
-                .Select(p => new ProductResponse
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Price = p.Price,
-                    ImageUrl = p.ImageUrl,
-                    IsFavorite = p.IsFavorite,
-                    Badge_FlashSale = p.Badge_FlashSale,
-                    Badge_BestSelling = p.Badge_BestSelling,
-                    Label_BestSeller = p.Label_BestSeller,
-                    Label_FastDelivery = p.Label_FastDelivery,
-                    CategoryId = p.CategoryId,
-                    CategoryName = p.Category.CategoryName,
-                    AvailableSizes = p.ProductSizes.Select(ps => ps.Size.SizeName).ToList(),
-                    AverageRating = p.Reviews.Count > 0 ? p.Reviews.Average(r => r.Rating) : 0,
-                    ReviewCount = p.Reviews.Count
-                })
-                .ToListAsync();
-
-            return Ok(new
-            {
-                Products = products,
-                TotalCount = totalCount,
-                Page = filter.Page,
-                PageSize = filter.PageSize,
-                TotalPages = (int)Math.Ceiling((double)totalCount / filter.PageSize)
-            });
-        }
-
         // POST: api/Product
         [HttpPost]
         public async Task<ActionResult<ProductResponse>> CreateProduct(CreateProductRequest request)
         {
-            // Validate request
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             if (!request.IsValid())
             {
-                return BadRequest(new { message = "Exactly one badge and one label must be selected" });
+                return BadRequest("Invalid badge or label configuration. Exactly one badge and one label must be selected.");
             }
 
             // Check if category exists
-            var category = await _context.Categories.FindAsync(request.CategoryId);
-            if (category == null)
+            var categoryExists = await _context.Categories.AnyAsync(c => c.Id == request.CategoryId);
+            if (!categoryExists)
             {
-                return NotFound(new { message = "Category not found" });
+                return BadRequest($"Category with ID {request.CategoryId} does not exist.");
             }
 
-            // Check if all sizes exist and belong to the category
-            var sizes = await _context.Sizes
-                .Where(s => request.SizeIds.Contains(s.Id) && s.CategoryId == request.CategoryId)
-                .ToListAsync();
-
-            if (sizes.Count != request.SizeIds.Count)
+            // Check if all sizes exist
+            var existingSizes = await _context.Sizes.Where(s => request.SizeIds.Contains(s.Id)).ToListAsync();
+            if (existingSizes.Count != request.SizeIds.Count)
             {
-                return BadRequest(new { message = "Some sizes are invalid or don't belong to the selected category" });
+                return BadRequest("One or more size IDs are invalid.");
             }
 
             var product = new Product
             {
                 Name = request.Name,
                 Price = request.Price,
-                ImageUrl = request.ImageUrl,
+                FrontImagePath = request.FrontImagePath,
+                BackImagePath = request.BackImagePath,
                 IsFavorite = request.IsFavorite,
                 Badge_FlashSale = request.Badge_FlashSale,
                 Badge_BestSelling = request.Badge_BestSelling,
@@ -257,7 +165,7 @@ namespace mobileAPI.Controllers
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
-            // Add ProductSizes
+            // Add product sizes
             foreach (var sizeId in request.SizeIds)
             {
                 _context.ProductSizes.Add(new ProductSize
@@ -269,54 +177,71 @@ namespace mobileAPI.Controllers
 
             await _context.SaveChangesAsync();
 
-            // Return created product
+            // Return the created product
             var createdProduct = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.ProductSizes)
                 .ThenInclude(ps => ps.Size)
-                .FirstAsync(p => p.Id == product.Id);
+                .Include(p => p.Reviews)
+                .FirstOrDefaultAsync(p => p.Id == product.Id);
+
+            if (createdProduct == null)
+            {
+                return StatusCode(500, "Error retrieving created product");
+            }
 
             var response = new ProductResponse
             {
                 Id = createdProduct.Id,
                 Name = createdProduct.Name,
                 Price = createdProduct.Price,
-                ImageUrl = createdProduct.ImageUrl,
+                FrontImagePath = createdProduct.FrontImagePath,
+                BackImagePath = createdProduct.BackImagePath,
                 IsFavorite = createdProduct.IsFavorite,
                 Badge_FlashSale = createdProduct.Badge_FlashSale,
                 Badge_BestSelling = createdProduct.Badge_BestSelling,
                 Label_BestSeller = createdProduct.Label_BestSeller,
                 Label_FastDelivery = createdProduct.Label_FastDelivery,
                 CategoryId = createdProduct.CategoryId,
-                CategoryName = createdProduct.Category.CategoryName,
-                AvailableSizes = createdProduct.ProductSizes.Select(ps => ps.Size.SizeName).ToList()
+                CategoryName = createdProduct.Category?.CategoryName ?? "",
+                AvailableSizes = createdProduct.ProductSizes.Select(ps => ps.Size.SizeName).ToList(),
+                AverageRating = 0,
+                ReviewCount = 0
             };
 
             return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, response);
         }
 
-        // PUT: api/Product/5
+        // PUT: api/Product/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, UpdateProductRequest request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var product = await _context.Products
                 .Include(p => p.ProductSizes)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null)
             {
-                return NotFound(new { message = "Product not found" });
+                return NotFound();
             }
 
-            // Update properties if provided
-            if (!string.IsNullOrEmpty(request.Name))
+            // Update fields if provided
+            if (!string.IsNullOrWhiteSpace(request.Name))
                 product.Name = request.Name;
 
             if (request.Price.HasValue)
                 product.Price = request.Price.Value;
 
-            if (!string.IsNullOrEmpty(request.ImageUrl))
-                product.ImageUrl = request.ImageUrl;
+            if (!string.IsNullOrWhiteSpace(request.FrontImagePath))
+                product.FrontImagePath = request.FrontImagePath;
+
+            if (!string.IsNullOrWhiteSpace(request.BackImagePath))
+                product.BackImagePath = request.BackImagePath;
 
             if (request.IsFavorite.HasValue)
                 product.IsFavorite = request.IsFavorite.Value;
@@ -335,41 +260,35 @@ namespace mobileAPI.Controllers
 
             if (request.CategoryId.HasValue)
             {
-                var category = await _context.Categories.FindAsync(request.CategoryId.Value);
-                if (category == null)
+                var categoryExists = await _context.Categories.AnyAsync(c => c.Id == request.CategoryId.Value);
+                if (!categoryExists)
                 {
-                    return NotFound(new { message = "Category not found" });
+                    return BadRequest($"Category with ID {request.CategoryId.Value} does not exist.");
                 }
                 product.CategoryId = request.CategoryId.Value;
             }
 
             // Update sizes if provided
-            if (request.SizeIds != null)
+            if (request.SizeIds != null && request.SizeIds.Any())
             {
-                // Remove existing ProductSizes
+                var existingSizes = await _context.Sizes.Where(s => request.SizeIds.Contains(s.Id)).ToListAsync();
+                if (existingSizes.Count != request.SizeIds.Count)
+                {
+                    return BadRequest("One or more size IDs are invalid.");
+                }
+
+                // Remove existing product sizes
                 _context.ProductSizes.RemoveRange(product.ProductSizes);
 
-                // Add new ProductSizes
+                // Add new product sizes
                 foreach (var sizeId in request.SizeIds)
                 {
-                    var size = await _context.Sizes.FindAsync(sizeId);
-                    if (size == null || size.CategoryId != product.CategoryId)
-                    {
-                        return BadRequest(new { message = "Some sizes are invalid or don't belong to the selected category" });
-                    }
-
                     _context.ProductSizes.Add(new ProductSize
                     {
                         ProductId = product.Id,
                         SizeId = sizeId
                     });
                 }
-            }
-
-            // Validate constraints
-            if (!product.IsValid())
-            {
-                return BadRequest(new { message = "Exactly one badge and one label must be selected" });
             }
 
             try
@@ -391,107 +310,118 @@ namespace mobileAPI.Controllers
             return NoContent();
         }
 
-        // DELETE: api/Product/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProduct(int id)
+        // PUT: api/Product/{id}/basic-info
+        [HttpPut("{id}/basic-info")]
+        public async Task<IActionResult> UpdateProductBasicInfo(int id, UpdateProductBasicInfoRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var product = await _context.Products.FindAsync(id);
+            if (product == null)
+            {
+                return NotFound($"Product with ID {id} not found.");
+            }
+
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(request.Name))
+                {
+                    product.Name = request.Name;
+                }
+
+                if (request.Price.HasValue)
+                {
+                    product.Price = request.Price.Value;
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.FrontImagePath))
+                {
+                    product.FrontImagePath = request.FrontImagePath;
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.BackImagePath))
+                {
+                    product.BackImagePath = request.BackImagePath;
+                }
+
+                _context.Entry(product).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    message = "Product updated successfully",
+                    productId = id,
+                    updatedFields = new
+                    {
+                        name = request.Name != null ? product.Name : null,
+                        price = request.Price.HasValue ? (decimal?)product.Price : null,
+                        frontImagePath = request.FrontImagePath != null ? product.FrontImagePath : null,
+                        backImagePath = request.BackImagePath != null ? product.BackImagePath : null
+                    }
+                });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ProductExists(id))
+                {
+                    return NotFound($"Product with ID {id} not found.");
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "An error occurred while updating the product",
+                    error = ex.Message
+                });
+            }
+        }
+
+        // PUT: api/Product/{id}/favorite
+        [HttpPut("{id}/favorite")]
+        public async Task<IActionResult> ToggleFavorite(int id)
         {
             var product = await _context.Products.FindAsync(id);
             if (product == null)
             {
-                return NotFound(new { message = "Product not found" });
+                return NotFound();
             }
 
+            product.IsFavorite = !product.IsFavorite;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { isFavorite = product.IsFavorite });
+        }
+
+        // DELETE: api/Product/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteProduct(int id)
+        {
+            var product = await _context.Products
+                .Include(p => p.ProductSizes)
+                .Include(p => p.Reviews)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            // Remove related data
+            _context.ProductSizes.RemoveRange(product.ProductSizes);
+            _context.Reviews.RemoveRange(product.Reviews);
             _context.Products.Remove(product);
+
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        // GET: api/Product/bestsellers
-        [HttpGet("bestsellers")]
-        public async Task<ActionResult<IEnumerable<ProductResponse>>> GetBestSellers()
-        {
-            var products = await _context.Products
-                .Include(p => p.Category)
-                .Include(p => p.ProductSizes)
-                .ThenInclude(ps => ps.Size)
-                .Where(p => p.Badge_BestSelling)
-                .Select(p => new ProductResponse
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Price = p.Price,
-                    ImageUrl = p.ImageUrl,
-                    IsFavorite = p.IsFavorite,
-                    Badge_FlashSale = p.Badge_FlashSale,
-                    Badge_BestSelling = p.Badge_BestSelling,
-                    Label_BestSeller = p.Label_BestSeller,
-                    Label_FastDelivery = p.Label_FastDelivery,
-                    CategoryId = p.CategoryId,
-                    CategoryName = p.Category.CategoryName,
-                    AvailableSizes = p.ProductSizes.Select(ps => ps.Size.SizeName).ToList()
-                })
-                .ToListAsync();
-
-            return Ok(products);
-        }
-
-        // GET: api/Product/flashsale
-        [HttpGet("flashsale")]
-        public async Task<ActionResult<IEnumerable<ProductResponse>>> GetFlashSaleProducts()
-        {
-            var products = await _context.Products
-                .Include(p => p.Category)
-                .Include(p => p.ProductSizes)
-                .ThenInclude(ps => ps.Size)
-                .Where(p => p.Badge_FlashSale)
-                .Select(p => new ProductResponse
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Price = p.Price,
-                    ImageUrl = p.ImageUrl,
-                    IsFavorite = p.IsFavorite,
-                    Badge_FlashSale = p.Badge_FlashSale,
-                    Badge_BestSelling = p.Badge_BestSelling,
-                    Label_BestSeller = p.Label_BestSeller,
-                    Label_FastDelivery = p.Label_FastDelivery,
-                    CategoryId = p.CategoryId,
-                    CategoryName = p.Category.CategoryName,
-                    AvailableSizes = p.ProductSizes.Select(ps => ps.Size.SizeName).ToList()
-                })
-                .ToListAsync();
-
-            return Ok(products);
-        }
-
-        // GET: api/Product/fastdelivery
-        [HttpGet("fastdelivery")]
-        public async Task<ActionResult<IEnumerable<ProductResponse>>> GetFastDeliveryProducts()
-        {
-            var products = await _context.Products
-                .Include(p => p.Category)
-                .Include(p => p.ProductSizes)
-                .ThenInclude(ps => ps.Size)
-                .Where(p => p.Label_FastDelivery)
-                .Select(p => new ProductResponse
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Price = p.Price,
-                    ImageUrl = p.ImageUrl,
-                    IsFavorite = p.IsFavorite,
-                    Badge_FlashSale = p.Badge_FlashSale,
-                    Badge_BestSelling = p.Badge_BestSelling,
-                    Label_BestSeller = p.Label_BestSeller,
-                    Label_FastDelivery = p.Label_FastDelivery,
-                    CategoryId = p.CategoryId,
-                    CategoryName = p.Category.CategoryName,
-                    AvailableSizes = p.ProductSizes.Select(ps => ps.Size.SizeName).ToList()
-                })
-                .ToListAsync();
-
-            return Ok(products);
         }
 
         private bool ProductExists(int id)

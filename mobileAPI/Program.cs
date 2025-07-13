@@ -7,6 +7,7 @@ using mobileAPI.Models;
 using mobileAPI.Models.Requests;
 using mobileAPI.Services;
 using mobileAPI.Data;
+using BCrypt.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,6 +81,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Static files middleware - Images klasörü için
+app.UseStaticFiles();
+
+// Mevcut Images klasörünü statik dosya olarak servis et
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "Images")),
+    RequestPath = "/Images"
+});
+
 //app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -97,6 +109,23 @@ app.Run();
 
 async Task SeedDatabase(ApplicationDbContext context)
 {
+    // Seed test user if no users exist
+    if (!context.Users.Any())
+    {
+        var testUser = new User
+        {
+            Name = "Test User",
+            Email = "test@test.com",
+            Role = "User",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Test123")
+        };
+
+        context.Users.Add(testUser);
+        await context.SaveChangesAsync();
+
+        Console.WriteLine("Test user created: test@test.com / Test123");
+    }
+
     // Check if products already exist
     if (context.Products.Any())
         return;
@@ -114,23 +143,144 @@ async Task SeedDatabase(ApplicationDbContext context)
         if (!category.Sizes.Any())
             continue;
 
-        // Add 4 products per category
-        for (int i = 1; i <= 4; i++)
+        // Add real products with actual image names for each category
+        if (category.CategoryName == "Jacket")
         {
-            var product = new Product
+            var jacketProducts = new[]
             {
-                Name = $"{category.CategoryName} Product {i}",
-                Price = 50 + (i * 25),
-                ImageUrl = "https://via.placeholder.com/300x300",
-                IsFavorite = i % 2 == 0,
-                Badge_FlashSale = i == 1,
-                Badge_BestSelling = i != 1,
-                Label_BestSeller = i <= 2,
-                Label_FastDelivery = i > 2,
-                CategoryId = category.Id
+                new { Name = "Blazer Ceket", Front = "Blazer-Ceket-On.jpg", Back = "Blazer-Ceket-Arka.jpg", Price = 2500 },
+                new { Name = "Çift Yırtmaçlı Erkek Ceket", Front = "Cift-Yirtmacli-Erkek-Ceket-On.jpg", Back = "Cift-Yirtmacli-Erkek-Ceket-Arka.jpg", Price = 1800 },
+                new { Name = "Comfort Flanel Ceket", Front = "Comfort-Flanel-Ceket-Onjpg.jpg", Back = "Comfort-Flanel-Ceket-Arka.jpg", Price = 1200 },
+                new { Name = "Mono Yaka Erkek Ceket", Front = "Mono-Yaka-Erkek-Ceket-On.jpg", Back = "Mono-Yaka-Erkek-Ceket-Arka.jpg", Price = 1500 }
             };
 
-            products.Add(product);
+            for (int i = 0; i < jacketProducts.Length; i++)
+            {
+                var jacket = jacketProducts[i];
+                var product = new Product
+                {
+                    Name = jacket.Name,
+                    Price = jacket.Price,
+                    FrontImagePath = $"Images/{category.CategoryName}/{jacket.Front}",
+                    BackImagePath = $"Images/{category.CategoryName}/{jacket.Back}",
+                    IsFavorite = i % 2 == 0,
+                    Badge_FlashSale = i == 0,
+                    Badge_BestSelling = i != 0,
+                    Label_BestSeller = i <= 1,
+                    Label_FastDelivery = i > 1,
+                    CategoryId = category.Id
+                };
+                products.Add(product);
+            }
+        }
+        else if (category.CategoryName == "Pants")
+        {
+            var pantsProducts = new[]
+            {
+                new { Name = "Antrasit Klasik Pantolon", Front = "Antrasit Klasik Pantolon-On.jpg", Back = "Antrasit Klasik Pantolon-Arka.jpg", Price = 800 },
+                new { Name = "Fit Klasik Pantolon", Front = "Fit Klasik Pantolon-On-B.jpg", Back = "Fit Klasik Pantolon-Arka.jpg", Price = 950 },
+                new { Name = "Regular Siyah Pantolon", Front = "Regular-Siyap-Pantolon-On.jpg", Back = "Regular-Siyap-Pantolon-Arka.jpg", Price = 750 },
+                new { Name = "Spor Siyah Pantolon", Front = "Spor-Siyah-Pantolon-On.jpg", Back = "Spor-Siyah-Pantolon-Arka.jpg", Price = 650 }
+            };
+
+            for (int i = 0; i < pantsProducts.Length; i++)
+            {
+                var pants = pantsProducts[i];
+                var product = new Product
+                {
+                    Name = pants.Name,
+                    Price = pants.Price,
+                    FrontImagePath = $"Images/{category.CategoryName}/{pants.Front}",
+                    BackImagePath = $"Images/{category.CategoryName}/{pants.Back}",
+                    IsFavorite = i % 2 == 0,
+                    Badge_FlashSale = i == 0,
+                    Badge_BestSelling = i != 0,
+                    Label_BestSeller = i <= 1,
+                    Label_FastDelivery = i > 1,
+                    CategoryId = category.Id
+                };
+                products.Add(product);
+            }
+        }
+        else if (category.CategoryName == "Shoes")
+        {
+            var shoesProducts = new[]
+            {
+                new { Name = "Deri Sneaker Ayakkabı", Front = "Deri-Sneaker-Ayakkabi-On.jpg", Back = "Deri-Sneaker-Ayakkabi-Arka.jpg", Price = 1200 },
+                new { Name = "Deve Tüyü Deri Bot", Front = "Deve-Tuyu-Deri-Bot-On.jpg", Back = "Deve-Tuyu-Deri-Bot-Arka.jpg", Price = 1800 },
+                new { Name = "Kahverengi Deri Sneaker", Front = "Kahverengi-Deri-Sneaker-Ayakkabi-On.jpg", Back = "Kahverengi-Deri-Sneaker-Ayakkabi-Arka.jpg", Price = 1350 },
+                new { Name = "Gri Sneaker", Front = "Sneaker-Gri-On.jpg", Back = "Sneaker-Gri-Arka.jpg", Price = 900 }
+            };
+
+            for (int i = 0; i < shoesProducts.Length; i++)
+            {
+                var shoes = shoesProducts[i];
+                var product = new Product
+                {
+                    Name = shoes.Name,
+                    Price = shoes.Price,
+                    FrontImagePath = $"Images/{category.CategoryName}/{shoes.Front}",
+                    BackImagePath = $"Images/{category.CategoryName}/{shoes.Back}",
+                    IsFavorite = i % 2 == 0,
+                    Badge_FlashSale = i == 0,
+                    Badge_BestSelling = i != 0,
+                    Label_BestSeller = i <= 1,
+                    Label_FastDelivery = i > 1,
+                    CategoryId = category.Id
+                };
+                products.Add(product);
+            }
+        }
+        else if (category.CategoryName == "T-Shirt")
+        {
+            var tshirtProducts = new[]
+            {
+                new { Name = "Bisiklet Yaka T-Shirt", Front = "Bisiklet-Yaka-Tshirt-On.jpg", Back = "Bisiklet-Yaka-Tshirt-Arka.jpg", Price = 250 },
+                new { Name = "Polo Yaka T-Shirt", Front = "Polo-Yaka-On.jpg", Back = "Polo-Yaka-Arka.jpg", Price = 320 },
+                new { Name = "Polo Yaka Triko", Front = "Polo-Yaka-Triko-On.jpg", Back = "Polo-Yaka-Triko-Arka.jpg", Price = 450 },
+                new { Name = "Yazlık Triko", Front = "Yazlik-Triko-On.jpg", Back = "Yazlik-Triko-Arka.jpg", Price = 380 }
+            };
+
+            for (int i = 0; i < tshirtProducts.Length; i++)
+            {
+                var tshirt = tshirtProducts[i];
+                var product = new Product
+                {
+                    Name = tshirt.Name,
+                    Price = tshirt.Price,
+                    FrontImagePath = $"Images/{category.CategoryName}/{tshirt.Front}",
+                    BackImagePath = $"Images/{category.CategoryName}/{tshirt.Back}",
+                    IsFavorite = i % 2 == 0,
+                    Badge_FlashSale = i == 0,
+                    Badge_BestSelling = i != 0,
+                    Label_BestSeller = i <= 1,
+                    Label_FastDelivery = i > 1,
+                    CategoryId = category.Id
+                };
+                products.Add(product);
+            }
+        }
+        else
+        {
+            // Fallback for any other categories
+            for (int i = 1; i <= 4; i++)
+            {
+                var product = new Product
+                {
+                    Name = $"{category.CategoryName} Product {i}",
+                    Price = 50 + (i * 25),
+                    FrontImagePath = $"Images/{category.CategoryName}/{category.CategoryName}Product{i}-Front.jpg",
+                    BackImagePath = $"Images/{category.CategoryName}/{category.CategoryName}Product{i}-Back.jpg",
+                    IsFavorite = i % 2 == 0,
+                    Badge_FlashSale = i == 1,
+                    Badge_BestSelling = i != 1,
+                    Label_BestSeller = i <= 2,
+                    Label_FastDelivery = i > 2,
+                    CategoryId = category.Id
+                };
+
+                products.Add(product);
+            }
         }
     }
 

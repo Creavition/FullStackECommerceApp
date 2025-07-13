@@ -65,7 +65,12 @@ export const clearCurrentUser = async () => {
 export const loginUser = async (email, password) => {
     try {
         const response = await axios.post(`${API_BASE_URL}/login`, { email, password });
+
         const { token } = response.data;
+        if (!token) {
+            throw new Error('Token not received from server');
+        }
+
         await AsyncStorage.setItem('authToken', token);
 
         // Token'dan kullanıcı bilgilerini al ve AsyncStorage'a kaydet
@@ -76,7 +81,20 @@ export const loginUser = async (email, password) => {
 
         return response.data;
     } catch (error) {
-        throw new Error(error.response?.data || 'Login failed');
+        console.error('Login error:', error);
+
+        // Error mesajını düzgün şekilde handle et
+        if (error.response?.data) {
+            if (typeof error.response.data === 'string') {
+                throw new Error(error.response.data);
+            } else if (error.response.data.message) {
+                throw new Error(error.response.data.message);
+            } else {
+                throw new Error('Login failed');
+            }
+        } else {
+            throw new Error(error.message || 'Network error occurred');
+        }
     }
 };
 
@@ -115,8 +133,6 @@ export const getCurrentUserFromToken = async () => {
         const jsonPayload = base64Decode(base64);
         const payload = JSON.parse(jsonPayload);
 
-        console.log('JWT Payload:', payload); // Debug log
-
         // Token'ın süresi dolmuş mu kontrol et
         if (payload.exp * 1000 < Date.now()) {
             await AsyncStorage.removeItem('authToken');
@@ -130,7 +146,6 @@ export const getCurrentUserFromToken = async () => {
             role: payload.role || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
         };
 
-        console.log('Parsed user info:', userInfo); // Debug log
         return userInfo;
     } catch (error) {
         console.error('Error decoding token:', error);

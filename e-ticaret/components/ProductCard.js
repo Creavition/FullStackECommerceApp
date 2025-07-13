@@ -1,7 +1,9 @@
 // components/ProductCard.js
-import React, { useCallback, memo } from 'react';
+import React, { useCallback, memo, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useProduct } from '../contexts/ProductContext';
+import { useFavorites } from '../contexts/FavoritesContext';
 
 const ProductCard = memo(({
     item,
@@ -9,22 +11,33 @@ const ProductCard = memo(({
     onFavoritePress,
     translations,
     isDarkMode,
+    favoriteItems: propFavoriteItems,
 }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const { getImageUrl } = useProduct();
+    const { favoriteItems: contextFavoriteItems } = useFavorites();
+
+    // Prop'tan gelen favoriteItems'ı önceleyerek al
+    const favoriteItems = propFavoriteItems || contextFavoriteItems;
+
     const handleProductPress = useCallback(() => onProductPress(item), [item, onProductPress]);
     const handleFavoritePress = useCallback(() => onFavoritePress(item.id), [item.id, onFavoritePress]);
 
     // API'den gelen verilerden badge ve label bilgilerini al
-    const isFavorite = item.isFavorite || false;
+    // Favori durumunu önce API'den (item.isFavorite), sonra context'ten (favoriteItems) kontrol et
+    const isFavorite = item.isFavorite !== undefined ? item.isFavorite : (favoriteItems[item.id] || false);
     const isFlashSale = item.badge_FlashSale || false;
     const isBestSelling = item.badge_BestSelling || false;
     const hasLabelBestSeller = item.label_BestSeller || false;
     const hasFastDelivery = item.label_FastDelivery || false;
 
+    // Get image URLs using the context helper
+    const frontImageUrl = getImageUrl(item.frontImagePath || item.frontImageUrl || item.imageUrl || item.image);
+    const backImageUrl = getImageUrl(item.backImagePath || item.backImageUrl || item.frontImagePath || item.frontImageUrl || item.imageUrl || item.image);
+
     return (
-        <TouchableOpacity
-            onPress={handleProductPress}
+        <View
             style={[styles.card, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}
-            activeOpacity={0.8}
         >
             <Badge
                 isFlashSale={isFlashSale}
@@ -33,11 +46,21 @@ const ProductCard = memo(({
             />
 
             <View style={styles.imageContainer}>
-                <Image
-                    source={{ uri: item.imageUrl || item.image }}
-                    style={styles.image}
-                    resizeMode="cover"
-                />
+                <TouchableOpacity
+                    onPressIn={() => setIsHovered(true)}
+                    onPressOut={() => setIsHovered(false)}
+                    onPress={handleProductPress}
+                    activeOpacity={1}
+                    style={styles.imageWrapper}
+                >
+                    <Image
+                        source={{
+                            uri: isHovered ? backImageUrl : frontImageUrl
+                        }}
+                        style={styles.image}
+                        resizeMode="cover"
+                    />
+                </TouchableOpacity>
                 <TouchableOpacity
                     onPress={handleFavoritePress}
                     style={styles.favoriteIcon}
@@ -68,13 +91,18 @@ const ProductCard = memo(({
             >
                 {typeof item.price === 'number' ? `${item.price}₺` : item.price}
             </Text>
-        </TouchableOpacity>
+        </View>
     );
 }, (prevProps, nextProps) => {
-    // Custom comparison function for better performance
+    // Sadece bu ürünle ilgili değişiklikleri kontrol et
+    const prevFavorite = prevProps.favoriteItems?.[prevProps.item.id] ?? prevProps.item.isFavorite;
+    const nextFavorite = nextProps.favoriteItems?.[nextProps.item.id] ?? nextProps.item.isFavorite;
+
     return (
         prevProps.item.id === nextProps.item.id &&
-        prevProps.item.isFavorite === nextProps.item.isFavorite &&
+        prevProps.item.name === nextProps.item.name &&
+        prevProps.item.price === nextProps.item.price &&
+        prevFavorite === nextFavorite &&
         prevProps.item.badge_FlashSale === nextProps.item.badge_FlashSale &&
         prevProps.item.badge_BestSelling === nextProps.item.badge_BestSelling &&
         prevProps.item.label_BestSeller === nextProps.item.label_BestSeller &&
@@ -156,6 +184,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 12,
         position: 'relative',
+    },
+    imageWrapper: {
+        width: 130,
+        height: 130,
+        borderRadius: 12,
     },
     image: {
         width: 130,
@@ -262,7 +295,5 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
 });
-
-ProductCard.displayName = 'ProductCard';
 
 export default ProductCard;

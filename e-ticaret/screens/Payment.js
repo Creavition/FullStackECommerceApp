@@ -65,6 +65,11 @@ export default function Payment() {
         items: cartItems.map(item => ({
           id: item.id,
           name: item.name,
+          frontImagePath: item.frontImagePath,
+          frontImageUrl: item.frontImageUrl,
+          backImagePath: item.backImagePath,
+          backImageUrl: item.backImageUrl,
+          imageUrl: item.imageUrl,
           image: item.image,
           price: item.price,
           size: item.size,

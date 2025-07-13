@@ -86,7 +86,7 @@ public class ReviewController : ControllerBase
                     CreatedAt = r.CreatedAt,
                     ProductId = r.ProductId,
                     ProductName = r.Product.Name,
-                    ProductImageUrl = r.Product.ImageUrl
+                    ProductImageUrl = r.Product.FrontImagePath
                 })
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();

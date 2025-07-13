@@ -46,6 +46,10 @@ export const CartProvider = ({ children }) => {
             itemToAdd = {
                 id: productOrItem.id,
                 name: productOrItem.name,
+                frontImagePath: productOrItem.frontImagePath,
+                frontImageUrl: productOrItem.frontImageUrl,
+                backImagePath: productOrItem.backImagePath,
+                backImageUrl: productOrItem.backImageUrl,
                 image: productOrItem.image,
                 price: productOrItem.price,
                 size: selectedSize, // ✅ Seçilen beden
@@ -58,6 +62,10 @@ export const CartProvider = ({ children }) => {
             itemToAdd = {
                 id: productOrItem.id,
                 name: productOrItem.name,
+                frontImagePath: productOrItem.frontImagePath,
+                frontImageUrl: productOrItem.frontImageUrl,
+                backImagePath: productOrItem.backImagePath,
+                backImageUrl: productOrItem.backImageUrl,
                 image: productOrItem.image,
                 price: productOrItem.price,
                 size: productOrItem.size, // ✅ Zaten var olan beden

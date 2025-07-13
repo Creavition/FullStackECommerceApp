@@ -8,7 +8,7 @@ export function FilterProvider({ children }) {
         minPrice: null,
         maxPrice: null,
         selectedCategory: null,
-        selectedSize: null,
+        selectedSizes: [],
     });
 
     const updateFilters = (newFilters) => {
@@ -23,7 +23,7 @@ export function FilterProvider({ children }) {
             minPrice: null,
             maxPrice: null,
             selectedCategory: null,
-            selectedSize: null,
+            selectedSizes: [],
         });
     };
 
@@ -32,7 +32,7 @@ export function FilterProvider({ children }) {
             minPrice: filterData.minPrice,
             maxPrice: filterData.maxPrice,
             selectedCategory: filterData.selectedCategory,
-            selectedSize: filterData.selectedSize,
+            selectedSizes: filterData.selectedSizes || [],
         });
     };
 

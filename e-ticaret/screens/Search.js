@@ -10,11 +10,12 @@ import { useFavorites } from '../contexts/FavoritesContext';
 import { useFilter } from '../contexts/FilterContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useProduct } from '../contexts/ProductContext';
 
 import SelectableOptions from '../components/SelectableOptions';
 import ProductCard from '../components/ProductCard';
 
-import { getAllProducts, getCategories, categoryUtils, checkApiStatus, toggleProductFavorite, parsePrice } from '../utils/productUtils';
+import { parsePrice } from '../utils/productUtils';
 
 export default function Search() {
     const navigation = useNavigation();
@@ -26,21 +27,20 @@ export default function Search() {
             minPrice: null,
             maxPrice: null,
             selectedCategory: null,
-            selectedSize: null
+            selectedSizes: []
         },
         updateFilters: () => { }
     };
     const { translations, language } = useLanguage() || { translations: {}, language: 'en' };
     const { theme, isDarkMode } = useTheme() || { theme: {}, isDarkMode: false };
+    const { products, loading, fetchProducts, fetchProductsByCategory, updateProductFavoriteStatus } = useProduct();
 
     const [searchText, setSearchText] = useState('');
     const [sortOption, setSortOption] = useState(null);
-    const [allProducts, setAllProducts] = useState([]);
-    const [categories, setCategories] = useState(['Jacket', 'Pants', 'Shoes', 'T-Shirt']); // Fallback kategoriler
-    const [loading, setLoading] = useState(true);
+    const [categories] = useState(['Jacket', 'Pants', 'Shoes', 'T-Shirt']); // Static categories
     const [apiStatus, setApiStatus] = useState(true);
 
-    const { minPrice, maxPrice, selectedCategory, selectedSize } = filters || {};
+    const { minPrice, maxPrice, selectedCategory, selectedSizes } = filters || {};
 
     // Navigation başlığını güncelle
     useEffect(() => {
@@ -62,50 +62,13 @@ export default function Search() {
 
     // Güvenli fiyat parsing için utility kullan
 
-    // loadProducts fonksiyonunu optimize et - stable dependency
-    const loadProducts = useCallback(async () => {
-        setLoading(true);
-        try {
-            // API durumunu kontrol et
-            const apiOk = checkApiStatus();
-            setApiStatus(apiOk);
-
-            // Kategorileri ve ürünleri paralel olarak yükle
-            const [products, categoryList] = await Promise.all([
-                getAllProducts().catch(() => []), // Hata durumunda boş array
-                getCategories().catch(() => ['Jacket', 'Pants', 'Shoes', 'T-Shirt']) // Fallback
-            ]);
-
-            // Güvenli veri kontrolü
-            const safeProducts = Array.isArray(products) ? products : [];
-            const safeCategories = Array.isArray(categoryList) ? categoryList : ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
-
-            setAllProducts(safeProducts);
-            setCategories(safeCategories);
-
-            console.log(`Search: Loaded ${safeProducts.length} products and ${safeCategories.length} categories`);
-        } catch (e) {
-            console.error('Error loading products in Search:', e);
-            // Hata durumunda API'yi tekrar test et
-            try {
-                const testResult = await categoryUtils.testApiConnection();
-                setApiStatus(testResult);
-            } catch (testError) {
-                console.error('Error testing API connection in Search:', testError);
-                setApiStatus(false);
-            }
-
-            // Fallback verilerini ayarla
-            setAllProducts([]);
-            setCategories(['Jacket', 'Pants', 'Shoes', 'T-Shirt']);
-        } finally {
-            setLoading(false);
-        }
-    }, []); // Dependency array'i tamamen boş bırak - stable function
-
+    // Load products using ProductContext - sadece gerektiğinde
     useEffect(() => {
-        loadProducts();
-    }, [language]); // loadProducts'ı dependency'den çıkardık
+        // If products are already loaded in context, we're good
+        if (products.length === 0 && !loading) {
+            fetchProducts();
+        }
+    }, []); // Sadece component mount'ta çalışsın
 
     // Route params'tan kategori al ve filter'a set et - Optimize edilmiş
     useEffect(() => {
@@ -125,14 +88,14 @@ export default function Search() {
     // useMemo'ları stable hale getir
     const flashSaleProducts = useMemo(() => {
         const ids = new Set();
-        const products = allProducts || [];
+        const productList = products || [];
 
         // API'den gelen ürünlerin badge özelliği var mı kontrol et
-        const hasApiFlags = products.some(p => p && typeof p.badge_FlashSale === 'boolean');
+        const hasApiFlags = productList.some(p => p && typeof p.badge_FlashSale === 'boolean');
 
         if (hasApiFlags) {
             // API verilerini kullan
-            products.forEach(p => {
+            productList.forEach(p => {
                 if (p && p.id && p.badge_FlashSale === true) {
                     ids.add(p.id);
                 }
@@ -153,18 +116,18 @@ export default function Search() {
             });
         }
         return ids;
-    }, [allProducts]); // categories'i dependency'den çıkardık
+    }, [products]); // products kullan
 
     const fastDeliveryProducts = useMemo(() => {
         const ids = new Set();
-        const products = allProducts || [];
+        const productList = products || [];
 
         // API'den gelen ürünlerin label özelliği var mı kontrol et
-        const hasApiFlags = products.some(p => p && typeof p.label_FastDelivery === 'boolean');
+        const hasApiFlags = productList.some(p => p && typeof p.label_FastDelivery === 'boolean');
 
         if (hasApiFlags) {
             // API verilerini kullan
-            products.forEach(p => {
+            productList.forEach(p => {
                 if (p && p.id && p.label_FastDelivery === true) {
                     ids.add(p.id);
                 }
@@ -179,25 +142,25 @@ export default function Search() {
             });
         }
         return ids;
-    }, [allProducts]);
+    }, [products]);
 
     const bestSellingProducts = useMemo(() => {
         const ids = new Set();
-        const products = allProducts || [];
+        const productList = products || [];
 
         // API'den gelen ürünlerin label özelliği var mı kontrol et
-        const hasApiFlags = products.some(p => p && typeof p.label_BestSeller === 'boolean');
+        const hasApiFlags = productList.some(p => p && typeof p.label_BestSeller === 'boolean');
 
         if (hasApiFlags) {
             // API verilerini kullan
-            products.forEach(p => {
+            productList.forEach(p => {
                 if (p && p.id && p.label_BestSeller === true) {
                     ids.add(p.id);
                 }
             });
         } else {
             // Fallback: computed logic
-            products.forEach(p => {
+            productList.forEach(p => {
                 if (p && p.id && typeof p.id === 'string') {
                     const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
                     if (Math.abs(hash) % 10 >= 7) ids.add(p.id);
@@ -205,14 +168,14 @@ export default function Search() {
             });
         }
         return ids;
-    }, [allProducts]);
+    }, [products]);
 
     // filteredProducts'ı optimize et - minimal dependencies
     const filteredProducts = useMemo(() => {
-        const products = allProducts || [];
+        const productList = products || [];
         const searchLower = searchText.toLowerCase();
 
-        return products.filter(item => {
+        return productList.filter(item => {
             if (!item || !item.name) return false;
 
             const price = parsePrice(item.price);
@@ -222,11 +185,13 @@ export default function Search() {
                 item.category === selectedCategory ||
                 item.categoryName === selectedCategory;
 
-            // Size filtreleme - API field'larını da kontrol et
-            const sizeMatch = !selectedSize ||
-                (Array.isArray(item.availableSizes) && item.availableSizes.includes(selectedSize)) ||
-                (Array.isArray(item.sizes) && item.sizes.includes(selectedSize)) ||
-                (typeof item.size === 'string' && item.size === selectedSize);
+            // Size filtreleme - Seçili tüm bedenlerin üründe bulunması gerekiyor
+            const sizeMatch = !selectedSizes || selectedSizes.length === 0 ||
+                selectedSizes.every(selectedSize => {
+                    return (Array.isArray(item.availableSizes) && item.availableSizes.includes(selectedSize)) ||
+                        (Array.isArray(item.sizes) && item.sizes.includes(selectedSize)) ||
+                        (typeof item.size === 'string' && item.size === selectedSize);
+                });
 
             return (
                 item.name.toLowerCase().includes(searchLower) &&
@@ -249,39 +214,23 @@ export default function Search() {
                 default: return 0;
             }
         });
-    }, [allProducts, searchText, minPrice, maxPrice, selectedCategory, selectedSize, sortOption, translations?.lowestPrice, translations?.highestPrice]); // translations'ı minimal'e indirdik
+    }, [products, searchText, minPrice, maxPrice, selectedCategory, selectedSizes, sortOption, translations?.lowestPrice, translations?.highestPrice]); // Updated to use products from context
 
     const handleProductPress = useCallback(product => {
         navigation.navigate('ProductDetail', { product });
     }, [navigation]);
 
     const handleFavoritePress = useCallback(async (productId) => {
-        const currentProduct = allProducts.find(p => p.id === productId);
-        if (currentProduct) {
-            // Önce UI'yi güncelle (optimistic update)
-            setAllProducts(prevProducts =>
-                prevProducts.map(p =>
-                    p.id === productId
-                        ? { ...p, isFavorite: !p.isFavorite }
-                        : p
-                )
-            );
+        console.log(`Search: Toggling favorite for product ${productId}`);
 
-            const success = await toggleProductFavorite(productId, currentProduct.isFavorite);
-            if (!success) {
-                // API başarısızsa eski duruma geri al
-                setAllProducts(prevProducts =>
-                    prevProducts.map(p =>
-                        p.id === productId
-                            ? { ...p, isFavorite: currentProduct.isFavorite }
-                            : p
-                    )
-                );
-                // Fallback context'i de güncelle
-                toggleFavorite(productId, 'Search');
-            }
+        // Context'teki toggle fonksiyonunu kullan ve ProductContext'i güncelle
+        const newFavoriteStatus = await toggleFavorite(productId, 'Search', updateProductFavoriteStatus);
+
+        // Eğer API'den cevap gelmişse durumu logla
+        if (newFavoriteStatus !== null) {
+            console.log(`Search: Product ${productId} favorite status updated to: ${newFavoriteStatus}`);
         }
-    }, [allProducts, toggleFavorite]);
+    }, [toggleFavorite, updateProductFavoriteStatus]);
 
     // Optimize renderItem with stable references
     const renderItem = useCallback(({ item }) => (
@@ -291,6 +240,7 @@ export default function Search() {
             onFavoritePress={handleFavoritePress}
             translations={translations}
             isDarkMode={isDarkMode}
+            favoriteItems={favoriteItems}
         />
     ), [handleProductPress, handleFavoritePress, translations, isDarkMode]);
 
@@ -359,7 +309,7 @@ export default function Search() {
                 </View>
                 <SelectableOptions
                     categories={categories}
-                    sizeOptions={allProducts.length > 0 ? [...new Set(allProducts.flatMap(p => p.sizes || []))] : []}
+                    sizeOptions={products.length > 0 ? [...new Set(products.flatMap(p => p.availableSizes || p.sizes || []))] : []}
                     onSelect={setSortOption}
                     onFilter={(min, max) => updateFilters && typeof updateFilters === 'function' ? updateFilters({ minPrice: min, maxPrice: max }) : null}
                 />

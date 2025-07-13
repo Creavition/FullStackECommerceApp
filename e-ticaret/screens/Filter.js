@@ -14,6 +14,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { fetchCategoriesFromAPI, checkApiStatus, categoryUtils } from '../utils/productUtils';
+import { categoryApi } from '../utils/categoryApi';
 
 export default function Filter() {
     const navigation = useNavigation();
@@ -37,6 +38,8 @@ export default function Filter() {
     // API'den gelen kategoriler için state'ler
     const [apiCategories, setApiCategories] = useState(routeCategories.length > 0 ? routeCategories : []);
     const [apiSizeMap, setApiSizeMap] = useState({});
+    const [categorySizes, setCategorySizes] = useState([]);
+    const [allCategorySizes, setAllCategorySizes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [apiStatus, setApiStatus] = useState(true);
 
@@ -46,7 +49,7 @@ export default function Filter() {
         (sizeMap && typeof sizeMap === 'object' ? Object.keys(sizeMap) : ['Jacket', 'Pants', 'Shoes', 'T-Shirt']);
 
     const [selectedCategory, setSelectedCategory] = useState(filters?.selectedCategory || null);
-    const [selectedSize, setSelectedSize] = useState(filters?.selectedSize || null);
+    const [selectedSizes, setSelectedSizes] = useState(filters?.selectedSizes || []);
     const [minPrice, setMinPrice] = useState(filters?.minPrice ? filters.minPrice.toString() : '');
     const [maxPrice, setMaxPrice] = useState(filters?.maxPrice ? filters.maxPrice.toString() : '');
 
@@ -59,15 +62,43 @@ export default function Filter() {
                 setApiStatus(apiOk);
 
                 console.log('Loading categories for filter...');
-                const { categories, sizeMap } = await fetchCategoriesFromAPI();
 
-                if (categories && categories.length > 0) {
-                    setApiCategories(Array.isArray(categories) ? categories : []);
-                    setApiSizeMap(sizeMap && typeof sizeMap === 'object' ? sizeMap : {});
-                    console.log(`Filter loaded ${categories.length} categories from API`);
+                // Kategorileri API'den al
+                const categoriesFromAPI = await categoryApi.getAllCategories();
+
+                if (categoriesFromAPI && categoriesFromAPI.length > 0) {
+                    setApiCategories(categoriesFromAPI);
+
+                    // Tüm kategorilerin bedenlerini birleştir
+                    const allSizes = new Set();
+                    const sizeMapFromAPI = {};
+
+                    categoriesFromAPI.forEach(category => {
+                        if (category.sizes && Array.isArray(category.sizes)) {
+                            const sizesForCategory = category.sizes.map(size => size.sizeName || size);
+                            sizeMapFromAPI[category.categoryName] = sizesForCategory;
+
+                            // Tüm bedenler setine ekle
+                            sizesForCategory.forEach(size => allSizes.add(size));
+                        }
+                    });
+
+                    setApiSizeMap(sizeMapFromAPI);
+                    setAllCategorySizes(Array.from(allSizes));
+                    console.log(`Filter loaded ${categoriesFromAPI.length} categories from API`);
+                    console.log('All categories sizes combined:', Array.from(allSizes));
                 } else {
                     console.log('No API categories, using fallback data');
                     setApiSizeMap(sizeMap && typeof sizeMap === 'object' ? sizeMap : {});
+
+                    // Fallback için tüm bedenler
+                    const fallbackAllSizes = new Set();
+                    Object.values(sizeMap || {}).forEach(sizes => {
+                        if (Array.isArray(sizes)) {
+                            sizes.forEach(size => fallbackAllSizes.add(size));
+                        }
+                    });
+                    setAllCategorySizes(Array.from(fallbackAllSizes));
                 }
             } catch (error) {
                 console.error('Error loading categories for filter:', error);
@@ -79,6 +110,15 @@ export default function Filter() {
                     setApiStatus(false);
                 }
                 setApiSizeMap(sizeMap && typeof sizeMap === 'object' ? sizeMap : {});
+
+                // Error durumunda fallback tüm bedenler
+                const fallbackAllSizes = new Set();
+                Object.values(sizeMap || {}).forEach(sizes => {
+                    if (Array.isArray(sizes)) {
+                        sizes.forEach(size => fallbackAllSizes.add(size));
+                    }
+                });
+                setAllCategorySizes(Array.from(fallbackAllSizes));
             } finally {
                 setLoading(false);
             }
@@ -91,7 +131,7 @@ export default function Filter() {
     useEffect(() => {
         if (filters) {
             setSelectedCategory(filters.selectedCategory || null);
-            setSelectedSize(filters.selectedSize || null);
+            setSelectedSizes(filters.selectedSizes || []);
             setMinPrice(filters.minPrice ? filters.minPrice.toString() : '');
             setMaxPrice(filters.maxPrice ? filters.maxPrice.toString() : '');
         }
@@ -100,41 +140,62 @@ export default function Filter() {
     const toggleCategory = (cat) => {
         const newCategory = cat === selectedCategory ? null : cat;
         setSelectedCategory(newCategory);
-        setSelectedSize(null); // Kategori değişince beden sıfırlansın
+        setSelectedSizes([]); // Kategori değişince bedenler sıfırlansın
+
+        // Kategori seçildiğinde o kategorinin bedenlerini yükle
+        if (newCategory) {
+            loadCategorySizes(newCategory);
+        } else {
+            // Kategori seçimi kaldırıldığında tüm bedenler gösterilsin
+            setCategorySizes([]);
+        }
+    };
+
+    // Seçili kategorinin bedenlerini API'den yükle
+    const loadCategorySizes = async (categoryName) => {
+        try {
+            const categoryData = apiCategories.find(cat => cat.categoryName === categoryName);
+            if (categoryData && categoryData.id) {
+                console.log(`Loading sizes for category: ${categoryName} (ID: ${categoryData.id})`);
+                const sizes = await categoryApi.getCategorySizes(categoryData.id);
+                const sizeNames = sizes.map(size => size.sizeName || size);
+                setCategorySizes(sizeNames);
+                console.log(`Loaded ${sizeNames.length} sizes for ${categoryName}:`, sizeNames);
+            } else {
+                // Fallback - API'den gelen kategori verilerinde arama yap
+                const sizesFromApiMap = apiSizeMap[categoryName] || [];
+                setCategorySizes(sizesFromApiMap);
+                console.log(`Using cached sizes for ${categoryName}:`, sizesFromApiMap);
+            }
+        } catch (error) {
+            console.error(`Error loading sizes for category ${categoryName}:`, error);
+            // Fallback - önceden yüklenmiş verilerden al
+            const sizesFromApiMap = apiSizeMap[categoryName] || [];
+            setCategorySizes(sizesFromApiMap);
+        }
     };
 
     const toggleSize = (size) => {
-        setSelectedSize(size === selectedSize ? null : size);
+        setSelectedSizes(prevSizes => {
+            if (prevSizes.includes(size)) {
+                // Size zaten seçili, kaldır
+                return prevSizes.filter(s => s !== size);
+            } else {
+                // Size seçili değil, ekle
+                return [...prevSizes, size];
+            }
+        });
     };
 
     // Seçili kategorinin bedenlerini al (Route params, API'den veya fallback'ten)
     const getSizesForCategory = (category) => {
-        if (!category) return [];
-
-        // Önce route params'tan gelen size options'ları kontrol et
-        if (routeSizeOptions && routeSizeOptions.length > 0) {
-            return routeSizeOptions;
+        if (!category) {
+            // Kategori seçili değilse tüm kategorilerin bedenlerini göster
+            return allCategorySizes;
         }
 
-        // Sonra API'den gelen verilerden kontrol et
-        if (apiSizeMap && apiSizeMap[category] && Array.isArray(apiSizeMap[category])) {
-            return apiSizeMap[category];
-        }
-
-        // Fallback olarak context'ten al
-        if (sizeMap && sizeMap[category] && Array.isArray(sizeMap[category])) {
-            return sizeMap[category];
-        }
-
-        // Son fallback - kategori tipine göre varsayılan bedenler
-        const defaultSizes = {
-            'Jacket': ['XS', 'S', 'M', 'L', 'XL'],
-            'Pants': ['28', '30', '32', '34', '36'],
-            'Shoes': ['38', '39', '40', '41', '42'],
-            'T-Shirt': ['XS', 'S', 'M', 'L', 'XL']
-        };
-
-        return defaultSizes[category] || [];
+        // Kategori seçiliyse o kategorinin bedenlerini göster
+        return categorySizes;
     };
 
     // Kategori isimlerini çevir
@@ -260,37 +321,42 @@ export default function Filter() {
 
             {/* Size Options */}
             <Text style={[styles.text, { color: isDarkMode ? theme.text : '#000' }]}>{translations?.sizeOptionsFilter || 'Size Options'}</Text>
-            {selectedCategory ? (
-                <View style={styles.rowContainer}>
-                    {getSizesForCategory(selectedCategory).map((size) => {
-                        if (!size) return null;
-                        return (
-                            <TouchableOpacity
-                                key={size}
-                                onPress={() => toggleSize(size)}
-                                style={[
-                                    styles.sizeBox,
-                                    {
-                                        borderColor: isDarkMode ? theme.border : '#999',
-                                        backgroundColor: isDarkMode ? theme.surface : '#f2f2f2'
-                                    },
-                                    selectedSize === size && styles.sizeBoxSelected
-                                ]}
-                            >
-                                <Text style={[
-                                    styles.sizeText,
-                                    { color: isDarkMode ? theme.text : '#333' },
-                                    selectedSize === size && styles.sizeTextSelected
-                                ]}>
-                                    {size}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
-            ) : (
-                <Text style={[styles.placeholderText, { color: isDarkMode ? theme.textSecondary : '#888' }]}>
-                    {translations?.selectCategory || 'Select a category first'}
+            <View style={styles.rowContainer}>
+                {getSizesForCategory(selectedCategory).map((size) => {
+                    if (!size) return null;
+                    const isSelected = selectedSizes.includes(size);
+                    return (
+                        <TouchableOpacity
+                            key={size}
+                            onPress={() => toggleSize(size)}
+                            style={[
+                                styles.sizeBox,
+                                {
+                                    borderColor: isDarkMode ? theme.border : '#999',
+                                    backgroundColor: isDarkMode ? theme.surface : '#f2f2f2'
+                                },
+                                isSelected && styles.sizeBoxSelected
+                            ]}
+                        >
+                            <Text style={[
+                                styles.sizeText,
+                                { color: isDarkMode ? theme.text : '#333' },
+                                isSelected && styles.sizeTextSelected
+                            ]}>
+                                {size}
+                            </Text>
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+            {!selectedCategory && (
+                <Text style={[styles.infoText, { color: isDarkMode ? theme.textSecondary : '#666' }]}>
+                    {translations?.allCategorySizes || 'Showing sizes from all categories'}
+                </Text>
+            )}
+            {selectedSizes.length > 0 && (
+                <Text style={[styles.selectedSizesText, { color: isDarkMode ? theme.primary : '#ce6302' }]}>
+                    {translations?.selectedSizes || 'Selected sizes'}: {selectedSizes.join(', ')}
                 </Text>
             )}
 
@@ -301,7 +367,7 @@ export default function Filter() {
                     onPress={() => {
                         // Filtreleri temizle
                         setSelectedCategory(null);
-                        setSelectedSize(null);
+                        setSelectedSizes([]);
                         setMinPrice('');
                         setMaxPrice('');
 
@@ -311,7 +377,7 @@ export default function Filter() {
                                 minPrice: null,
                                 maxPrice: null,
                                 selectedCategory: null,
-                                selectedSize: null
+                                selectedSizes: []
                             });
                         }
                     }}
@@ -328,7 +394,7 @@ export default function Filter() {
                                 minPrice: minPrice ? parseFloat(minPrice) : null,
                                 maxPrice: maxPrice ? parseFloat(maxPrice) : null,
                                 selectedCategory,
-                                selectedSize
+                                selectedSizes
                             });
                         }
 
@@ -424,6 +490,21 @@ const styles = StyleSheet.create({
         color: '#888',
         marginTop: 10,
         textAlign: 'center',
+    },
+    infoText: {
+        fontSize: 14,
+        fontStyle: 'italic',
+        color: '#666',
+        marginTop: 8,
+        textAlign: 'center',
+    },
+    selectedSizesText: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#ce6302',
+        marginTop: 8,
+        textAlign: 'center',
+        paddingHorizontal: 10,
     },
     buttonContainer: {
         flexDirection: 'row',

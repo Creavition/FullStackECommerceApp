@@ -48,6 +48,10 @@ namespace mobileAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("BackImagePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("Badge_BestSelling")
                         .HasColumnType("bit");
 
@@ -57,7 +61,7 @@ namespace mobileAPI.Migrations
                     b.Property<int>("CategoryId")
                         .HasColumnType("int");
 
-                    b.Property<string>("ImageUrl")
+                    b.Property<string>("FrontImagePath")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

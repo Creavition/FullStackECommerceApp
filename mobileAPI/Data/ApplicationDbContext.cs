@@ -49,7 +49,8 @@ public class ApplicationDbContext : DbContext
         {
             entity.Property(e => e.Name).IsRequired();
             entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
-            entity.Property(e => e.ImageUrl).IsRequired();
+            entity.Property(e => e.FrontImagePath).IsRequired();
+            entity.Property(e => e.BackImagePath).IsRequired();
 
             entity.HasOne(p => p.Category)
                   .WithMany()

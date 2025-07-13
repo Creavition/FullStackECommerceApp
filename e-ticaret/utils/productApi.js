@@ -53,36 +53,75 @@ export const productApi = {
         }
     },
 
-    // En çok satanları getir
+    // En çok satanları getir - API endpoint'i olmadığı için tüm ürünleri çekip filtrele
     getBestSellers: async () => {
         try {
-            const response = await api.get('/Product/bestsellers');
-            return response.data;
+            console.log('Fetching best sellers...');
+            // Backend'de özel endpoint yok, tüm ürünleri çekip badge_BestSelling olanları filtrele
+            const response = await api.get('/Product');
+            const allProducts = response.data || [];
+            const bestSellers = allProducts.filter(product => product.badge_BestSelling === true);
+            console.log('Best sellers found:', bestSellers.length);
+            return bestSellers;
         } catch (error) {
-            console.error('Error fetching bestsellers:', error);
-            throw error;
+            console.error('Error fetching best sellers:', error);
+            console.log('API best sellers not available, using all products');
+            // Fallback: tüm ürünleri döndür
+            try {
+                const response = await api.get('/Product');
+                return response.data || [];
+            } catch (fallbackError) {
+                console.error('Fallback also failed:', fallbackError);
+                throw fallbackError;
+            }
         }
     },
 
-    // Flash sale ürünlerini getir
+    // Flash sale ürünlerini getir - API endpoint'i olmadığı için tüm ürünleri çekip filtrele
     getFlashSaleProducts: async () => {
         try {
-            const response = await api.get('/Product/flashsale');
-            return response.data;
+            console.log('Fetching flash sale products...');
+            // Backend'de özel endpoint yok, tüm ürünleri çekip badge_FlashSale olanları filtrele
+            const response = await api.get('/Product');
+            const allProducts = response.data || [];
+            const flashSaleProducts = allProducts.filter(product => product.badge_FlashSale === true);
+            console.log('Flash sale products found:', flashSaleProducts.length);
+            return flashSaleProducts;
         } catch (error) {
             console.error('Error fetching flash sale products:', error);
-            throw error;
+            console.log('API flash sale products not available, using all products');
+            // Fallback: tüm ürünleri döndür
+            try {
+                const response = await api.get('/Product');
+                return response.data || [];
+            } catch (fallbackError) {
+                console.error('Fallback also failed:', fallbackError);
+                throw fallbackError;
+            }
         }
     },
 
-    // Hızlı teslimat ürünlerini getir
+    // Hızlı teslimat ürünlerini getir - API endpoint'i olmadığı için tüm ürünleri çekip filtrele
     getFastDeliveryProducts: async () => {
         try {
-            const response = await api.get('/Product/fastdelivery');
-            return response.data;
+            console.log('Fetching fast delivery products...');
+            // Backend'de özel endpoint yok, tüm ürünleri çekip label_FastDelivery olanları filtrele
+            const response = await api.get('/Product');
+            const allProducts = response.data || [];
+            const fastDeliveryProducts = allProducts.filter(product => product.label_FastDelivery === true);
+            console.log('Fast delivery products found:', fastDeliveryProducts.length);
+            return fastDeliveryProducts;
         } catch (error) {
             console.error('Error fetching fast delivery products:', error);
-            throw error;
+            console.log('API fast delivery products not available, using all products');
+            // Fallback: tüm ürünleri döndür
+            try {
+                const response = await api.get('/Product');
+                return response.data || [];
+            } catch (fallbackError) {
+                console.error('Fallback also failed:', fallbackError);
+                throw fallbackError;
+            }
         }
     },
 

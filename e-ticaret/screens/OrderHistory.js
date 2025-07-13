@@ -1,16 +1,18 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { OrderContext } from '../contexts/OrderContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useProduct } from '../contexts/ProductContext';
 
 export default function OrderHistory() {
     const navigation = useNavigation();
-    const { orderHistory, loadOrderHistory } = useContext(OrderContext);
+    const { orderHistory, loadOrderHistory, clearOrderHistory } = useContext(OrderContext);
     const { translations } = useLanguage();
     const { theme, isDarkMode } = useTheme();
+    const { getImageUrl } = useProduct();
     const [selectedOrder, setSelectedOrder] = useState(null); {/* Modal'da gosterilecek secili siparis */ }
     const [modalVisible, setModalVisible] = useState(false); {/* View Details a basildiginda modal in acik/kapali kontrolu */ }
 
@@ -47,6 +49,39 @@ export default function OrderHistory() {
             case 'Delivered': return 'checkmark-done-circle';
             default: return 'help-circle';
         }
+    };
+
+    // Clear order history fonksiyonu
+    const handleClearHistory = () => {
+        Alert.alert(
+            translations.clearHistory || 'Clear History',
+            translations.clearHistoryConfirm || 'Are you sure you want to clear all order history? This action cannot be undone.',
+            [
+                {
+                    text: translations.cancel || 'Cancel',
+                    style: 'cancel',
+                },
+                {
+                    text: translations.clear || 'Clear',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await clearOrderHistory();
+                            Alert.alert(
+                                translations.success || 'Success',
+                                translations.historyCleared || 'Order history has been cleared successfully.'
+                            );
+                        } catch (error) {
+                            Alert.alert(
+                                translations.error || 'Error',
+                                translations.clearHistoryError || 'Failed to clear order history. Please try again.'
+                            );
+                            console.error('Error clearing order history:', error);
+                        }
+                    },
+                },
+            ]
+        );
     };
 
     const renderOrderItem = ({ item, index }) => (
@@ -164,11 +199,15 @@ export default function OrderHistory() {
 
                             {/* Items Section */}
                             <View style={styles.itemsSection}>
-                                <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>Sipariş Edilen Ürünler ({selectedOrder?.items?.length || 0} Adet)</Text>
-                                {selectedOrder?.items?.map((item, index) => (
+                                <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>Sipariş Edilen Ürünler ({selectedOrder?.items?.length || 0} Adet)</Text>                                {selectedOrder?.items?.map((item, index) => (
                                     <View key={index} style={[styles.modernItemCard, { backgroundColor: isDarkMode ? '#333' : '#fff', borderColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
                                         <View style={{ flexDirection: "row" }}>
-                                            <Image source={{ uri: item.image }} style={[styles.modernItemImage, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]} />
+                                            <Image
+                                                source={{ uri: getImageUrl(item.frontImagePath || item.frontImageUrl || item.imageUrl || item.image) }}
+                                                style={[styles.modernItemImage, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}
+                                                defaultSource={require('../assets/images/icon.png')}
+                                                onError={(error) => console.log('OrderHistory Image load error:', error.nativeEvent.error)}
+                                            />
                                             <View style={styles.modernItemInfo}>
                                                 <Text style={[styles.modernItemName, { color: isDarkMode ? '#fff' : '#333' }]}>{item.name}</Text>
                                                 <Text style={[styles.modernItemCategory, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{item.category}</Text>
@@ -195,12 +234,11 @@ export default function OrderHistory() {
                                         <View style={styles.detailGroup}>
                                             <Text style={styles.detailGroupTitle}>Fiyat</Text>
                                             <View style={[styles.priceContainer, { backgroundColor: isDarkMode ? '#1a2a3a' : '#e3f2fd', borderLeftColor: '#007BFF' }]}>
-                                                <Text style={[styles.unitPrice, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>Birim: {item.price}</Text>
+                                                <Text style={[styles.unitPrice, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>Birim: {item.price} ₺</Text>
                                                 <Text style={styles.totalPrice}>
-                                                    Toplam: {(parseFloat(item.price.replace('₺', '').replace(',', '.')) * item.amount).toFixed(2)} ₺
+                                                    Toplam: {((typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace('₺', '').replace(',', '.')) || 0) * item.amount).toFixed(2)} ₺
                                                 </Text>
-                                            </View>
-                                        </View>
+                                            </View>                                        </View>
                                     </View>
                                 ))}
                             </View>
@@ -250,12 +288,29 @@ export default function OrderHistory() {
 
     return (
         <View style={[styles.container, { backgroundColor: isDarkMode ? theme.background : '#f8f9fa' }]}>
-            <TouchableOpacity
-                style={styles.closeButtonTopLeft}
-                onPress={() => navigation.navigate('HomeScreen', { screen: 'Account' })}
-            >
-                <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#333'} />
-            </TouchableOpacity>
+            {/* Header with Close and Clear buttons */}
+            <View style={styles.headerContainer}>
+                <TouchableOpacity
+                    style={styles.closeButtonTopLeft}
+                    onPress={() => navigation.navigate('HomeScreen', { screen: 'Account' })}
+                >
+                    <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#333'} />
+                </TouchableOpacity>
+
+                <Text style={[styles.headerTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
+                    {translations.orderHistory || 'Order History'}
+                </Text>
+
+                {orderHistory.length > 0 && (
+                    <TouchableOpacity
+                        style={[styles.clearButton, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}
+                        onPress={handleClearHistory}
+                    >
+                        <Ionicons name="trash-outline" size={20} color="#ff6b6b" />
+                        <Text style={styles.clearButtonText}>{translations.clear || 'Clear'}</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
 
             {/* Orders List */}
             <FlatList
@@ -276,6 +331,49 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f8f9fa',
+    },
+    headerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingTop: 50,
+        paddingBottom: 20,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    closeButtonTopLeft: {
+        padding: 8,
+        borderRadius: 8,
+        backgroundColor: 'rgba(0,0,0,0.1)',
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        flex: 1,
+        textAlign: 'center',
+        marginHorizontal: 10,
+    },
+    clearButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 8,
+        elevation: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+    },
+    clearButtonText: {
+        color: '#ff6b6b',
+        fontSize: 14,
+        fontWeight: '600',
+        marginLeft: 4,
     },
     header: {
         flexDirection: 'row',

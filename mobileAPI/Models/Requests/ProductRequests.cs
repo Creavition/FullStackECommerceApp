@@ -13,8 +13,12 @@ namespace mobileAPI.Models.Requests
         public decimal Price { get; set; }
 
         [Required]
-        [Url]
-        public string ImageUrl { get; set; } = string.Empty;
+        [StringLength(500)]
+        public string FrontImagePath { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(500)]
+        public string BackImagePath { get; set; } = string.Empty;
 
         public bool IsFavorite { get; set; } = false;
 
@@ -54,8 +58,11 @@ namespace mobileAPI.Models.Requests
         [Range(0.01, 999999.99)]
         public decimal? Price { get; set; }
 
-        [Url]
-        public string? ImageUrl { get; set; }
+        [StringLength(500)]
+        public string? FrontImagePath { get; set; }
+
+        [StringLength(500)]
+        public string? BackImagePath { get; set; }
 
         public bool? IsFavorite { get; set; }
 
@@ -70,6 +77,21 @@ namespace mobileAPI.Models.Requests
         public int? CategoryId { get; set; }
 
         public List<int>? SizeIds { get; set; }
+    }
+
+    public class UpdateProductBasicInfoRequest
+    {
+        [StringLength(200)]
+        public string? Name { get; set; }
+
+        [Range(0.01, 999999.99)]
+        public decimal? Price { get; set; }
+
+        [StringLength(500)]
+        public string? FrontImagePath { get; set; }
+
+        [StringLength(500)]
+        public string? BackImagePath { get; set; }
     }
 
     public class ProductFilterRequest
@@ -92,7 +114,8 @@ namespace mobileAPI.Models.Requests
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
-        public string ImageUrl { get; set; } = string.Empty;
+        public string FrontImagePath { get; set; } = string.Empty;
+        public string BackImagePath { get; set; } = string.Empty;
         public bool IsFavorite { get; set; }
         public bool Badge_FlashSale { get; set; }
         public bool Badge_BestSelling { get; set; }

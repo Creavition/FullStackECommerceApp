@@ -117,6 +117,7 @@ const translations = {
         pleaseEnterAllFields: 'Please fill in all fields.',
         passwordsDoNotMatch: 'Passwords do not match!',
         registrationSuccessful: 'Registration successful! You can now login.',
+        loginSuccessful: 'Login successful! Welcome back.',
         emailAlreadyExists: 'This email is already registered.',
         registrationError: 'An error occurred during registration.',
 
@@ -301,6 +302,7 @@ const translations = {
         pleaseEnterAllFields: 'Lütfen tüm alanları doldurun.',
         passwordsDoNotMatch: 'Şifreler eşleşmiyor!',
         registrationSuccessful: 'Kayıt başarılı! Artık giriş yapabilirsiniz.',
+        loginSuccessful: 'Giriş başarılı! Hoş geldiniz.',
         emailAlreadyExists: 'Bu e-posta zaten kayıtlı.',
         registrationError: 'Kayıt sırasında bir hata oluştu.',
 

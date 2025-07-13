@@ -1,11 +1,12 @@
 // ProductDetail.js
 import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Animated, Alert, ScrollView } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Animated, Alert, ScrollView, PanResponder } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { CartContext } from '../contexts/CartContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useProduct } from '../contexts/ProductContext';
 import { categoryApi } from '../utils/categoryApi';
 import { productApi } from '../utils/productApi';
 import { logProductDetails, extractSizeInfo } from '../utils/productUtils';
@@ -71,6 +72,7 @@ export default function ProductDetail({ route }) {
     const { addToCart } = useContext(CartContext);
     const { theme, isDarkMode } = useTheme();
     const { translations } = useLanguage();
+    const { getImageUrl } = useProduct();
     const navigation = useNavigation();
 
     // State'ler
@@ -82,7 +84,14 @@ export default function ProductDetail({ route }) {
     const [loading, setLoading] = useState(true);
     const [categoryData, setCategoryData] = useState(null); // Category bilgileri için
     const [reviewModalVisible, setReviewModalVisible] = useState(false);
-    const [productData, setProductData] = useState(product); // Rating bilgisini güncellemek için    // API'den ürün ve kategori verilerini çek
+    const [productData, setProductData] = useState(product); // Rating bilgisini güncellemek için
+    const [currentImageIndex, setCurrentImageIndex] = useState(0); // 0: front, 1: back
+
+    // Mevcut ürün için kullanılabilir resimler
+    const availableImages = [
+        getImageUrl(product.frontImagePath || product.frontImageUrl || product.image),
+        getImageUrl(product.backImagePath || product.backImageUrl || product.image)
+    ].filter(img => img); // null/undefined olanları filtrele    // API'den ürün ve kategori verilerini çek
     useEffect(() => {
         const fetchProductAndCategoryData = async () => {
             try {
@@ -162,6 +171,41 @@ export default function ProductDetail({ route }) {
 
         fetchProductAndCategoryData();
     }, [product.id, product.categoryId]);
+
+    // Fotoğraf geçiş fonksiyonları
+    const goToPreviousImage = () => {
+        if (currentImageIndex > 0) {
+            setCurrentImageIndex(currentImageIndex - 1);
+        }
+    };
+
+    const goToNextImage = () => {
+        if (currentImageIndex < availableImages.length - 1) {
+            setCurrentImageIndex(currentImageIndex + 1);
+        }
+    };
+
+    // Swipe gesture handler
+    const panResponder = PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (evt, gestureState) => {
+            // Sadece yatay hareketi algıla
+            return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10;
+        },
+        onPanResponderRelease: (evt, gestureState) => {
+            const swipeThreshold = 50; // Minimum swipe mesafesi
+
+            if (Math.abs(gestureState.dx) > swipeThreshold) {
+                if (gestureState.dx > 0) {
+                    // Sağdan sola swipe (sağa kaydırma) - önceki fotoğrafa git
+                    goToPreviousImage();
+                } else {
+                    // Soldan sağa swipe (sola kaydırma) - sonraki fotoğrafa git
+                    goToNextImage();
+                }
+            }
+        },
+    });
 
     const showToast = (message) => {
         // Toast'ı göster
@@ -271,7 +315,30 @@ export default function ProductDetail({ route }) {
                 <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#333'} />
             </TouchableOpacity>
 
-            <Image source={{ uri: product.image }} style={styles.image} />
+            <View style={styles.imageContainer} {...panResponder.panHandlers}>
+                <Image
+                    source={{
+                        uri: availableImages[currentImageIndex] || getImageUrl(product.frontImagePath || product.frontImageUrl || product.image)
+                    }}
+                    style={styles.image}
+                />
+
+                {/* Fotoğraf İndikatörleri */}
+                {availableImages.length > 1 && (
+                    <View style={styles.imageIndicatorContainer}>
+                        {availableImages.map((_, index) => (
+                            <TouchableOpacity
+                                key={index}
+                                style={[
+                                    styles.imageIndicator,
+                                    currentImageIndex === index && styles.activeImageIndicator
+                                ]}
+                                onPress={() => setCurrentImageIndex(index)}
+                            />
+                        ))}
+                    </View>
+                )}
+            </View>
             <Text style={[styles.name, { color: isDarkMode ? '#fff' : '#000' }]}>{product.name}</Text>
             <Text style={[styles.price, { color: isDarkMode ? '#ce6302' : '#ce6302' }]}>{product.price}</Text>
 
@@ -454,11 +521,16 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         backgroundColor: 'rgba(0, 0, 0, 0.1)',
     },
+    imageContainer: {
+        alignItems: 'center',
+        marginBottom: 20,
+        position: 'relative',
+    },
     image: {
         width: 210,
         height: 230,
         borderRadius: 16,
-        marginBottom: 20,
+        marginBottom: 15,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -467,6 +539,26 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 4.65,
         elevation: 8,
+    },
+    imageIndicatorContainer: {
+        position: 'absolute',
+        bottom: 25,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    imageIndicator: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+        marginHorizontal: 4,
+    },
+    activeImageIndicator: {
+        backgroundColor: '#fff',
+        transform: [{ scale: 1.2 }],
     },
     name: {
         fontSize: 22,

@@ -17,7 +17,10 @@ namespace mobileAPI.Models
         public decimal Price { get; set; }
 
         [Required]
-        public string ImageUrl { get; set; } = string.Empty;
+        public string FrontImagePath { get; set; } = string.Empty;
+
+        [Required]
+        public string BackImagePath { get; set; } = string.Empty;
 
         public bool IsFavorite { get; set; } = false;
 

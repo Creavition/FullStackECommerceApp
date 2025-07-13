@@ -1,9 +1,9 @@
-// screens/Home.js - Maximum update depth sorunu çözüldü
+// screens/Home.js - API ile çalışacak şekilde güncellendi
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
     View, Text, StyleSheet, FlatList, StatusBar, TouchableOpacity, ScrollView,
-    Image
+    Image, ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -11,10 +11,11 @@ import { useFavorites } from '../contexts/FavoritesContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useFilter } from '../contexts/FilterContext';
+import { useProduct } from '../contexts/ProductContext';
 
 import ProductCardHorizontal from '../components/ProductCardHorizontal';
 
-import { getAllProducts, getCategories, parsePrice, toggleProductFavorite, logProductDetails } from '../utils/productUtils';
+import { parsePrice, logProductDetails } from '../utils/productUtils';
 
 export default function Home() {
     const navigation = useNavigation();
@@ -24,88 +25,51 @@ export default function Home() {
     const { translations, language } = useLanguage();
     const { theme, isDarkMode } = useTheme();
     const { updateFilters } = useFilter() || {};
+    const { products, loading, error, fetchProducts, fetchProductsByCategory, updateProductFavoriteStatus } = useProduct();
 
-    const [allProducts, setAllProducts] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [categories] = useState(['Jacket', 'Pants', 'Shoes', 'T-Shirt']); // Static categories for now
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-    // Basit veri yükleme - dependency'leri sabitledik
-    const loadProducts = useCallback(async () => {
-        if (!isMounted.current) return;
-
-        setLoading(true);
-        try {
-            const [products, categoryList] = await Promise.all([
-                getAllProducts(),
-                getCategories()
-            ]);
-
-            if (isMounted.current) {
-                setAllProducts(products || []);
-                setCategories(categoryList || []);
-                setIsInitialLoad(false);
-            }
-        } catch (error) {
-            console.error('Error loading data:', error);
-            if (isMounted.current) {
-                setAllProducts([]);
-                setCategories([]);
-                setIsInitialLoad(false);
-            }
-        } finally {
-            if (isMounted.current) {
-                setLoading(false);
-            }
-        }
-    }, []); // Dependency array'i boş bıraktık
-
-    // İlk mount'ta yükle
+    // Component mount/unmount tracking
     useEffect(() => {
-        if (isInitialLoad) {
-            loadProducts();
-        }
-    }, [isInitialLoad]); // Sadece isInitialLoad'a bağlı
-
-    // Dil değiştiğinde yeniden yükle
-    useEffect(() => {
-        if (!isInitialLoad) {
-            loadProducts();
-        }
-    }, [language]); // Sadece language'a bağlı
-
-    // Sayfa odaklandığında - sadece gerektiğinde yükle (optimize edilmiş)
-    useFocusEffect(
-        useCallback(() => {
-            // Sadece veriler tamamen boşsa yükle
-            if (allProducts.length === 0 && !loading) {
-                loadProducts();
-            }
-        }, [allProducts.length, loading])
-    );
-
-    // Cleanup fonksiyonu
-    useEffect(() => {
+        isMounted.current = true;
         return () => {
             isMounted.current = false;
         };
     }, []);
 
+    // Initial data loading
+    useEffect(() => {
+        if (isInitialLoad) {
+            fetchProducts().finally(() => {
+                setIsInitialLoad(false);
+            });
+        }
+    }, [isInitialLoad, fetchProducts]);
+
+    // Show loading only for initial load
+    const isLoading = isInitialLoad && loading;
+
     // Basit kategori filtreleme
     const flashSaleProducts = useMemo(() => {
-        const products = allProducts || [];
-        return products.filter(p => p && p.badge_FlashSale);
-    }, [allProducts]);
+        const productList = products || [];
+        return productList.filter(p => p && p.badge_FlashSale);
+    }, [products]);
 
     const fastDeliveryProducts = useMemo(() => {
-        const products = allProducts || [];
-        return products.filter(p => p && p.label_FastDelivery);
-    }, [allProducts]);
+        const productList = products || [];
+        return productList.filter(p => p && p.label_FastDelivery);
+    }, [products]);
+
+    const bestSellerProducts = useMemo(() => {
+        const productList = products || [];
+        return productList.filter(p => p && p.label_BestSeller);
+    }, [products]);
 
     const bestSellingProducts = useMemo(() => {
-        const products = allProducts || [];
-        return products.filter(p => p && p.badge_BestSelling);
-    }, [allProducts]);
+        const productList = products || [];
+        return productList.filter(p => p && p.badge_BestSelling);
+    }, [products]);
 
     // Categories listesi - başına "All" seçeneği eklenir
     const categoriesWithAll = useMemo(() => {
@@ -123,31 +87,21 @@ export default function Home() {
 
     // Basit favori toggle
     const handleFavoritePress = useCallback(async (productId) => {
-        const currentProduct = allProducts.find(p => p.id === productId);
-        if (!currentProduct) return;
+        console.log(`Home: Toggling favorite for product ${productId}`);
 
-        // Optimistic update
-        setAllProducts(prevProducts =>
-            prevProducts.map(p =>
-                p.id === productId
-                    ? { ...p, isFavorite: !p.isFavorite }
-                    : p
-            )
-        );
-
-        // API çağrısı
-        const success = await toggleProductFavorite(productId, currentProduct.isFavorite);
-        if (!success) {
-            // Başarısızsa geri al
-            setAllProducts(prevProducts =>
-                prevProducts.map(p =>
-                    p.id === productId
-                        ? { ...p, isFavorite: currentProduct.isFavorite }
-                        : p
-                )
-            );
+        const currentProduct = products.find(p => p.id === productId);
+        if (!currentProduct) {
+            return;
         }
-    }, [allProducts]);
+
+        // Context'teki toggle fonksiyonunu kullan ve ProductContext'i güncelle
+        const newFavoriteStatus = await toggleFavorite(productId, 'Home', updateProductFavoriteStatus);
+
+        // Eğer API'den cevap gelmişse durumu logla
+        if (newFavoriteStatus !== null) {
+            console.log(`Home: Product ${productId} favorite status updated to: ${newFavoriteStatus}`);
+        }
+    }, [products, toggleFavorite, updateProductFavoriteStatus]);
 
     // Kategori basma fonksiyonu - Filter context'i de güncelle - Optimized
     const handleCategoryPress = useCallback((category) => {
@@ -173,7 +127,7 @@ export default function Home() {
         });
     }, [navigation, updateFilters, translations.all]);
 
-    // Render functions - sabit dependency'ler
+    // Render functions - sadece gerekli dependency'ler (favoriteItems kaldırıldı)
     const renderHorizontalItem = useCallback(({ item }) => (
         <ProductCardHorizontal
             item={item}
@@ -181,6 +135,7 @@ export default function Home() {
             onFavoritePress={handleFavoritePress}
             translations={translations}
             isDarkMode={isDarkMode}
+            favoriteItems={favoriteItems}
         />
     ), [handleProductPress, handleFavoritePress, translations, isDarkMode]);
 
@@ -222,7 +177,7 @@ export default function Home() {
         );
     }, [handleCategoryPress, theme, translations.all]);
 
-    if (loading) {
+    if (isLoading) {
         return (
             <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
                 <Text style={[styles.loadingText, { color: theme.text }]}>
@@ -241,14 +196,7 @@ export default function Home() {
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Header */}
-                <View style={[styles.header, { backgroundColor: theme.primary }]}>
-                    <View style={styles.headerContent}>
-                        <Image source={require('../assets/images/KombinSepeti-logo-kucuk.png')} style={styles.logo} />
-                        <TouchableOpacity onPress={() => navigation.navigate('Search')}>
-                            <Ionicons name="search" size={24} color="white" />
-                        </TouchableOpacity>
-                    </View>
-                </View>
+
 
                 {/* Categories */}
                 <View style={styles.section}>
