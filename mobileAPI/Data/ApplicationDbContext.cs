@@ -15,6 +15,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Size> Sizes { get; set; }
     public DbSet<Product> Products { get; set; }
     public DbSet<ProductSize> ProductSizes { get; set; }
+    public DbSet<Review> Reviews { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -69,6 +70,26 @@ public class ApplicationDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(ps => ps.SizeId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Review>(entity =>
+        {
+            entity.Property(e => e.Rating).IsRequired();
+            entity.Property(e => e.Comment)
+                  .HasMaxLength(1000);
+
+            entity.HasOne(r => r.User)
+                  .WithMany()
+                  .HasForeignKey(r => r.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(r => r.Product)
+                  .WithMany(p => p.Reviews)
+                  .HasForeignKey(r => r.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Bir kullanıcı aynı ürüne sadece bir yorum yapabilir
+            entity.HasIndex(r => new { r.UserId, r.ProductId }).IsUnique();
         });
     }
 }

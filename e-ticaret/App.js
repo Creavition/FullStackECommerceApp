@@ -8,6 +8,7 @@ import Login from "./screens/Login";
 import Register from './screens/Register';
 import HomeScreen from './screens/HomeScreen';
 import ProductDetail from './screens/ProductDetail';
+import ProductReviews from './screens/ProductReviews';
 import Payment from './screens/Payment';
 import Filter from './screens/Filter';
 import Home from './screens/Home';
@@ -19,7 +20,7 @@ import BestSeller from './screens/BestSeller';
 
 // Splash Screen
 import SplashScreen
- from './contexts/SplashScreen'; // Splash screen dosyanızın yolu
+  from './contexts/SplashScreen'; // Splash screen dosyanızın yolu
 
 // Contexts
 import { FavoritesProvider } from './contexts/FavoritesContext';
@@ -63,6 +64,11 @@ function AppNavigator() {
           name="ProductDetail"
           component={ProductDetail}
           options={{ title: translations.productDetail, headerShown: false }}
+        />
+        <Stack.Screen
+          name="ProductReviews"
+          component={ProductReviews}
+          options={{ title: 'Değerlendirmeler', headerShown: false }}
         />
         <Stack.Screen
           name="Payment"

@@ -25,6 +25,7 @@ namespace mobileAPI.Controllers
                 .Include(p => p.Category)
                 .Include(p => p.ProductSizes)
                 .ThenInclude(ps => ps.Size)
+                .Include(p => p.Reviews)
                 .Select(p => new ProductResponse
                 {
                     Id = p.Id,
@@ -38,7 +39,9 @@ namespace mobileAPI.Controllers
                     Label_FastDelivery = p.Label_FastDelivery,
                     CategoryId = p.CategoryId,
                     CategoryName = p.Category.CategoryName,
-                    AvailableSizes = p.ProductSizes.Select(ps => ps.Size.SizeName).ToList()
+                    AvailableSizes = p.ProductSizes.Select(ps => ps.Size.SizeName).ToList(),
+                    AverageRating = p.Reviews.Count > 0 ? p.Reviews.Average(r => r.Rating) : 0,
+                    ReviewCount = p.Reviews.Count
                 })
                 .ToListAsync();
 
@@ -53,6 +56,7 @@ namespace mobileAPI.Controllers
                 .Include(p => p.Category)
                 .Include(p => p.ProductSizes)
                 .ThenInclude(ps => ps.Size)
+                .Include(p => p.Reviews)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null)
@@ -73,7 +77,9 @@ namespace mobileAPI.Controllers
                 Label_FastDelivery = product.Label_FastDelivery,
                 CategoryId = product.CategoryId,
                 CategoryName = product.Category.CategoryName,
-                AvailableSizes = product.ProductSizes.Select(ps => ps.Size.SizeName).ToList()
+                AvailableSizes = product.ProductSizes.Select(ps => ps.Size.SizeName).ToList(),
+                AverageRating = product.AverageRating,
+                ReviewCount = product.ReviewCount
             };
 
             return Ok(productResponse);
@@ -93,6 +99,7 @@ namespace mobileAPI.Controllers
                 .Include(p => p.Category)
                 .Include(p => p.ProductSizes)
                 .ThenInclude(ps => ps.Size)
+                .Include(p => p.Reviews)
                 .Where(p => p.CategoryId == categoryId)
                 .Select(p => new ProductResponse
                 {
@@ -107,7 +114,9 @@ namespace mobileAPI.Controllers
                     Label_FastDelivery = p.Label_FastDelivery,
                     CategoryId = p.CategoryId,
                     CategoryName = p.Category.CategoryName,
-                    AvailableSizes = p.ProductSizes.Select(ps => ps.Size.SizeName).ToList()
+                    AvailableSizes = p.ProductSizes.Select(ps => ps.Size.SizeName).ToList(),
+                    AverageRating = p.Reviews.Count > 0 ? p.Reviews.Average(r => r.Rating) : 0,
+                    ReviewCount = p.Reviews.Count
                 })
                 .ToListAsync();
 
@@ -122,6 +131,7 @@ namespace mobileAPI.Controllers
                 .Include(p => p.Category)
                 .Include(p => p.ProductSizes)
                 .ThenInclude(ps => ps.Size)
+                .Include(p => p.Reviews)
                 .AsQueryable();
 
             // Apply filters
@@ -188,7 +198,9 @@ namespace mobileAPI.Controllers
                     Label_FastDelivery = p.Label_FastDelivery,
                     CategoryId = p.CategoryId,
                     CategoryName = p.Category.CategoryName,
-                    AvailableSizes = p.ProductSizes.Select(ps => ps.Size.SizeName).ToList()
+                    AvailableSizes = p.ProductSizes.Select(ps => ps.Size.SizeName).ToList(),
+                    AverageRating = p.Reviews.Count > 0 ? p.Reviews.Average(r => r.Rating) : 0,
+                    ReviewCount = p.Reviews.Count
                 })
                 .ToListAsync();
 

@@ -16,10 +16,35 @@ export default function Payment() {
   const { theme, isDarkMode } = useTheme();
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Price parsing fonksiyonu - Cart.js'den alındı
+  const parsePrice = (priceValue) => {
+    // Null/undefined kontrolü
+    if (!priceValue && priceValue !== 0) {
+      return 0;
+    }
+
+    // Eğer zaten sayıysa direkt döndür
+    if (typeof priceValue === 'number') {
+      return priceValue;
+    }
+
+    // String değilse 0 döndür
+    if (typeof priceValue !== 'string') {
+      return 0;
+    }
+
+    try {
+      return parseFloat(priceValue.replace('₺', '').replace(',', '.')) || 0;
+    } catch (error) {
+      console.error('parsePrice error:', error, 'for value:', priceValue);
+      return 0;
+    }
+  };
+
   // Toplam tutarı hesapla
   const calculateTotal = () => {
     return cartItems.reduce((total, item) => {
-      const price = parseFloat(item.price.replace('₺', '').replace(',', '.'));
+      const price = parsePrice(item.price);
       return total + (price * item.amount);
     }, 0);
   };
@@ -90,11 +115,11 @@ export default function Payment() {
           {item.name}
         </Text>
         <Text style={[styles.itemDetails, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-          {translations.size}: {item.size} | {translations.quantity}: {item.amount}
+          {translations.size}: {item.size || 'N/A'} | {translations.quantity}: {item.amount}
         </Text>
       </View>
       <Text style={[styles.itemPrice, { color: isDarkMode ? '#fff' : '#7f4612' }]}>
-        {(parseFloat(item.price.replace('₺', '').replace(',', '.')) * item.amount).toFixed(2)} ₺
+        {(parsePrice(item.price) * item.amount).toFixed(2)} ₺
       </Text>
     </View>
   );
@@ -198,10 +223,20 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 20,
   },
+  closeButtonTopLeft: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 1,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
   sectionTitle: {
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 20,
+    marginTop: 80,
     textAlign: 'center',
   },
   orderSummary: {

@@ -107,6 +107,12 @@ export default function Home() {
         return products.filter(p => p && p.badge_BestSelling);
     }, [allProducts]);
 
+    // Categories listesi - başına "All" seçeneği eklenir
+    const categoriesWithAll = useMemo(() => {
+        const allOption = translations.all || 'All';
+        return [allOption, ...(categories || [])];
+    }, [categories, translations.all]);
+
     const handleProductPress = useCallback((product) => {
         // Debug için product detaylarını log'la
         if (__DEV__) {
@@ -147,10 +153,14 @@ export default function Home() {
     const handleCategoryPress = useCallback((category) => {
         console.log(`Home: Category pressed: ${category}`);
 
+        // "All" seçeneği için özel işlem
+        const allOption = translations.all || 'All';
+        const selectedCategory = category === allOption ? null : category;
+
         // Filter context'i güncelle
         if (updateFilters && typeof updateFilters === 'function') {
             updateFilters({
-                selectedCategory: category,
+                selectedCategory: selectedCategory,
                 priceRange: { min: 0, max: 1000 },
                 selectedSizes: []
             });
@@ -158,10 +168,10 @@ export default function Home() {
 
         // Search sayfasına git - her seferinde yeni route ile
         navigation.navigate('Search', {
-            selectedCategory: category,
+            selectedCategory: selectedCategory,
             timestamp: Date.now() // Her seferinde farklı bir param ekle
         });
-    }, [navigation, updateFilters]);
+    }, [navigation, updateFilters, translations.all]);
 
     // Render functions - sabit dependency'ler
     const renderHorizontalItem = useCallback(({ item }) => (
@@ -174,14 +184,43 @@ export default function Home() {
         />
     ), [handleProductPress, handleFavoritePress, translations, isDarkMode]);
 
-    const renderCategory = useCallback(({ item }) => (
-        <TouchableOpacity
-            style={[styles.categoryItem, { backgroundColor: theme.cardBackground }]}
-            onPress={() => handleCategoryPress(item)}
-        >
-            <Text style={[styles.categoryText, { color: theme.text }]}>{item}</Text>
-        </TouchableOpacity>
-    ), [handleCategoryPress, theme]);
+    const renderCategory = useCallback(({ item }) => {
+        const allOption = translations.all || 'All';
+        const isAllOption = item === allOption;
+
+        return (
+            <TouchableOpacity
+                style={[
+                    styles.categoryItem,
+                    {
+                        backgroundColor: isAllOption
+                            ? '#000000'
+                            : theme.cardBackground,
+                    },
+                    isAllOption && styles.allCategoryItem
+                ]}
+                onPress={() => handleCategoryPress(item)}
+            >
+                {isAllOption && (
+                    <Ionicons
+                        name="apps"
+                        size={16}
+                        color="white"
+                        style={styles.allCategoryIcon}
+                    />
+                )}
+                <Text style={[
+                    styles.categoryText,
+                    {
+                        color: isAllOption ? 'white' : theme.text,
+                        fontWeight: isAllOption ? 'bold' : '500'
+                    }
+                ]}>
+                    {item}
+                </Text>
+            </TouchableOpacity>
+        );
+    }, [handleCategoryPress, theme, translations.all]);
 
     if (loading) {
         return (
@@ -217,7 +256,7 @@ export default function Home() {
                         {translations.categories || 'Categories'}
                     </Text>
                     <FlatList
-                        data={categories}
+                        data={categoriesWithAll}
                         renderItem={renderCategory}
                         keyExtractor={(item, index) => `category-${index}-${item}`}
                         horizontal
@@ -372,6 +411,17 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.22,
         shadowRadius: 2.22,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    allCategoryItem: {
+        paddingHorizontal: 16,
+        elevation: 4,
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+    },
+    allCategoryIcon: {
+        marginRight: 6,
     },
     categoryText: {
         fontSize: 14,

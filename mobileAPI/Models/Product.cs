@@ -39,9 +39,20 @@ namespace mobileAPI.Models
         // Available sizes for this product (many-to-many relationship)
         public virtual ICollection<ProductSize> ProductSizes { get; set; } = new List<ProductSize>();
 
+        // Reviews for this product
+        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
+
         // Computed property to get available size names
         [NotMapped]
         public List<string> AvailableSizes => ProductSizes?.Select(ps => ps.Size.SizeName).ToList() ?? new List<string>();
+
+        // Computed property to get average rating
+        [NotMapped]
+        public double AverageRating => Reviews?.Count > 0 ? Reviews.Average(r => r.Rating) : 0.0;
+
+        // Computed property to get total review count
+        [NotMapped]
+        public int ReviewCount => Reviews?.Count ?? 0;
 
         // Validation method to ensure badge and label constraints
         public bool IsValid()

@@ -1,6 +1,6 @@
 // ProductDetail.js
 import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Animated, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Animated, Alert, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { CartContext } from '../contexts/CartContext';
@@ -9,6 +9,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { categoryApi } from '../utils/categoryApi';
 import { productApi } from '../utils/productApi';
 import { logProductDetails, extractSizeInfo } from '../utils/productUtils';
+import StarRating from '../components/StarRating';
+import ReviewModal from '../components/ReviewModal';
 
 // Ürünün mevcut bedenlerini özellikle availableSize field'ından çıkaran helper fonksiyon
 const extractProductAvailableSizes = (product) => {
@@ -78,7 +80,9 @@ export default function ProductDetail({ route }) {
     const [showGoToCart, setShowGoToCart] = useState(false);
     const [toastOpacity] = useState(new Animated.Value(0));
     const [loading, setLoading] = useState(true);
-    const [categoryData, setCategoryData] = useState(null); // Category bilgileri için    // API'den ürün ve kategori verilerini çek
+    const [categoryData, setCategoryData] = useState(null); // Category bilgileri için
+    const [reviewModalVisible, setReviewModalVisible] = useState(false);
+    const [productData, setProductData] = useState(product); // Rating bilgisini güncellemek için    // API'den ürün ve kategori verilerini çek
     useEffect(() => {
         const fetchProductAndCategoryData = async () => {
             try {
@@ -99,6 +103,7 @@ export default function ProductDetail({ route }) {
                         console.log(`Fetching fresh product data for ID: ${product.id}`);
                         currentProduct = await productApi.getProductById(product.id);
                         console.log('Fresh product data:', currentProduct);
+                        setProductData(currentProduct); // Rating bilgisini güncellemek için
                     } catch (error) {
                         console.log('Could not fetch fresh product data, using passed product:', error.message);
                         currentProduct = product;
@@ -218,6 +223,28 @@ export default function ProductDetail({ route }) {
         }
     };
 
+    // Review fonksiyonları
+    const handleRateProduct = () => {
+        setReviewModalVisible(true);
+    };
+
+    const handleReviewSubmitted = async () => {
+        // Yorum gönderildikten sonra ürün verilerini yenile
+        try {
+            const updatedProduct = await productApi.getProductById(product.id);
+            setProductData(updatedProduct);
+        } catch (error) {
+            console.log('Could not refresh product data after review submission:', error);
+        }
+    };
+
+    const handleViewReviews = () => {
+        navigation.navigate('ProductReviews', {
+            product: productData,
+            productId: productData.id
+        });
+    };
+
     // Loading state
     if (loading) {
         return (
@@ -248,27 +275,45 @@ export default function ProductDetail({ route }) {
             <Text style={[styles.name, { color: isDarkMode ? '#fff' : '#000' }]}>{product.name}</Text>
             <Text style={[styles.price, { color: isDarkMode ? '#ce6302' : '#ce6302' }]}>{product.price}</Text>
 
+            {/* Rating Section */}
+            <View style={styles.ratingSection}>
+                <StarRating
+                    rating={productData.averageRating || 0}
+                    disabled={true}
+                    size={20}
+                    showRating={true}
+                />
+                <TouchableOpacity onPress={handleViewReviews}>
+                    <Text style={[styles.reviewCount, { color: isDarkMode ? '#aaa' : '#666' }]}>
+                        ({productData.reviewCount || 0} değerlendirme)
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* Rate and Review Buttons */}
+            <View style={styles.reviewButtonsContainer}>
+                <TouchableOpacity
+                    style={styles.rateButton}
+                    onPress={handleRateProduct}
+                >
+                    <Ionicons name="star-outline" size={18} color="#FFD700" />
+                    <Text style={styles.rateButtonText}>Ürünü Değerlendir</Text>
+                </TouchableOpacity>
+
+                {productData.reviewCount > 0 && (
+                    <TouchableOpacity
+                        style={styles.viewReviewsButton}
+                        onPress={handleViewReviews}
+                    >
+                        <Ionicons name="chatbubble-outline" size={18} color="#007BFF" />
+                        <Text style={styles.viewReviewsButtonText}>Değerlendirmeleri Gör</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+
             <Text style={[styles.sizeTitle, { color: isDarkMode ? '#fff' : '#000' }]}>
                 {translations.sizeOptions}
             </Text>
-
-            {/* Debug Info - Sadece development modunda */}
-            {__DEV__ && (
-                <View style={styles.debugContainer}>
-                    <Text style={[styles.debugText, { color: isDarkMode ? '#ccc' : '#666' }]}>
-                        Debug: Product ID: {product.id} | CategoryID: {product.categoryId || 'N/A'}
-                    </Text>
-                    <Text style={[styles.debugText, { color: isDarkMode ? '#ccc' : '#666' }]}>
-                        Category: {categoryData ? categoryData.categoryName : 'Loading...'} (ID: {categoryData ? categoryData.id : 'N/A'})
-                    </Text>
-                    <Text style={[styles.debugText, { color: isDarkMode ? '#ccc' : '#666' }]}>
-                        All Sizes (from Category): {allSizes.join(', ') || 'None'}
-                    </Text>
-                    <Text style={[styles.debugText, { color: isDarkMode ? '#ccc' : '#666' }]}>
-                        Available Sizes (from Product): {availableSizes.join(', ') || 'None'}
-                    </Text>
-                </View>
-            )}
 
             <View style={styles.sizeContainer}>
                 {allSizes.map((size) => {
@@ -331,23 +376,6 @@ export default function ProductDetail({ route }) {
                                     />
                                 </View>
                             )}
-
-                            {/* Mevcut olan bedenler için tick işareti (seçili değilse) */}
-                            {isAvailable && !isSelected && (
-                                <View style={[
-                                    styles.tickContainer,
-                                    {
-                                        backgroundColor: isDarkMode ? 'rgba(0, 123, 255, 0.1)' : 'rgba(0, 123, 255, 0.1)'
-                                    }
-                                ]}>
-                                    <Ionicons
-                                        name="checkmark"
-                                        size={12}
-                                        color="#007BFF"
-                                        style={styles.tickIcon}
-                                    />
-                                </View>
-                            )}
                         </TouchableOpacity>
                     );
                 })}
@@ -399,6 +427,14 @@ export default function ProductDetail({ route }) {
                 <Ionicons name="checkmark-circle" size={20} color="#fff" style={{ marginRight: 8 }} />
                 <Text style={styles.toastText}>{translations.productAddedToCart}</Text>
             </Animated.View>
+
+            {/* Review Modal */}
+            <ReviewModal
+                visible={reviewModalVisible}
+                onClose={() => setReviewModalVisible(false)}
+                product={productData}
+                onReviewSubmitted={handleReviewSubmitted}
+            />
         </View>
     );
 }
@@ -442,8 +478,58 @@ const styles = StyleSheet.create({
     price: {
         fontSize: 18,
         color: '#ce6302',
-        marginBottom: 28,
+        marginBottom: 20,
         fontWeight: '600',
+    },
+    ratingSection: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 15,
+        gap: 10,
+    },
+    reviewCount: {
+        fontSize: 14,
+        textDecorationLine: 'underline',
+    },
+    reviewButtonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+        gap: 15,
+    },
+    rateButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF8DC',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#FFD700',
+        gap: 5,
+    },
+    rateButtonText: {
+        color: '#B8860B',
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    viewReviewsButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F0F8FF',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#007BFF',
+        gap: 5,
+    },
+    viewReviewsButtonText: {
+        color: '#007BFF',
+        fontSize: 14,
+        fontWeight: '500',
     },
     sizeTitle: {
         fontSize: 18,
@@ -534,31 +620,6 @@ const styles = StyleSheet.create({
     crossIcon: {
         // Icon kendisi için ekstra stil gerekmiyor
     },
-    tickContainer: {
-        position: 'absolute',
-        bottom: -3,
-        right: -3,
-        backgroundColor: 'rgba(0, 123, 255, 0.1)',
-        borderRadius: 8,
-        padding: 1,
-        elevation: 2,
-        shadowColor: '#007BFF',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 1,
-        borderWidth: 1,
-        borderColor: 'rgba(0, 123, 255, 0.3)',
-        width: 16,
-        height: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    tickIcon: {
-        // Icon kendisi için ekstra stil gerekmiyor
-    },
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
@@ -647,14 +708,5 @@ const styles = StyleSheet.create({
     loadingText: {
         fontSize: 16,
         fontWeight: '500',
-    },
-    debugContainer: {
-        marginBottom: 10,
-        paddingHorizontal: 10,
-    },
-    debugText: {
-        fontSize: 11,
-        textAlign: 'center',
-        fontStyle: 'italic',
     },
 });

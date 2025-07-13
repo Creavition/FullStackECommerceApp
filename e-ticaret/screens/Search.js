@@ -42,6 +42,24 @@ export default function Search() {
 
     const { minPrice, maxPrice, selectedCategory, selectedSize } = filters || {};
 
+    // Navigation başlığını güncelle
+    useEffect(() => {
+        const title = selectedCategory
+            ? `${selectedCategory} ${translations?.products || 'Products'}`
+            : translations?.allProducts || 'All Products';
+
+        navigation.setOptions({
+            title: title,
+            headerStyle: {
+                backgroundColor: theme.primary,
+            },
+            headerTintColor: '#fff',
+            headerTitleStyle: {
+                fontWeight: 'bold',
+            },
+        });
+    }, [selectedCategory, navigation, translations, theme.primary]);
+
     // Güvenli fiyat parsing için utility kullan
 
     // loadProducts fonksiyonunu optimize et - stable dependency

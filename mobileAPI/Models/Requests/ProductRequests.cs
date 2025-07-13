@@ -101,5 +101,7 @@ namespace mobileAPI.Models.Requests
         public int CategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;
         public List<string> AvailableSizes { get; set; } = new List<string>();
+        public double AverageRating { get; set; } = 0.0;
+        public int ReviewCount { get; set; } = 0;
     }
 }
