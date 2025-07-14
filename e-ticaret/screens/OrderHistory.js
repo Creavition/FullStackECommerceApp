@@ -121,7 +121,7 @@ export default function OrderHistory() {
                     }}
                 >
                     <Text style={styles.detailsButtonText}>{translations.viewDetails}</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#007BFF" />
+                    <Ionicons name="chevron-forward" size={16} color="#E88A35" />
                 </TouchableOpacity>
             </View>
         </View>
@@ -165,7 +165,7 @@ export default function OrderHistory() {
                         </View>
 
                         {/* Order Info Card */}
-                        <View style={[styles.orderInfoCard, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa', borderLeftColor: '#007BFF' }]}>
+                        <View style={[styles.orderInfoCard, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa', borderLeftColor: '#FF6B35' }]}>
                             <View style={styles.orderInfoHeader}>
                                 <Text style={[styles.orderNumber, { color: isDarkMode ? '#fff' : '#333' }]}>#{selectedOrder?.id}</Text>
                                 <View style={[styles.miniStatusBadge, { backgroundColor: getStatusColor(selectedOrder?.status) }]}>
@@ -220,7 +220,7 @@ export default function OrderHistory() {
                                                 {/* Ürün Detayları */}
                                                 <View style={styles.itemDetailsContainer}>
                                                     <View style={styles.detailGroup}>
-                                                        <Text style={styles.detailGroupTitle}>Beden & Adet</Text>
+                                                        <Text style={[styles.detailGroupTitle, { color: isDarkMode ? '#fff' : '#000' }]}>Beden & Adet</Text>
                                                         <View style={styles.detailRow}>
                                                             <View style={[styles.detailItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
                                                                 <Ionicons name="shirt" size={16} color="#D06E16" />
@@ -237,11 +237,10 @@ export default function OrderHistory() {
                                             </View>
                                         </View>
                                         <View style={styles.detailGroup}>
-                                            <Text style={styles.detailGroupTitle}>Fiyat</Text>
-                                            <View style={[styles.priceContainer, { backgroundColor: isDarkMode ? '#1a2a3a' : '#e3f2fd', borderLeftColor: '#007BFF' }]}>
-                                                <Text style={[styles.unitPrice, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>Birim: {item.price} ₺</Text>
-                                                <Text style={styles.totalPrice}>
-                                                    Toplam: {((typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace('₺', '').replace(',', '.')) || 0) * item.amount).toFixed(2)} ₺
+                                            <Text style={[styles.detailGroupTitle, { color: isDarkMode ? '#fff' : '#000' }]}>Fiyat</Text>
+                                            <View style={[styles.priceContainer, { backgroundColor: isDarkMode ? '#1a2a3a' : '#e3f2fd', borderLeftColor: '#FF6B35' }]}>
+                                                <Text style={[styles.totalPrice, { color: isDarkMode ? '#fff' : '#000' }]}>
+                                                    Toplam: <Text style={{ color: '#FF6B35' }}>{((typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace('₺', '').replace(',', '.')) || 0) * item.amount).toFixed(2)} ₺</Text>
                                                 </Text>
                                             </View>
                                         </View>
@@ -252,12 +251,12 @@ export default function OrderHistory() {
                             {/* Payment Details Section */}
                             <View style={styles.paymentSection}>
                                 <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                    Ödeme Bilgileri
+                                    Sipariş Bilgileri
                                 </Text>
                                 <View style={[styles.paymentDetailsCard, { backgroundColor: isDarkMode ? '#333' : '#fff', borderColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
                                     <View style={styles.paymentDetailRow}>
                                         <View style={styles.paymentDetailItem}>
-                                            <Ionicons name="card-outline" size={20} color="#007BFF" />
+                                            <Ionicons name="card-outline" size={20} color="#FF6B35" />
                                             <View style={styles.paymentDetailInfo}>
                                                 <Text style={[styles.paymentDetailLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
                                                     Kullanılan Kart
@@ -271,7 +270,7 @@ export default function OrderHistory() {
 
                                     <View style={[styles.paymentDetailRow, { borderTopWidth: 1, borderTopColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
                                         <View style={styles.paymentDetailItem}>
-                                            <Ionicons name="location-outline" size={20} color="#007BFF" />
+                                            <Ionicons name="location-outline" size={20} color="#FF6B35" />
                                             <View style={styles.paymentDetailInfo}>
                                                 <Text style={[styles.paymentDetailLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
                                                     Teslimat Adresi
@@ -286,10 +285,10 @@ export default function OrderHistory() {
                             </View>
 
                             {/* Total Summary */}
-                            <View style={[styles.totalSummaryCard, { backgroundColor: 'white' }]}>
+                            <View style={[styles.totalSummaryCard, { backgroundColor: isDarkMode ? '#333' : '#f8f9fa', borderColor: isDarkMode ? '#444' : '#e0e0e0' }]}>
                                 <View style={styles.totalSummaryRow}>
-                                    <Text style={[styles.totalSummaryLabel, { color: '#333' }]}>Toplam Tutar</Text>
-                                    <Text style={styles.totalSummaryValue}>{selectedOrder?.totalAmount} ₺</Text>
+                                    <Text style={[styles.totalSummaryLabel, { color: isDarkMode ? '#fff' : '#333' }]}>Toplam Tutar</Text>
+                                    <Text style={[styles.totalSummaryValue, { color: '#FF6B35' }]}>{selectedOrder?.totalAmount} ₺</Text>
                                 </View>
                             </View>
                         </ScrollView>
@@ -330,7 +329,7 @@ export default function OrderHistory() {
 
     return (
         <View style={[styles.container, { backgroundColor: isDarkMode ? theme.background : '#f8f9fa' }]}>
-            {/* Header with Close and Clear buttons */}
+            {/* Header with Close button only */}
             <View style={styles.headerContainer}>
                 <TouchableOpacity
                     style={styles.closeButtonTopLeft}
@@ -343,16 +342,33 @@ export default function OrderHistory() {
                     {translations.orderHistory || 'Order History'}
                 </Text>
 
-                {orderHistory.length > 0 && (
-                    <TouchableOpacity
-                        style={[styles.clearButton, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}
-                        onPress={handleClearHistory}
-                    >
-                        <Ionicons name="trash-outline" size={20} color="#ff6b6b" />
-                        <Text style={styles.clearButtonText}>{translations.clear || 'Clear'}</Text>
-                    </TouchableOpacity>
-                )}
+                <View style={styles.placeholder} />
             </View>
+
+            {/* Clear button section */}
+            {orderHistory.length > 0 && (
+                <View style={styles.clearButtonSection}>
+                    <TouchableOpacity
+                        style={[
+                            styles.clearButtonModern,
+                            {
+                                backgroundColor: '#c84955',
+                                borderColor: '#b02a2f',
+                                shadowColor: '#dc3545'
+                            }
+                        ]}
+                        onPress={handleClearHistory}
+                        activeOpacity={0.8}
+                    >
+                        <View style={styles.clearButtonContent}>
+                            <Ionicons name="trash-outline" size={18} color="#000" />
+                            <Text style={[styles.clearButtonTextModern, { color: '#000' }]}>
+                                {translations.clear || 'Clear'}
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            )}
 
             {/* Orders List */}
             <FlatList
@@ -416,6 +432,40 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         marginLeft: 4,
+    },
+    clearButtonSection: {
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        backgroundColor: 'transparent',
+        alignItems: 'flex-end',
+    },
+    clearButtonModern: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 16,
+        borderWidth: 1.5,
+        elevation: 3,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+        alignSelf: 'flex-end',
+    },
+    clearButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    clearButtonTextModern: {
+        fontSize: 14,
+        fontWeight: '600',
+        letterSpacing: 0.3,
+        marginLeft: 6,
+    },
+    placeholder: {
+        width: 40,
     },
     header: {
         flexDirection: 'row',
@@ -534,7 +584,7 @@ const styles = StyleSheet.create({
     },
     detailsButtonText: {
         fontSize: 14,
-        color: '#007BFF',
+        color: '#E88A35',
         fontWeight: '600',
         marginRight: 4,
     },
@@ -795,10 +845,11 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     totalSummaryCard: {
-        backgroundColor: 'white',
+        backgroundColor: '#f8f9fa',
         padding: 16,
         borderRadius: 12,
-        borderWidth: 0,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
         marginBottom: 20,
     },
     totalSummaryRow: {
