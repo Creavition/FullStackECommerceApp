@@ -181,19 +181,25 @@ export default function OrderHistory() {
                             {/* Quick Info */}
                             <View style={styles.quickInfoRow}>
                                 <View style={[styles.quickInfoItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
-                                    <Ionicons name="card" size={16} color={isDarkMode ? '#ce6302' : '#ce6302'} />
+                                    <View style={[styles.quickInfoIconContainer, { backgroundColor: isDarkMode ? '#FF6B35' : '#FF6B35' }]}>
+                                        <Ionicons name="card" size={16} color="#fff" />
+                                    </View>
                                     <Text style={[styles.quickInfoLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{translations.payment}</Text>
-                                    <Text style={[styles.quickInfoValue, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                        {selectedOrder?.paymentMethod || 'Kart'}
+                                    <Text style={[styles.quickInfoValue, { color: isDarkMode ? '#fff' : '#333' }]} numberOfLines={1}>
+                                        {selectedOrder?.paymentMethod || translations.cardNotFound}
                                     </Text>
                                 </View>
                                 <View style={[styles.quickInfoItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
-                                    <Ionicons name="cube" size={16} color={isDarkMode ? '#ce6302' : '#ce6302'} />
+                                    <View style={[styles.quickInfoIconContainer, { backgroundColor: isDarkMode ? '#FF6B35' : '#FF6B35' }]}>
+                                        <Ionicons name="cube" size={16} color="#fff" />
+                                    </View>
                                     <Text style={[styles.quickInfoLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{translations.product}</Text>
                                     <Text style={[styles.quickInfoValue, { color: isDarkMode ? '#fff' : '#333' }]}>{selectedOrder?.items?.length || 0} {translations.pieces}</Text>
                                 </View>
                                 <View style={[styles.quickInfoItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
-                                    <Ionicons name="cash" size={16} color={isDarkMode ? '#ce6302' : '#ce6302'} />
+                                    <View style={[styles.quickInfoIconContainer, { backgroundColor: isDarkMode ? '#FF6B35' : '#FF6B35' }]}>
+                                        <Ionicons name="cash" size={16} color="#fff" />
+                                    </View>
                                     <Text style={[styles.quickInfoLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{translations.total}</Text>
                                     <Text style={[styles.quickInfoValue, { color: isDarkMode ? '#fff' : '#333' }]}>{selectedOrder?.totalAmount} ₺</Text>
                                 </View>
@@ -201,9 +207,19 @@ export default function OrderHistory() {
 
                             {/* Items Section */}
                             <View style={styles.itemsSection}>
-                                <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                    {translations.orderedProducts} ({selectedOrder?.items?.length || 0} {translations.piece})
-                                </Text>
+                                <View style={styles.sectionHeaderWithIcon}>
+                                    <View style={styles.sectionTitleContainer}>
+                                        <Ionicons name="bag-handle" size={20} color="#FF6B35" />
+                                        <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
+                                            {translations.orderedProducts}
+                                        </Text>
+                                    </View>
+                                    <View style={[styles.itemCountBadge, { backgroundColor: isDarkMode ? '#FF6B35' : '#FF6B35' }]}>
+                                        <Text style={styles.itemCountText}>
+                                            {selectedOrder?.items?.length || 0}
+                                        </Text>
+                                    </View>
+                                </View>
                                 {selectedOrder?.items?.map((item, index) => (
                                     <View key={index} style={[styles.modernItemCard, { backgroundColor: isDarkMode ? '#333' : '#fff', borderColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
                                         <View style={{ flexDirection: "row" }}>
@@ -738,30 +754,50 @@ const styles = StyleSheet.create({
     quickInfoItem: {
         flex: 1,
         alignItems: 'center',
-        padding: 12,
+        padding: 16,
         backgroundColor: '#f8f9fa',
         borderRadius: 12,
         marginHorizontal: 4,
+        minHeight: 85,
+        justifyContent: 'center',
     },
     quickInfoLabel: {
-        fontSize: 12,
+        fontSize: 11,
         color: '#666',
-        marginTop: 4,
+        marginTop: 6,
+        marginBottom: 4,
+        textAlign: 'center',
     },
     quickInfoValue: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: 'bold',
         color: '#333',
-        marginTop: 2,
+        textAlign: 'center',
+        lineHeight: 16,
     },
-    itemsSection: {
-        marginBottom: 20,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
+    sectionHeaderWithIcon: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: 16,
+    },
+    sectionTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    itemCountBadge: {
+        backgroundColor: '#FF6B35',
+        borderRadius: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        minWidth: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    itemCountText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: 'bold',
     },
     modernItemCard: {
         flexDirection: 'column',
@@ -1120,7 +1156,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         color: '#333',
-        marginBottom: 16,
+        marginLeft: 8,
     },
     itemCard: {
         flexDirection: 'row',
