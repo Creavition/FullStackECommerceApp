@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { decode as base64Decode } from 'base-64';
 
-const API_BASE_URL = 'http://192.168.1.3:5207/Auth';
+const API_BASE_URL = 'http://192.168.1.210:5207/Auth';
 
 // Auth token'ı al
 export const getAuthToken = async () => {
@@ -91,7 +91,7 @@ export const loginUser = async (email, password) => {
 
         return response.data;
     } catch (error) {
-        console.error('Login error:', error);
+        // Console error mesajını kaldırdık
 
         // Error mesajını düzgün şekilde handle et
         if (error.response?.data) {

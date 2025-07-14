@@ -80,14 +80,9 @@ export default function Login({ navigation }) {
         setLoading(true);
         try {
             const response = await loginUser(email.trim(), password);
-            Alert.alert(
-                translations.success,
-                translations.loginSuccessful,
-                [{ text: translations.ok }]
-            );
             navigation.replace('HomeScreen');
         } catch (err) {
-            console.error("Login error:", err);
+            // Console error mesajını kaldırdık
             Alert.alert(
                 translations.error,
                 err.message || translations.somethingWentWrong,

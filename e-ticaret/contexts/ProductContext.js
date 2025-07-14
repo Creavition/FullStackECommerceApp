@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { sizeMap } from '../utils/productUtils';
+import { productApi } from '../utils/productApi';
 
 const ProductContext = createContext();
 
 // API Base URL
-const API_BASE_URL = 'http://192.168.1.3:5207';
+const API_BASE_URL = 'http://192.168.1.210:5207';
 
 export const ProductProvider = ({ children }) => {
     const [products, setProducts] = useState([]);
@@ -71,6 +72,76 @@ export const ProductProvider = ({ children }) => {
         );
     }, []);
 
+    // Update product category
+    const updateProductCategory = useCallback(async (productId, categoryId) => {
+        try {
+            await productApi.updateProductCategory(productId, categoryId);
+
+            // Update local state
+            setProducts(prevProducts =>
+                prevProducts.map(product =>
+                    product.id === productId
+                        ? { ...product, categoryId }
+                        : product
+                )
+            );
+
+            return true;
+        } catch (error) {
+            console.error('Error updating product category:', error);
+            setError(error.message);
+            return false;
+        }
+    }, []);
+
+    // Update product available sizes
+    const updateProductSizes = useCallback(async (productId, sizeIds) => {
+        try {
+            await productApi.updateProductSizes(productId, sizeIds);
+
+            // Refresh products to get updated sizes from API
+            await fetchProducts();
+
+            return true;
+        } catch (error) {
+            console.error('Error updating product sizes:', error);
+            setError(error.message);
+            return false;
+        }
+    }, [fetchProducts]);
+
+    // Update product category and sizes together
+    const updateProductCategoryAndSizes = useCallback(async (productId, categoryId, sizeIds) => {
+        try {
+            await productApi.updateProductCategoryAndSizes(productId, categoryId, sizeIds);
+
+            // Refresh products to get all updated data from API
+            await fetchProducts();
+
+            return true;
+        } catch (error) {
+            console.error('Error updating product category and sizes:', error);
+            setError(error.message);
+            return false;
+        }
+    }, [fetchProducts]);
+
+    // General product update function
+    const updateProduct = useCallback(async (productId, updateData) => {
+        try {
+            await productApi.updateProduct(productId, updateData);
+
+            // Refresh products to get all updated data from API
+            await fetchProducts();
+
+            return true;
+        } catch (error) {
+            console.error('Error updating product:', error);
+            setError(error.message);
+            return false;
+        }
+    }, [fetchProducts]);
+
     // Initialize data on mount - sadece bir kez
     useEffect(() => {
         fetchProducts();
@@ -88,6 +159,10 @@ export const ProductProvider = ({ children }) => {
         fetchProductsByCategory,
         getImageUrl,
         updateProductFavoriteStatus,
+        updateProductCategory,
+        updateProductSizes,
+        updateProductCategoryAndSizes,
+        updateProduct,
 
         // Legacy
         sizeMap,

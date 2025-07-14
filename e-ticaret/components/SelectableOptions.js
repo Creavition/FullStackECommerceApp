@@ -30,7 +30,7 @@ export default function SelectableOptions({ onSelect, categories = [], sizeOptio
     return (
         <View style={styles.container}>
             {/* Sort By Button Container */}
-            <View style={[styles.sortContainer, open && styles.sortContainerOpen]}>
+            <View style={styles.sortContainer}>
                 <TouchableOpacity
                     style={[
                         styles.selector,
@@ -124,15 +124,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingHorizontal: 20,
         marginVertical: 10,
-        zIndex: 1000, // Container için yüksek z-index
     },
     sortContainer: {
         position: 'relative',
         marginRight: 15,
-        zIndex: 2000, // Daha yüksek z-index
-    },
-    sortContainerOpen: {
-        zIndex: 3000, // Dropdown açıkken en yüksek z-index
     },
     selector: {
         width: 160,

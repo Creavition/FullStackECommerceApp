@@ -4,7 +4,7 @@ import { useProduct } from './ProductContext';
 const FavoritesContext = createContext();
 
 // API Base URL
-const API_BASE_URL = 'http://192.168.1.3:5207';
+const API_BASE_URL = 'http://192.168.1.210:5207';
 
 export const FavoritesProvider = ({ children }) => {
     // Favoriye eklenen urunler favoriteItems degiskeninde obje olarak tutuluyor.

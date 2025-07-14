@@ -94,6 +94,13 @@ namespace mobileAPI.Models.Requests
         public string? BackImagePath { get; set; }
     }
 
+    public class UpdateProductSizesRequest
+    {
+        [Required]
+        [MinLength(1, ErrorMessage = "At least one size must be provided")]
+        public List<int> SizeIds { get; set; } = new List<int>();
+    }
+
     public class ProductFilterRequest
     {
         public int? CategoryId { get; set; }

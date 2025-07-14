@@ -302,10 +302,10 @@ export default function OrderHistory() {
         return (
             <View style={[styles.container, { backgroundColor: isDarkMode ? theme.background : '#f8f9fa' }]}>
                 <TouchableOpacity
-                    style={styles.closeButtonTopLeft}
-                    onPress={() => navigation.navigate('HomeScreen', { screen: 'Account' })}
+                    style={styles.backButtonTopLeft}
+                    onPress={() => navigation.goBack()}
                 >
-                    <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#333'} />
+                    <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#fff' : '#333'} />
                 </TouchableOpacity>
 
                 {/* Empty State */}
@@ -406,6 +406,15 @@ const styles = StyleSheet.create({
     closeButtonTopLeft: {
         padding: 8,
         borderRadius: 8,
+        backgroundColor: 'rgba(0,0,0,0.1)',
+    },
+    backButtonTopLeft: {
+        position: 'absolute',
+        top: 50,
+        left: 20,
+        zIndex: 1,
+        padding: 8,
+        borderRadius: 20,
         backgroundColor: 'rgba(0,0,0,0.1)',
     },
     headerTitle: {

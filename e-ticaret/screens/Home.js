@@ -78,7 +78,6 @@ export default function Home() {
     }, [categories, translations.all]);
 
     const handleProductPress = useCallback((product) => {
-        // Debug için product detaylarını log'la
         if (__DEV__) {
             logProductDetails(product);
         }
@@ -148,27 +147,16 @@ export default function Home() {
                 style={[
                     styles.categoryItem,
                     {
-                        backgroundColor: isAllOption
-                            ? '#000000'
-                            : theme.cardBackground,
-                    },
-                    isAllOption && styles.allCategoryItem
+                        backgroundColor: theme.cardBackground,
+                    }
                 ]}
                 onPress={() => handleCategoryPress(item)}
             >
-                {isAllOption && (
-                    <Ionicons
-                        name="apps"
-                        size={16}
-                        color="white"
-                        style={styles.allCategoryIcon}
-                    />
-                )}
                 <Text style={[
                     styles.categoryText,
                     {
-                        color: isAllOption ? 'white' : theme.text,
-                        fontWeight: isAllOption ? 'bold' : '500'
+                        color: theme.text,
+                        fontWeight: '500'
                     }
                 ]}>
                     {item}
@@ -195,7 +183,7 @@ export default function Home() {
             />
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-                {/* Header */}
+
 
 
                 {/* Categories */}
@@ -324,6 +312,7 @@ const styles = StyleSheet.create({
     section: {
         marginVertical: 15,
         paddingHorizontal: 15,
+        paddingVertical: 15
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -361,15 +350,6 @@ const styles = StyleSheet.create({
         shadowRadius: 2.22,
         flexDirection: 'row',
         alignItems: 'center',
-    },
-    allCategoryItem: {
-        paddingHorizontal: 16,
-        elevation: 4,
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-    },
-    allCategoryIcon: {
-        marginRight: 6,
     },
     categoryText: {
         fontSize: 14,

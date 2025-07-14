@@ -66,14 +66,14 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
                 return;
             }
 
-            console.log('Making review request to:', 'http://192.168.1.3:5207/api/Review');
+            console.log('Making review request to:', 'http://192.168.1.210:5207/api/Review');
             console.log('Request body:', {
                 productId: product.id,
                 rating: rating,
                 comment: comment.trim(),
             });
 
-            const response = await fetch('http://192.168.1.3:5207/api/Review', {
+            const response = await fetch('http://192.168.1.210:5207/api/Review', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

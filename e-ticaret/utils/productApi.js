@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://192.168.1.3:5207/api';
+const API_BASE_URL = 'http://192.168.1.210:5207/api';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -178,6 +178,111 @@ export const productApi = {
             return response.data;
         } catch (error) {
             console.error(`Error toggling favorite for product ${productId}:`, error);
+            throw error;
+        }
+    },
+
+    // Ürünü güncelle (CategoryId ve AvailableSizes dahil)
+    updateProduct: async (productId, updateData) => {
+        try {
+            const response = await api.put(`/Product/${productId}`, updateData);
+            return response.data;
+        } catch (error) {
+            console.error(`Error updating product ${productId}:`, error);
+            throw error;
+        }
+    },
+
+    // Ürün kategorisini güncelle
+    updateProductCategory: async (productId, categoryId) => {
+        try {
+            const response = await api.put(`/Product/${productId}`, {
+                categoryId: categoryId
+            });
+            return response.data;
+        } catch (error) {
+            console.error(`Error updating product category for ${productId}:`, error);
+            throw error;
+        }
+    },
+
+    // Ürün available sizes'ını güncelle (özel endpoint kullanarak)
+    updateProductSizes: async (productId, sizeIds) => {
+        try {
+            const response = await api.put(`/Product/${productId}/sizes`, {
+                sizeIds: sizeIds
+            });
+            return response.data;
+        } catch (error) {
+            console.error(`Error updating product sizes for ${productId}:`, error);
+            throw error;
+        }
+    },
+
+    // Ürün available sizes'ını güncelle (genel endpoint kullanarak)
+    updateProductSizesGeneral: async (productId, sizeIds) => {
+        try {
+            const response = await api.put(`/Product/${productId}`, {
+                sizeIds: sizeIds
+            });
+            return response.data;
+        } catch (error) {
+            console.error(`Error updating product sizes (general) for ${productId}:`, error);
+            throw error;
+        }
+    },
+
+    // Ürün kategori ve available sizes'ını beraber güncelle
+    updateProductCategoryAndSizes: async (productId, categoryId, sizeIds) => {
+        try {
+            const response = await api.put(`/Product/${productId}`, {
+                categoryId: categoryId,
+                sizeIds: sizeIds
+            });
+            return response.data;
+        } catch (error) {
+            console.error(`Error updating product category and sizes for ${productId}:`, error);
+            throw error;
+        }
+    },
+
+    // JSON formatında available sizes güncelle
+    updateProductSizesFromJson: async (productId, sizesData) => {
+        try {
+            // sizesData can be:
+            // 1. Array of size IDs: [1, 2, 3]
+            // 2. Array of size names: ["S", "M", "L"]
+            // 3. Object with sizeIds property: { sizeIds: [1, 2, 3] }
+
+            let sizeIds = [];
+
+            if (Array.isArray(sizesData)) {
+                // If it's an array, check if it contains numbers or strings
+                if (sizesData.length > 0 && typeof sizesData[0] === 'number') {
+                    // Array of size IDs
+                    sizeIds = sizesData;
+                } else if (sizesData.length > 0 && typeof sizesData[0] === 'string') {
+                    // Array of size names - convert to IDs
+                    const sizeNameToId = {
+                        'XS': 1, 'S': 2, 'M': 3, 'L': 4, 'XL': 5, 'XXL': 6
+                    };
+                    sizeIds = sizesData.map(name => sizeNameToId[name]).filter(id => id);
+                }
+            } else if (sizesData && typeof sizesData === 'object' && sizesData.sizeIds) {
+                // Object with sizeIds property
+                sizeIds = sizesData.sizeIds;
+            }
+
+            if (sizeIds.length === 0) {
+                throw new Error('No valid size IDs provided');
+            }
+
+            const response = await api.put(`/Product/${productId}/sizes`, {
+                sizeIds: sizeIds
+            });
+            return response.data;
+        } catch (error) {
+            console.error(`Error updating product sizes from JSON for ${productId}:`, error);
             throw error;
         }
     }

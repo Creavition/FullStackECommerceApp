@@ -367,15 +367,6 @@ export default function ProductDetail({ route }) {
                     <Text style={styles.rateButtonText}>{translations.rateProduct || 'Ürünü Değerlendir'}</Text>
                 </TouchableOpacity>
 
-                {productData.reviewCount > 0 && (
-                    <TouchableOpacity
-                        style={styles.viewReviewsButton}
-                        onPress={handleViewReviews}
-                    >
-                        <Ionicons name="chatbubble-outline" size={18} color="#FF8C00" />
-                        <Text style={styles.viewReviewsButtonText}>{translations.viewReviews || 'Değerlendirmeleri Gör'}</Text>
-                    </TouchableOpacity>
-                )}
             </View>
 
             <Text style={[styles.sizeTitle, { color: isDarkMode ? '#fff' : '#000' }]}>
@@ -590,7 +581,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 20,
         gap: 10,
-        paddingHorizontal: 10,
+        paddingHorizontal: 8,
     },
     rateButton: {
         flexDirection: 'row',

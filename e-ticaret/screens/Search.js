@@ -280,18 +280,6 @@ export default function Search() {
 
             {/* Arama ve Sıralama */}
             <View style={[styles.headerContainer, { backgroundColor: theme.background }]}>
-                {/* API Status Indicator */}
-                <View style={styles.apiStatusContainer}>
-                    <Ionicons
-                        name={apiStatus ? "checkmark-circle" : "alert-circle"}
-                        size={16}
-                        color={apiStatus ? "#4CAF50" : "#FF6B35"}
-                    />
-                    <Text style={[styles.apiStatusText, { color: apiStatus ? "#4CAF50" : "#FF6B35" }]}>
-                        {apiStatus ? "API Connected" : "Using Offline Data"}
-                    </Text>
-                </View>
-
                 <View style={[styles.searchBox, { backgroundColor: theme.surface || '#f0f0f0', borderColor: theme.border || '#e0e0e0' }]}>
                     <Ionicons name="search" size={22} color={theme.textSecondary} style={styles.searchIcon} />
                     <TextInput
@@ -398,23 +386,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-    },
-    apiStatusContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 10,
-        marginBottom: 5,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 12,
-        backgroundColor: 'rgba(0,0,0,0.05)',
-        alignSelf: 'center',
-    },
-    apiStatusText: {
-        fontSize: 12,
-        fontWeight: '500',
-        marginLeft: 4,
     },
     searchBox: {
         flexDirection: 'row',

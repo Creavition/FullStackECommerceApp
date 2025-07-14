@@ -400,6 +400,99 @@ namespace mobileAPI.Controllers
             return Ok(new { isFavorite = product.IsFavorite });
         }
 
+        // PUT: api/Product/{id}/sizes
+        [HttpPut("{id}/sizes")]
+        public async Task<IActionResult> UpdateProductSizes(int id, [FromBody] UpdateProductSizesRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var product = await _context.Products
+                .Include(p => p.ProductSizes)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (product == null)
+            {
+                return NotFound($"Product with ID {id} not found.");
+            }
+
+            // Validate that all size IDs exist
+            if (request.SizeIds != null && request.SizeIds.Any())
+            {
+                var existingSizes = await _context.Sizes.Where(s => request.SizeIds.Contains(s.Id)).ToListAsync();
+                if (existingSizes.Count != request.SizeIds.Count)
+                {
+                    var invalidSizeIds = request.SizeIds.Except(existingSizes.Select(s => s.Id)).ToList();
+                    return BadRequest($"Invalid size IDs: {string.Join(", ", invalidSizeIds)}");
+                }
+
+                // Remove existing product sizes
+                _context.ProductSizes.RemoveRange(product.ProductSizes);
+
+                // Add new product sizes
+                foreach (var sizeId in request.SizeIds)
+                {
+                    _context.ProductSizes.Add(new ProductSize
+                    {
+                        ProductId = product.Id,
+                        SizeId = sizeId
+                    });
+                }
+            }
+            else
+            {
+                // If no sizes provided, remove all existing sizes
+                _context.ProductSizes.RemoveRange(product.ProductSizes);
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+
+                // Return updated product with new sizes
+                var updatedProduct = await _context.Products
+                    .Include(p => p.Category)
+                    .Include(p => p.ProductSizes)
+                    .ThenInclude(ps => ps.Size)
+                    .Include(p => p.Reviews)
+                    .Where(p => p.Id == id)
+                    .Select(p => new ProductResponse
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        Price = p.Price,
+                        FrontImagePath = p.FrontImagePath,
+                        BackImagePath = p.BackImagePath,
+                        IsFavorite = p.IsFavorite,
+                        Badge_FlashSale = p.Badge_FlashSale,
+                        Badge_BestSelling = p.Badge_BestSelling,
+                        Label_BestSeller = p.Label_BestSeller,
+                        Label_FastDelivery = p.Label_FastDelivery,
+                        CategoryId = p.CategoryId,
+                        CategoryName = p.Category.CategoryName,
+                        AvailableSizes = p.ProductSizes.Select(ps => ps.Size.SizeName).ToList(),
+                        AverageRating = p.Reviews.Count > 0 ? p.Reviews.Average(r => r.Rating) : 0,
+                        ReviewCount = p.Reviews.Count
+                    })
+                    .FirstOrDefaultAsync();
+
+                return Ok(updatedProduct);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ProductExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
         // DELETE: api/Product/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
