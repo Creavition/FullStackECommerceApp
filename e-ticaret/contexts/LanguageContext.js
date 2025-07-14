@@ -143,9 +143,12 @@ const translations = {
         bestSeller: 'Best Seller',
         products: 'products',
         viewAll: 'View All',
+        seeAll: 'See All',
         productsFound: 'products found',
         noProductsFound: 'No products found',
         allProducts: 'All Products',
+        all: 'All',
+        categories: 'Categories',
 
         // Product Detail
         productDetail: 'Product Detail',
@@ -385,9 +388,12 @@ const translations = {
         bestSeller: 'En Çok Satan',
         products: 'ürün',
         viewAll: 'Tümü',
+        seeAll: 'Tümünü Gör',
         productsFound: 'ürün bulundu',
         noProductsFound: 'Ürün bulunamadı',
         allProducts: 'Tüm Ürünler',
+        all: 'Tümü',
+        categories: 'Kategoriler',
 
         // Product Detail
         productDetail: 'Ürün Detayı',

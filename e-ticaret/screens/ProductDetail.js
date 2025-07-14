@@ -756,7 +756,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     goToCartButton: {
-        backgroundColor: '#007BFF',
+        backgroundColor: '#ce6302',
         paddingVertical: 16,
         paddingHorizontal: 32,
         borderRadius: 12,
