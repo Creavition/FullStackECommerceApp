@@ -55,13 +55,6 @@ export default function FastDelivery() {
         }, [loadProducts])
     );
 
-    // Sayfa odaklandığında yeniden yükle (favorite durumlarını güncellemek için)
-    useFocusEffect(
-        useCallback(() => {
-            loadProducts();
-        }, [loadProducts])
-    );
-
     // Fast Delivery ürünlerini al - API'den gelenler zaten fast delivery
     const fastDeliveryFilteredProducts = useMemo(() => {
         // API'den gelen ürünler zaten fast delivery olarak işaretlenmiş

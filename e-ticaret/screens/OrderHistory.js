@@ -178,135 +178,149 @@ export default function OrderHistory() {
                         </View>
 
                         <ScrollView style={[styles.bottomSheetContent, { backgroundColor: isDarkMode ? '#2d2d2d' : '#fff' }]} showsVerticalScrollIndicator={false}>
-                            {/* Quick Info */}
-                            <View style={styles.quickInfoRow}>
-                                <View style={[styles.quickInfoItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
-                                    <View style={[styles.quickInfoIconContainer, { backgroundColor: isDarkMode ? '#FF6B35' : '#FF6B35' }]}>
-                                        <Ionicons name="card" size={16} color="#fff" />
+
+                            {/* Order Summary Card */}
+                            <View style={[styles.orderSummaryCard, { backgroundColor: isDarkMode ? '#333' : '#f8f9ff', borderColor: '#FF6B35' }]}>
+                                <View style={styles.summaryHeader}>
+                                    <View style={[styles.summaryIcon, { backgroundColor: '#FF6B35' }]}>
+                                        <Ionicons name="receipt" size={20} color="#fff" />
                                     </View>
-                                    <Text style={[styles.quickInfoLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{translations.payment}</Text>
-                                    <Text style={[styles.quickInfoValue, { color: isDarkMode ? '#fff' : '#333' }]} numberOfLines={1}>
-                                        {selectedOrder?.paymentMethod || translations.cardNotFound}
-                                    </Text>
-                                </View>
-                                <View style={[styles.quickInfoItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
-                                    <View style={[styles.quickInfoIconContainer, { backgroundColor: isDarkMode ? '#FF6B35' : '#FF6B35' }]}>
-                                        <Ionicons name="cube" size={16} color="#fff" />
+                                    <View style={styles.summaryInfo}>
+                                        <Text style={[styles.summaryTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
+                                            {translations.orderSummary || 'Sipariş Özeti'}
+                                        </Text>
+                                        <Text style={[styles.summarySubtitle, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
+                                            {selectedOrder?.items?.length || 0} {translations.products} • {selectedOrder?.totalAmount} ₺
+                                        </Text>
                                     </View>
-                                    <Text style={[styles.quickInfoLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{translations.product}</Text>
-                                    <Text style={[styles.quickInfoValue, { color: isDarkMode ? '#fff' : '#333' }]}>{selectedOrder?.items?.length || 0} {translations.pieces}</Text>
-                                </View>
-                                <View style={[styles.quickInfoItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
-                                    <View style={[styles.quickInfoIconContainer, { backgroundColor: isDarkMode ? '#FF6B35' : '#FF6B35' }]}>
-                                        <Ionicons name="cash" size={16} color="#fff" />
-                                    </View>
-                                    <Text style={[styles.quickInfoLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{translations.total}</Text>
-                                    <Text style={[styles.quickInfoValue, { color: isDarkMode ? '#fff' : '#333' }]}>{selectedOrder?.totalAmount} ₺</Text>
                                 </View>
                             </View>
 
-                            {/* Items Section */}
-                            <View style={styles.itemsSection}>
-                                <View style={styles.sectionHeaderWithIcon}>
-                                    <View style={styles.sectionTitleContainer}>
-                                        <Ionicons name="bag-handle" size={20} color="#FF6B35" />
-                                        <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
+                            {/* Status Timeline */}
+                            <View style={[styles.statusSection, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}>
+                                <View style={styles.statusHeader}>
+                                    <Ionicons name="time" size={18} color="#FF6B35" />
+                                    <Text style={[styles.statusTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
+                                        {translations.orderStatus || 'Sipariş Durumu'}
+                                    </Text>
+                                </View>
+                                <View style={[styles.statusBadgeContainer, { backgroundColor: getStatusColor(selectedOrder?.status) }]}>
+                                    <Ionicons name={getStatusIcon(selectedOrder?.status)} size={16} color="#fff" />
+                                    <Text style={styles.statusBadgeText}>{selectedOrder?.status}</Text>
+                                </View>
+                            </View>
+
+                            {/* Products Section */}
+                            <View style={[styles.productsSection, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}>
+                                <View style={styles.productsSectionHeader}>
+                                    <View style={styles.productsHeaderLeft}>
+                                        <Ionicons name="bag-handle" size={18} color="#FF6B35" />
+                                        <Text style={[styles.productsTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
                                             {translations.orderedProducts}
                                         </Text>
                                     </View>
-                                    <View style={[styles.itemCountBadge, { backgroundColor: isDarkMode ? '#FF6B35' : '#FF6B35' }]}>
-                                        <Text style={styles.itemCountText}>
+                                    <View style={[styles.productsCount, { backgroundColor: '#FF6B35' }]}>
+                                        <Text style={styles.productsCountText}>
                                             {selectedOrder?.items?.length || 0}
                                         </Text>
                                     </View>
                                 </View>
+
                                 {selectedOrder?.items?.map((item, index) => (
-                                    <View key={index} style={[styles.modernItemCard, { backgroundColor: isDarkMode ? '#333' : '#fff', borderColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
-                                        <View style={{ flexDirection: "row" }}>
-                                            <Image
-                                                source={{ uri: getImageUrl(item.frontImagePath || item.frontImageUrl || item.imageUrl || item.image) }}
-                                                style={[styles.modernItemImage, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}
-                                                defaultSource={require('../assets/images/icon.png')}
-                                                onError={(error) => console.log('OrderHistory Image load error:', error.nativeEvent.error)}
-                                            />
-                                            <View style={styles.modernItemInfo}>
-                                                <Text style={[styles.modernItemName, { color: isDarkMode ? '#fff' : '#333' }]}>{item.name}</Text>
-                                                <Text style={[styles.modernItemCategory, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{item.category}</Text>
-
-                                                {/* {translations.productDetails} */}
-                                                <View style={styles.itemDetailsContainer}>
-                                                    <View style={styles.detailGroup}>
-                                                        <Text style={[styles.detailGroupTitle, { color: isDarkMode ? '#fff' : '#000' }]}>{translations.sizeAndQuantity}</Text>
-                                                        <View style={styles.detailRow}>
-                                                            <View style={[styles.detailItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
-                                                                <Ionicons name="shirt" size={16} color="#D06E16" />
-                                                                <Text style={[styles.detailText, { color: isDarkMode ? '#fff' : '#333' }]}>{translations.size}: {item.size}</Text>
-                                                            </View>
-                                                            <View style={[styles.detailItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
-                                                                <Ionicons name="cube" size={16} color="#D06E16" />
-                                                                <Text style={[styles.detailText, { color: isDarkMode ? '#fff' : '#333' }]}>{translations.quantity}: {item.amount}</Text>
-                                                            </View>
-                                                        </View>
-                                                    </View>
-
+                                    <View key={index} style={[styles.productCard, {
+                                        backgroundColor: isDarkMode ? '#2a2a2a' : '#f8f9fa',
+                                        borderBottomWidth: index === selectedOrder.items.length - 1 ? 0 : 1,
+                                        borderBottomColor: isDarkMode ? '#444' : '#e0e0e0'
+                                    }]}>
+                                        <Image
+                                            source={{ uri: getImageUrl(item.frontImagePath || item.frontImageUrl || item.imageUrl || item.image) }}
+                                            style={[styles.productImage, { backgroundColor: isDarkMode ? '#444' : '#fff' }]}
+                                            defaultSource={require('../assets/images/icon.png')}
+                                        />
+                                        <View style={styles.productInfo}>
+                                            <Text style={[styles.productName, { color: isDarkMode ? '#fff' : '#333' }]}>
+                                                {item.name}
+                                            </Text>
+                                            <Text style={[styles.productCategory, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
+                                                {item.category}
+                                            </Text>
+                                            <View style={styles.productDetails}>
+                                                <View style={[styles.productDetailChip, { backgroundColor: isDarkMode ? '#444' : '#e3f2fd' }]}>
+                                                    <Ionicons name="resize" size={12} color="#FF6B35" />
+                                                    <Text style={[styles.chipText, { color: isDarkMode ? '#fff' : '#333' }]}>
+                                                        {item.size}
+                                                    </Text>
+                                                </View>
+                                                <View style={[styles.productDetailChip, { backgroundColor: isDarkMode ? '#444' : '#e3f2fd' }]}>
+                                                    <Ionicons name="duplicate" size={12} color="#FF6B35" />
+                                                    <Text style={[styles.chipText, { color: isDarkMode ? '#fff' : '#333' }]}>
+                                                        {item.amount}x
+                                                    </Text>
                                                 </View>
                                             </View>
                                         </View>
-                                        <View style={styles.detailGroup}>
-                                            <Text style={[styles.detailGroupTitle, { color: isDarkMode ? '#fff' : '#000' }]}>{translations.price}</Text>
-                                            <View style={[styles.priceContainer, { backgroundColor: isDarkMode ? '#1a2a3a' : '#e3f2fd', borderLeftColor: '#FF6B35' }]}>
-                                                <Text style={[styles.totalPrice, { color: isDarkMode ? '#fff' : '#000' }]}>
-                                                    {translations.total}: <Text style={{ color: '#FF6B35' }}>{((typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace('₺', '').replace(',', '.')) || 0) * item.amount).toFixed(2)} ₺</Text>
-                                                </Text>
-                                            </View>
+                                        <View style={styles.productPricing}>
+                                            <Text style={[styles.productPrice, { color: '#FF6B35' }]}>
+                                                {((typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace('₺', '').replace(',', '.')) || 0) * item.amount).toFixed(2)} ₺
+                                            </Text>
                                         </View>
                                     </View>
                                 ))}
                             </View>
 
-                            {/* Payment Details Section */}
-                            <View style={styles.paymentSection}>
-                                <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                    {translations.orderInfo}
-                                </Text>
-                                <View style={[styles.paymentDetailsCard, { backgroundColor: isDarkMode ? '#333' : '#fff', borderColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
-                                    <View style={styles.paymentDetailRow}>
-                                        <View style={styles.paymentDetailItem}>
-                                            <Ionicons name="card-outline" size={20} color="#FF6B35" />
-                                            <View style={styles.paymentDetailInfo}>
-                                                <Text style={[styles.paymentDetailLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-                                                    {translations.usedCard}
-                                                </Text>
-                                                <Text style={[styles.paymentDetailValue, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                                    {selectedOrder?.paymentMethod || translations.cardNotFound}
-                                                </Text>
-                                            </View>
+                            {/* Payment & Delivery Info */}
+                            <View style={[styles.infoSection, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}>
+                                <View style={styles.infoHeader}>
+                                    <Ionicons name="information-circle" size={18} color="#FF6B35" />
+                                    <Text style={[styles.infoTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
+                                        {translations.orderInfo}
+                                    </Text>
+                                </View>
+
+                                <View style={styles.infoGrid}>
+                                    <View style={[styles.infoCard, { backgroundColor: isDarkMode ? '#2a2a2a' : '#f8f9fa' }]}>
+                                        <View style={[styles.infoCardIcon, { backgroundColor: '#4CAF50' }]}>
+                                            <Ionicons name="card" size={16} color="#fff" />
                                         </View>
+                                        <Text style={[styles.infoCardLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
+                                            {translations.payment}
+                                        </Text>
+                                        <Text style={[styles.infoCardValue, { color: isDarkMode ? '#fff' : '#333' }]} numberOfLines={2}>
+                                            {selectedOrder?.paymentMethod || translations.cardNotFound}
+                                        </Text>
                                     </View>
 
-                                    <View style={[styles.paymentDetailRow, { borderTopWidth: 1, borderTopColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
-                                        <View style={styles.paymentDetailItem}>
-                                            <Ionicons name="location-outline" size={20} color="#FF6B35" />
-                                            <View style={styles.paymentDetailInfo}>
-                                                <Text style={[styles.paymentDetailLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-                                                    {translations.deliveryAddress}
-                                                </Text>
-                                                <Text style={[styles.paymentDetailValue, { color: isDarkMode ? '#fff' : '#333' }]} numberOfLines={3}>
-                                                    {selectedOrder?.shippingAddress || translations.addressNotFound}
-                                                </Text>
-                                            </View>
+                                    <View style={[styles.infoCard, { backgroundColor: isDarkMode ? '#2a2a2a' : '#f8f9fa' }]}>
+                                        <View style={[styles.infoCardIcon, { backgroundColor: '#2196F3' }]}>
+                                            <Ionicons name="location" size={16} color="#fff" />
                                         </View>
+                                        <Text style={[styles.infoCardLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
+                                            {translations.delivery}
+                                        </Text>
+                                        <Text style={[styles.infoCardValue, { color: isDarkMode ? '#fff' : '#333' }]} numberOfLines={3}>
+                                            {selectedOrder?.shippingAddress || translations.addressNotFound}
+                                        </Text>
                                     </View>
                                 </View>
                             </View>
 
-                            {/* Total Summary */}
-                            <View style={[styles.totalSummaryCard, { backgroundColor: isDarkMode ? '#333' : '#f8f9fa', borderColor: isDarkMode ? '#444' : '#e0e0e0' }]}>
-                                <View style={styles.totalSummaryRow}>
-                                    <Text style={[styles.totalSummaryLabel, { color: isDarkMode ? '#fff' : '#333' }]}>{translations.totalAmount}</Text>
-                                    <Text style={[styles.totalSummaryValue, { color: '#FF6B35' }]}>{selectedOrder?.totalAmount} ₺</Text>
+                            {/* Total Amount */}
+                            <View style={[styles.totalSection, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}>
+                                <View style={styles.totalContainer}>
+                                    <View style={styles.totalLeft}>
+                                        <Text style={[styles.totalLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
+                                            {translations.totalAmount}
+                                        </Text>
+                                        <Text style={[styles.totalAmount, { color: isDarkMode ? '#fff' : '#333' }]}>
+                                            {selectedOrder?.totalAmount} ₺
+                                        </Text>
+                                    </View>
+                                    <View style={[styles.totalIcon, { backgroundColor: '#FF6B35' }]}>
+                                        <Ionicons name="checkmark" size={24} color="#fff" />
+                                    </View>
                                 </View>
                             </View>
+
                         </ScrollView>
                     </View>
                 </View>
@@ -488,37 +502,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.3,
         marginLeft: 6,
     },
-    placeholder: {
-        width: 40,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingTop: 50,
-        paddingBottom: 20,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-    },
-    backButton: {
-        padding: 8,
-        borderRadius: 8,
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    placeholder: {
-        width: 40,
-    },
+
     listContainer: {
         padding: 20,
     },
@@ -1093,71 +1077,7 @@ const styles = StyleSheet.create({
         padding: 8,
         borderRadius: 8,
     },
-    statusSection: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 20,
-        backgroundColor: '#f8f9fa',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
-    },
-    statusIndicator: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 16,
-    },
-    statusInfo: {
-        flex: 1,
-    },
-    statusTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 4,
-    },
-    statusDate: {
-        fontSize: 14,
-        color: '#666',
-    },
-    detailsSection: {
-        padding: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
-    },
-    detailRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    detailItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    detailLabel: {
-        fontSize: 14,
-        color: '#666',
-        marginLeft: 8,
-    },
-    detailValue: {
-        fontSize: 14,
-        color: '#333',
-        fontWeight: '600',
-    },
-    itemsSection: {
-        padding: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-        marginLeft: 8,
-    },
+
     itemCard: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1191,34 +1111,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#007BFF',
     },
-    modalTotalSection: {
-        padding: 20,
-        backgroundColor: '#f8f9fa',
-    },
-    totalRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        elevation: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-    },
-    totalLabel: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    totalValue: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#007BFF',
-    },
+
 
     // Payment Details Styles
     paymentSection: {
@@ -1257,5 +1150,261 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         lineHeight: 22,
+    },
+
+    // New Modern Redesign Styles
+    orderSummaryCard: {
+        marginHorizontal: 20,
+        marginTop: 20,
+        padding: 20,
+        borderRadius: 16,
+        borderLeftWidth: 4,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    summaryHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    summaryIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    summaryInfo: {
+        flex: 1,
+    },
+    summaryTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    summarySubtitle: {
+        fontSize: 14,
+        opacity: 0.8,
+    },
+
+    statusSection: {
+        marginHorizontal: 20,
+        marginTop: 16,
+        padding: 20,
+        borderRadius: 16,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+    },
+    statusHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    statusTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 8,
+    },
+    statusBadgeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        alignSelf: 'flex-start',
+    },
+    statusBadgeText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginLeft: 6,
+    },
+
+    productsSection: {
+        marginHorizontal: 20,
+        marginTop: 16,
+        borderRadius: 16,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        overflow: 'hidden',
+    },
+    productsSectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    productsHeaderLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    productsTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 8,
+    },
+    productsCount: {
+        backgroundColor: '#FF6B35',
+        borderRadius: 12,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        minWidth: 24,
+        alignItems: 'center',
+    },
+    productsCountText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+
+    productCard: {
+        flexDirection: 'row',
+        padding: 16,
+        alignItems: 'center',
+    },
+    productImage: {
+        width: 60,
+        height: 60,
+        borderRadius: 12,
+        marginRight: 16,
+    },
+    productInfo: {
+        flex: 1,
+    },
+    productName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    productCategory: {
+        fontSize: 12,
+        marginBottom: 8,
+        opacity: 0.7,
+    },
+    productDetails: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    productDetailChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+    },
+    chipText: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginLeft: 4,
+    },
+    productPricing: {
+        alignItems: 'flex-end',
+    },
+    productPrice: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+
+    infoSection: {
+        marginHorizontal: 20,
+        marginTop: 16,
+        borderRadius: 16,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        overflow: 'hidden',
+    },
+    infoHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    infoTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 8,
+    },
+    infoGrid: {
+        padding: 20,
+        gap: 16,
+    },
+    infoCard: {
+        padding: 16,
+        borderRadius: 12,
+        marginBottom: 8,
+    },
+    infoCardIcon: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    infoCardLabel: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginBottom: 6,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    infoCardValue: {
+        fontSize: 14,
+        fontWeight: '600',
+        lineHeight: 20,
+    },
+
+    totalSection: {
+        marginHorizontal: 20,
+        marginTop: 16,
+        marginBottom: 20,
+        borderRadius: 16,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+    },
+    totalContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 24,
+    },
+    totalLeft: {
+        flex: 1,
+    },
+    totalLabel: {
+        fontSize: 14,
+        fontWeight: '500',
+        marginBottom: 4,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    totalAmount: {
+        fontSize: 24,
+        fontWeight: 'bold',
+    },
+    totalIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });

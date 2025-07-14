@@ -91,7 +91,9 @@ export default function ProductDetail({ route }) {
     const availableImages = [
         getImageUrl(product.frontImagePath || product.frontImageUrl || product.image),
         getImageUrl(product.backImagePath || product.backImageUrl || product.image)
-    ].filter(img => img); // null/undefined olanları filtrele    // API'den ürün ve kategori verilerini çek
+    ].filter(img => img); // null/undefined olanları filtrele
+
+    // API'den ürün ve kategori verilerini çek
     useEffect(() => {
         const fetchProductAndCategoryData = async () => {
             try {

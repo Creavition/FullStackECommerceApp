@@ -22,11 +22,13 @@ export default function Cart() {
   useEffect(() => {
     console.log('Current cartItems:', cartItems);
     cartItems.forEach((item, index) => {
+      const keyExtracted = `${item.id}-${item.size || 'nosize'}-${index}`;
       console.log(`Item ${index}:`, {
         id: item.id,
         name: item.name,
         size: item.size,
-        amount: item.amount
+        amount: item.amount,
+        generatedKey: keyExtracted
       });
     });
   }, [cartItems]);
@@ -277,7 +279,7 @@ export default function Cart() {
       <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#333' }]}>{translations.cart || 'Cart'}</Text>
       <FlatList
         data={cartItems}
-        keyExtractor={(item, index) => item.id + index + language}
+        keyExtractor={(item, index) => `${item.id}-${item.size || 'nosize'}-${index}`}
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 20 }}
         extraData={language}

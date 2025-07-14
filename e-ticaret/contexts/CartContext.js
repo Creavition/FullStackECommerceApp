@@ -35,7 +35,7 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    // ✅ DÜZELTME: ProductDetail'dan gelen ürün objesi doğrudan kullanılacak
+    
     const addToCart = (productOrItem, selectedSize = null) => {
         console.log('addToCart called with:', { productOrItem, selectedSize });
 
@@ -52,7 +52,7 @@ export const CartProvider = ({ children }) => {
                 backImageUrl: productOrItem.backImageUrl,
                 image: productOrItem.image,
                 price: productOrItem.price,
-                size: selectedSize, // ✅ Seçilen beden
+                size: selectedSize, 
                 amount: 1,
                 category: productOrItem.category
             };
@@ -68,7 +68,7 @@ export const CartProvider = ({ children }) => {
                 backImageUrl: productOrItem.backImageUrl,
                 image: productOrItem.image,
                 price: productOrItem.price,
-                size: productOrItem.size, // ✅ Zaten var olan beden
+                size: productOrItem.size,
                 amount: productOrItem.amount || 1,
                 category: productOrItem.category
             };

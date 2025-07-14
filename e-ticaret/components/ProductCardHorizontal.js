@@ -305,6 +305,18 @@ const styles = StyleSheet.create({
     },
 });
 
-ProductCardHorizontal.displayName = 'ProductCardHorizontal';
+// Equality check function to prevent unnecessary re-renders
+const areEqual = (prevProps, nextProps) => {
+    return (
+        prevProps.item.id === nextProps.item.id &&
+        prevProps.isDarkMode === nextProps.isDarkMode &&
+        prevProps.favoriteItems?.[prevProps.item.id] === nextProps.favoriteItems?.[nextProps.item.id] &&
+        prevProps.item.isFavorite === nextProps.item.isFavorite
+    );
+};
 
-export default ProductCardHorizontal;
+const ProductCardHorizontalWithMemo = memo(ProductCardHorizontal, areEqual);
+
+ProductCardHorizontalWithMemo.displayName = 'ProductCardHorizontal';
+
+export default ProductCardHorizontalWithMemo;

@@ -1,8 +1,8 @@
 // screens/Search.js
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
-    View, Text, TextInput, StyleSheet, FlatList, StatusBar, TouchableOpacity
+    View, Text, TextInput, StyleSheet, FlatList, StatusBar, TouchableOpacity, ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -20,6 +20,7 @@ import { parsePrice } from '../utils/productUtils';
 export default function Search() {
     const navigation = useNavigation();
     const route = useRoute();
+    const scrollViewRef = useRef(null); // ScrollView için ref
 
     const { favoriteItems, toggleFavorite } = useFavorites() || { favoriteItems: {}, toggleFavorite: () => { } };
     const { filters, updateFilters } = useFilter() || {
@@ -84,6 +85,19 @@ export default function Search() {
             });
         }
     }, [route.params?.selectedCategory, route.params?.timestamp]); // timestamp'i de dinle
+
+    // Arama tab'ına tıklandığında en üste scroll yapma
+    useFocusEffect(
+        useCallback(() => {
+            const unsubscribe = navigation.addListener('tabPress', (e) => {
+                if (scrollViewRef.current) {
+                    scrollViewRef.current.scrollToOffset({ offset: 0, animated: true });
+                }
+            });
+
+            return unsubscribe;
+        }, [navigation])
+    );
 
     // useMemo'ları stable hale getir
     const flashSaleProducts = useMemo(() => {
@@ -274,8 +288,9 @@ export default function Search() {
         );
     }
 
-    return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
+    // Header component for FlatList
+    const ListHeaderComponent = useCallback(() => (
+        <View>
             <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.statusBarBackground} />
 
             {/* Arama ve Sıralama */}
@@ -309,28 +324,31 @@ export default function Search() {
                     {filteredProducts.length} {translations?.productsFound || 'products found'}
                 </Text>
             </View>
+        </View>
+    ), [isDarkMode, theme, searchText, translations, clearSearch, categories, products, updateFilters, setSortOption, filteredProducts.length]);
 
-            {/* Ana Ürün Listesi */}
-            <View style={styles.mainListContainer}>
-                <FlatList
-                    data={filteredProducts}
-                    keyExtractor={keyExtractor}
-                    renderItem={renderItem}
-                    numColumns={2}
-                    columnWrapperStyle={styles.columnWrapper}
-                    contentContainerStyle={styles.productList}
-                    showsVerticalScrollIndicator={false}
-                    removeClippedSubviews={false}
-                    maxToRenderPerBatch={20}
-                    updateCellsBatchingPeriod={100}
-                    initialNumToRender={20}
-                    windowSize={10}
-                    keyboardShouldPersistTaps="handled"
-                    getItemLayout={getItemLayout}
-                    ListEmptyComponent={EmptyComponent}
-                    onEndReachedThreshold={0.5}
-                />
-            </View>
+    return (
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <FlatList
+                ref={scrollViewRef}
+                data={filteredProducts}
+                keyExtractor={keyExtractor}
+                renderItem={renderItem}
+                numColumns={2}
+                columnWrapperStyle={styles.columnWrapper}
+                contentContainerStyle={styles.productList}
+                showsVerticalScrollIndicator={false}
+                removeClippedSubviews={false}
+                maxToRenderPerBatch={20}
+                updateCellsBatchingPeriod={100}
+                initialNumToRender={20}
+                windowSize={10}
+                keyboardShouldPersistTaps="handled"
+                getItemLayout={getItemLayout}
+                ListHeaderComponent={ListHeaderComponent}
+                ListEmptyComponent={EmptyComponent}
+                onEndReachedThreshold={0.5}
+            />
         </View>
     );
 }

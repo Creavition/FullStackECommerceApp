@@ -6,7 +6,6 @@ import {
     Image, ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
 import { useFavorites } from '../contexts/FavoritesContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -20,6 +19,7 @@ import { parsePrice, logProductDetails } from '../utils/productUtils';
 export default function Home() {
     const navigation = useNavigation();
     const isMounted = useRef(true);
+    const scrollViewRef = useRef(null); // ScrollView için ref
 
     const { favoriteItems, toggleFavorite } = useFavorites();
     const { translations, language } = useLanguage();
@@ -30,6 +30,9 @@ export default function Home() {
     const [categories] = useState(['Jacket', 'Pants', 'Shoes', 'T-Shirt']); // Static categories for now
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+    // Show loading only for initial load - performance optimization
+    const isLoading = useMemo(() => isInitialLoad && loading, [isInitialLoad, loading]);
+
     // Component mount/unmount tracking
     useEffect(() => {
         isMounted.current = true;
@@ -38,37 +41,40 @@ export default function Home() {
         };
     }, []);
 
-    // Initial data loading
+    // Initial data loading - sadece bir kez çalışsın
     useEffect(() => {
         if (isInitialLoad) {
             fetchProducts().finally(() => {
-                setIsInitialLoad(false);
+                if (isMounted.current) {
+                    setIsInitialLoad(false);
+                }
             });
         }
-    }, [isInitialLoad, fetchProducts]);
+    }, [isInitialLoad]); // fetchProducts dependency'sini kaldırdık
 
-    // Show loading only for initial load
-    const isLoading = isInitialLoad && loading;
-
-    // Basit kategori filtreleme
+    // Memoized products - sadece products değiştiğinde hesaplanır ve stable array döndürür
     const flashSaleProducts = useMemo(() => {
-        const productList = products || [];
-        return productList.filter(p => p && p.badge_FlashSale);
+        if (!products || products.length === 0) return [];
+        const filtered = products.filter(p => p?.badge_FlashSale);
+        return filtered.slice(0, 10); // Slice'ı burada yap
     }, [products]);
 
     const fastDeliveryProducts = useMemo(() => {
-        const productList = products || [];
-        return productList.filter(p => p && p.label_FastDelivery);
+        if (!products || products.length === 0) return [];
+        const filtered = products.filter(p => p?.label_FastDelivery);
+        return filtered.slice(0, 10); // Slice'ı burada yap
     }, [products]);
 
     const bestSellerProducts = useMemo(() => {
-        const productList = products || [];
-        return productList.filter(p => p && p.label_BestSeller);
+        if (!products || products.length === 0) return [];
+        const filtered = products.filter(p => p?.label_BestSeller);
+        return filtered.slice(0, 10); // Slice'ı burada yap
     }, [products]);
 
     const bestSellingProducts = useMemo(() => {
-        const productList = products || [];
-        return productList.filter(p => p && p.badge_BestSelling);
+        if (!products || products.length === 0) return [];
+        const filtered = products.filter(p => p?.badge_BestSelling);
+        return filtered.slice(0, 10); // Slice'ı burada yap
     }, [products]);
 
     // Categories listesi - başına "All" seçeneği eklenir
@@ -126,45 +132,158 @@ export default function Home() {
         });
     }, [navigation, updateFilters, translations.all]);
 
-    // Render functions - sadece gerekli dependency'ler (favoriteItems kaldırıldı)
-    const renderHorizontalItem = useCallback(({ item }) => (
-        <ProductCardHorizontal
-            item={item}
-            onProductPress={handleProductPress}
-            onFavoritePress={handleFavoritePress}
-            translations={translations}
-            isDarkMode={isDarkMode}
-            favoriteItems={favoriteItems}
-        />
-    ), [handleProductPress, handleFavoritePress, translations, isDarkMode]);
+    // Tüm içeriği bir data array'i olarak hazırla
+    const homeData = useMemo(() => {
+        const data = [];
 
-    const renderCategory = useCallback(({ item }) => {
-        const allOption = translations.all || 'All';
-        const isAllOption = item === allOption;
+        // Categories section
+        data.push({ type: 'categories', data: categoriesWithAll });
 
-        return (
-            <TouchableOpacity
-                style={[
-                    styles.categoryItem,
-                    {
-                        backgroundColor: theme.cardBackground,
-                    }
-                ]}
-                onPress={() => handleCategoryPress(item)}
-            >
-                <Text style={[
-                    styles.categoryText,
-                    {
-                        color: theme.text,
-                        fontWeight: '500'
-                    }
-                ]}>
-                    {item}
-                </Text>
-            </TouchableOpacity>
-        );
-    }, [handleCategoryPress, theme, translations.all]);
+        // Flash Sale section
+        if (flashSaleProducts.length > 0) {
+            data.push({
+                type: 'section',
+                title: translations.flashSale || 'Flash Sale',
+                icon: 'flash',
+                seeAllRoute: 'FlashSale',
+                products: flashSaleProducts,
+                keyPrefix: 'flash'
+            });
+        }
 
+        // Best Selling section  
+        if (bestSellingProducts.length > 0) {
+            data.push({
+                type: 'section',
+                title: translations.bestSelling || 'Best Selling',
+                icon: 'trending-up',
+                seeAllRoute: 'BestSeller',
+                products: bestSellingProducts,
+                keyPrefix: 'bestselling'
+            });
+        }
+
+        // Fast Delivery section
+        if (fastDeliveryProducts.length > 0) {
+            data.push({
+                type: 'section',
+                title: translations.fastDelivery || 'Fast Delivery',
+                icon: 'rocket',
+                seeAllRoute: 'FastDelivery',
+                products: fastDeliveryProducts,
+                keyPrefix: 'fastdelivery'
+            });
+        }
+
+        return data;
+    }, [categoriesWithAll, flashSaleProducts, bestSellingProducts, fastDeliveryProducts, translations]);
+
+    // Ana render item function
+    const renderMainItem = useCallback(({ item, index }) => {
+        if (item.type === 'categories') {
+            return (
+                <View style={styles.section}>
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                        {translations.categories || 'Categories'}
+                    </Text>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.categoriesList}
+                    >
+                        {item.data.map((category, catIndex) => (
+                            <TouchableOpacity
+                                key={`category-${catIndex}-${category}`}
+                                style={[
+                                    styles.categoryItem,
+                                    {
+                                        backgroundColor: theme.cardBackground,
+                                    }
+                                ]}
+                                onPress={() => handleCategoryPress(category)}
+                            >
+                                <Text style={[
+                                    styles.categoryText,
+                                    {
+                                        color: theme.text,
+                                        fontWeight: '500'
+                                    }
+                                ]}>
+                                    {category}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+            );
+        }
+
+        if (item.type === 'section') {
+            return (
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <View style={styles.sectionTitleContainer}>
+                            <Ionicons name={item.icon} size={20} color={theme.primary} style={styles.sectionIcon} />
+                            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                                {item.title}
+                            </Text>
+                        </View>
+                        <TouchableOpacity onPress={() => navigation.navigate(item.seeAllRoute)}>
+                            <Text style={[styles.seeAll, { color: theme.primary }]}>
+                                {translations.seeAll || 'See All'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                    >
+                        {item.products.map((product, prodIndex) => (
+                            <ProductCardHorizontal
+                                key={`${item.keyPrefix}-${product.id}-${prodIndex}`}
+                                item={product}
+                                onProductPress={handleProductPress}
+                                onFavoritePress={handleFavoritePress}
+                                translations={translations}
+                                isDarkMode={isDarkMode}
+                                favoriteItems={favoriteItems}
+                            />
+                        ))}
+                    </ScrollView>
+                </View>
+            );
+        }
+
+        return null;
+    }, [theme, translations, navigation, handleCategoryPress, handleProductPress, handleFavoritePress, isDarkMode, favoriteItems]);
+
+    // useFocusEffect yerine navigation listener kullan - sadece gerektiğinde data refresh
+    useFocusEffect(
+        useCallback(() => {
+            // Sadece favoriler güncellensin, tüm ürünler yeniden yüklenmesin
+            console.log('Home screen focused - skipping full product refresh');
+            return () => {
+                // Cleanup function
+            };
+        }, [])
+    );
+
+    // Home tab'a basıldığında en üste kaydır
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('tabPress', (e) => {
+            // Eğer zaten Home screen'deysek, en üste kaydır
+            if (navigation.isFocused()) {
+                scrollViewRef.current?.scrollToOffset({
+                    offset: 0,
+                    animated: true,
+                });
+            }
+        });
+
+        return unsubscribe;
+    }, [navigation]);
+
+    // Early return for loading state - after all hooks
     if (isLoading) {
         return (
             <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
@@ -182,103 +301,18 @@ export default function Home() {
                 barStyle={isDarkMode ? "light-content" : "dark-content"}
             />
 
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-
-
-
-                {/* Categories */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                        {translations.categories || 'Categories'}
-                    </Text>
-                    <FlatList
-                        data={categoriesWithAll}
-                        renderItem={renderCategory}
-                        keyExtractor={(item, index) => `category-${index}-${item}`}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={styles.categoriesList}
-                    />
-                </View>
-
-                {/* Flash Sale */}
-                {flashSaleProducts.length > 0 && (
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <View style={styles.sectionTitleContainer}>
-                                <Ionicons name="flash" size={20} color={theme.primary} style={styles.sectionIcon} />
-                                <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                                    {translations.flashSale || 'Flash Sale'}
-                                </Text>
-                            </View>
-                            <TouchableOpacity onPress={() => navigation.navigate('FlashSale')}>
-                                <Text style={[styles.seeAll, { color: theme.primary }]}>
-                                    {translations.seeAll || 'See All'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                        <FlatList
-                            data={flashSaleProducts.slice(0, 10)}
-                            renderItem={renderHorizontalItem}
-                            keyExtractor={item => `flash-${item.id}`}
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                        />
-                    </View>
-                )}
-
-                {/* Best Selling */}
-                {bestSellingProducts.length > 0 && (
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <View style={styles.sectionTitleContainer}>
-                                <Ionicons name="trending-up" size={20} color={theme.primary} style={styles.sectionIcon} />
-                                <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                                    {translations.bestSelling || 'Best Selling'}
-                                </Text>
-                            </View>
-                            <TouchableOpacity onPress={() => navigation.navigate('BestSeller')}>
-                                <Text style={[styles.seeAll, { color: theme.primary }]}>
-                                    {translations.seeAll || 'See All'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                        <FlatList
-                            data={bestSellingProducts.slice(0, 10)}
-                            renderItem={renderHorizontalItem}
-                            keyExtractor={item => `best-${item.id}`}
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                        />
-                    </View>
-                )}
-
-                {/* Fast Delivery */}
-                {fastDeliveryProducts.length > 0 && (
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <View style={styles.sectionTitleContainer}>
-                                <Ionicons name="rocket" size={20} color={theme.primary} style={styles.sectionIcon} />
-                                <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                                    {translations.fastDelivery || 'Fast Delivery'}
-                                </Text>
-                            </View>
-                            <TouchableOpacity onPress={() => navigation.navigate('FastDelivery')}>
-                                <Text style={[styles.seeAll, { color: theme.primary }]}>
-                                    {translations.seeAll || 'See All'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                        <FlatList
-                            data={fastDeliveryProducts.slice(0, 10)}
-                            renderItem={renderHorizontalItem}
-                            keyExtractor={item => `fast-${item.id}`}
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                        />
-                    </View>
-                )}
-            </ScrollView>
+            <FlatList
+                ref={scrollViewRef}
+                data={homeData}
+                renderItem={renderMainItem}
+                keyExtractor={(item, index) => `home-${item.type}-${index}`}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.mainContainer}
+                removeClippedSubviews={false}
+                initialNumToRender={3}
+                maxToRenderPerBatch={3}
+                windowSize={5}
+            />
         </View>
     );
 }
@@ -291,8 +325,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    scrollView: {
-        flex: 1,
+    mainContainer: {
+        paddingBottom: 20,
     },
     header: {
         paddingTop: 50,
@@ -310,9 +344,9 @@ const styles = StyleSheet.create({
         resizeMode: 'contain',
     },
     section: {
-        marginVertical: 15,
+        marginVertical: 20,
         paddingHorizontal: 15,
-        paddingVertical: 15
+        paddingVertical: 20
     },
     sectionHeader: {
         flexDirection: 'row',
