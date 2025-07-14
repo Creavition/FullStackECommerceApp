@@ -139,19 +139,19 @@ export default function Payment() {
   const handlePayment = async () => {
     // Sepet boşluk kontrolü
     if (cartItems.length === 0) {
-      Alert.alert(translations.error || 'Hata', 'Sepetiniz boş!');
+      Alert.alert(translations.error || 'Hata', translations.cartEmpty || 'Sepetiniz boş!');
       return;
     }
 
     // Kart seçimi kontrolü
     if (!selectedCard) {
-      Alert.alert(translations.error || 'Hata', 'Lütfen bir kart seçin!');
+      Alert.alert(translations.error || 'Hata', translations.pleaseSelectCard || 'Lütfen bir kart seçin!');
       return;
     }
 
     // Adres seçimi kontrolü
     if (!selectedAddress) {
-      Alert.alert(translations.error || 'Hata', 'Lütfen bir teslimat adresi seçin!');
+      Alert.alert(translations.error || 'Hata', translations.pleaseSelectAddress || 'Lütfen bir teslimat adresi seçin!');
       return;
     }
 

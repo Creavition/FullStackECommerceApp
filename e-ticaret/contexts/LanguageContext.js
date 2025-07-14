@@ -145,6 +145,7 @@ const translations = {
         viewAll: 'View All',
         productsFound: 'products found',
         noProductsFound: 'No products found',
+        allProducts: 'All Products',
 
         // Product Detail
         productDetail: 'Product Detail',
@@ -152,6 +153,8 @@ const translations = {
         addedToCart: 'Added to Cart ✓',
         productAddedToCart: 'Product added to cart!',
         goToCart: 'Go to Cart',
+        pleaseSelectSize: 'Please select a size',
+        sizeNotAvailable: 'This size is not available',
 
         // Filter
         minAmount: 'Min Amount',
@@ -182,6 +185,9 @@ const translations = {
         backToHome: 'Back to Home',
         paymentError: 'An error occurred during payment.',
         yourPaymentSecure: 'Your payment information is secure and encrypted',
+        cartEmpty: 'Your cart is empty!',
+        pleaseSelectCard: 'Please select a card!',
+        pleaseSelectAddress: 'Please select a delivery address!',
 
         // Credit Card
         creditCard: 'CREDIT CARD',
@@ -189,6 +195,57 @@ const translations = {
         cardNumber: 'Card Number',
         expiryMMYY: 'Expiry (MM/YY)',
         cvv: 'CVV',
+
+        // Order History Additional
+        startShopping: 'Start Shopping',
+        clearHistory: 'Clear History',
+        clearHistoryConfirm: 'Are you sure you want to clear all order history? This action cannot be undone.',
+        historyCleared: 'Order history has been cleared successfully.',
+        clearHistoryError: 'Failed to clear order history. Please try again.',
+
+        // Reviews and Ratings
+        rateProduct: 'Rate Product',
+        viewReviews: 'View Reviews',
+        writeReview: 'Write Review',
+        submitReview: 'Submit Review',
+        reviewSubmitted: 'Review submitted successfully!',
+        pleaseSelectRating: 'Please select a rating',
+        pleaseWriteReview: 'Please write a review',
+        reviews: 'Reviews',
+        noReviews: 'No reviews yet',
+        beFirstToReview: 'Be the first to review this product',
+        stars: 'stars',
+        star: 'star',
+        reviewPlaceholder: 'Write your review here...',
+        reviewTooLong: 'Review can be maximum 1000 characters.',
+        pleaseLogin: 'Please login and try again.',
+        invalidSession: 'Invalid session. Please login again.',
+        sessionExpired: 'Your session has expired. Please login again.',
+        reviewError: 'An error occurred. Please try again.',
+        yourRating: 'Your Rating',
+        yourReview: 'Your Review',
+        giveRating: 'Give a rating',
+        veryBad: 'Very Bad',
+        bad: 'Bad',
+        average: 'Average',
+        good: 'Good',
+        excellent: 'Excellent',
+        reviewPlaceholderText: 'Share your thoughts about this product...',
+        characters: 'characters',
+        sending: 'Sending...',
+        send: 'Send',
+
+        // Additional UI Elements
+        close: 'Close',
+        edit: 'Edit',
+        delete: 'Delete',
+        save: 'Save',
+        update: 'Update',
+        add: 'Add',
+        remove: 'Remove',
+        confirm: 'Confirm',
+        yes: 'Yes',
+        no: 'No',
     },
     tr: {
         // Account Screen
@@ -330,6 +387,7 @@ const translations = {
         viewAll: 'Tümü',
         productsFound: 'ürün bulundu',
         noProductsFound: 'Ürün bulunamadı',
+        allProducts: 'Tüm Ürünler',
 
         // Product Detail
         productDetail: 'Ürün Detayı',
@@ -337,6 +395,8 @@ const translations = {
         addedToCart: 'Sepete Eklendi ✓',
         productAddedToCart: 'Ürün sepete eklendi!',
         goToCart: 'Sepete Git',
+        pleaseSelectSize: 'Lütfen bir beden seçin',
+        sizeNotAvailable: 'Bu beden mevcut değil',
 
         // Filter
         minAmount: 'Min Tutar',
@@ -366,6 +426,9 @@ const translations = {
         backToHome: 'Ana Sayfaya Dön',
         paymentError: 'Ödeme işlemi sırasında bir hata oluştu.',
         yourPaymentSecure: 'Ödeme bilgileriniz güvenli ve şifrelidir',
+        cartEmpty: 'Sepetiniz boş!',
+        pleaseSelectCard: 'Lütfen bir kart seçin!',
+        pleaseSelectAddress: 'Lütfen bir teslimat adresi seçin!',
 
         // Credit Card
         creditCard: 'KREDİ KARTI',
@@ -373,6 +436,57 @@ const translations = {
         cardNumber: 'Kart Numarası',
         expiryMMYY: 'Son Kullanma (AA/YY)',
         cvv: 'CVV',
+
+        // Order History Additional
+        startShopping: 'Alışverişe Başla',
+        clearHistory: 'Geçmişi Temizle',
+        clearHistoryConfirm: 'Tüm sipariş geçmişini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+        historyCleared: 'Sipariş geçmişi başarıyla temizlendi.',
+        clearHistoryError: 'Sipariş geçmişi temizlenirken hata oluştu. Lütfen tekrar deneyin.',
+
+        // Reviews and Ratings
+        rateProduct: 'Ürünü Değerlendir',
+        viewReviews: 'Değerlendirmeleri Gör',
+        writeReview: 'Değerlendirme Yaz',
+        submitReview: 'Değerlendirmeyi Gönder',
+        reviewSubmitted: 'Değerlendirmeniz başarıyla gönderildi!',
+        pleaseSelectRating: 'Lütfen bir puan verin.',
+        pleaseWriteReview: 'Lütfen bir yorum yazın.',
+        reviews: 'Değerlendirmeler',
+        noReviews: 'Henüz değerlendirme yok',
+        beFirstToReview: 'Bu ürünü değerlendiren ilk kişi olun',
+        stars: 'yıldız',
+        star: 'yıldız',
+        reviewPlaceholder: 'Değerlendirmenizi buraya yazın...',
+        reviewTooLong: 'Yorum en fazla 1000 karakter olabilir.',
+        pleaseLogin: 'Lütfen giriş yapın ve tekrar deneyin.',
+        invalidSession: 'Geçersiz oturum. Lütfen tekrar giriş yapın.',
+        sessionExpired: 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.',
+        reviewError: 'Bir hata oluştu. Lütfen tekrar deneyin.',
+        yourRating: 'Puanınız',
+        yourReview: 'Yorumunuz',
+        giveRating: 'Puan verin',
+        veryBad: 'Çok Kötü',
+        bad: 'Kötü',
+        average: 'Orta',
+        good: 'İyi',
+        excellent: 'Mükemmel',
+        reviewPlaceholderText: 'Bu ürün hakkındaki düşüncelerinizi paylaşın...',
+        characters: 'karakter',
+        sending: 'Gönderiliyor...',
+        send: 'Gönder',
+
+        // Additional UI Elements
+        close: 'Kapat',
+        edit: 'Düzenle',
+        delete: 'Sil',
+        save: 'Kaydet',
+        update: 'Güncelle',
+        add: 'Ekle',
+        remove: 'Kaldır',
+        confirm: 'Onayla',
+        yes: 'Evet',
+        no: 'Hayır',
     }
 };
 

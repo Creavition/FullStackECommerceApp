@@ -384,8 +384,8 @@ const styles = StyleSheet.create({
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#ddd',
+        borderWidth: 2,
+        borderColor: '#000',
         borderRadius: 12,
         backgroundColor: '#f9f9f9',
         paddingHorizontal: 15,

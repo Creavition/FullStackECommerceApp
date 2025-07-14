@@ -235,7 +235,7 @@ export default function ProductDetail({ route }) {
         console.log('handleAddToCart called with selectedSize:', selectedSize);
 
         if (!selectedSize) {
-            Alert.alert(translations.error, 'Lütfen bir beden seçin');
+            Alert.alert(translations.error, translations.pleaseSelectSize || 'Lütfen bir beden seçin');
             return;
         }
 
@@ -364,7 +364,7 @@ export default function ProductDetail({ route }) {
                     onPress={handleRateProduct}
                 >
                     <Ionicons name="star" size={20} color="#FF8C00" />
-                    <Text style={styles.rateButtonText}>Ürünü Değerlendir</Text>
+                    <Text style={styles.rateButtonText}>{translations.rateProduct || 'Ürünü Değerlendir'}</Text>
                 </TouchableOpacity>
 
                 {productData.reviewCount > 0 && (
@@ -373,7 +373,7 @@ export default function ProductDetail({ route }) {
                         onPress={handleViewReviews}
                     >
                         <Ionicons name="chatbubble-outline" size={18} color="#FF8C00" />
-                        <Text style={styles.viewReviewsButtonText}>Değerlendirmeleri Gör</Text>
+                        <Text style={styles.viewReviewsButtonText}>{translations.viewReviews || 'Değerlendirmeleri Gör'}</Text>
                     </TouchableOpacity>
                 )}
             </View>

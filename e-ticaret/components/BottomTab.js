@@ -44,7 +44,7 @@ export default function BottomTab() {
                 name="Search"
                 component={Search}
                 options={{
-                    tabBarLabel: "Arama",
+                    tabBarLabel: translations.search || "Arama",
                     tabBarIcon: ({ focused, color, size }) => (
                         <Ionicons
                             name={focused ? 'search' : 'search-outline'}

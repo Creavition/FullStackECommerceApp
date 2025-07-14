@@ -320,7 +320,7 @@ export default function OrderHistory() {
                         onPress={() => navigation.navigate('HomeScreen', { screen: 'Home' })}
                     >
                         <Ionicons name="storefront" size={20} color="#fff" />
-                        <Text style={styles.shopButtonText}>Start Shopping</Text>
+                        <Text style={styles.shopButtonText}>{translations.startShopping || 'Start Shopping'}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
