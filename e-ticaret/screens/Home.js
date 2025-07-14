@@ -257,17 +257,6 @@ export default function Home() {
         return null;
     }, [theme, translations, navigation, handleCategoryPress, handleProductPress, handleFavoritePress, isDarkMode, favoriteItems]);
 
-    // useFocusEffect yerine navigation listener kullan - sadece gerektiğinde data refresh
-    useFocusEffect(
-        useCallback(() => {
-            // Sadece favoriler güncellensin, tüm ürünler yeniden yüklenmesin
-            console.log('Home screen focused - skipping full product refresh');
-            return () => {
-                // Cleanup function
-            };
-        }, [])
-    );
-
     // Home tab'a basıldığında en üste kaydır
     useEffect(() => {
         const unsubscribe = navigation.addListener('tabPress', (e) => {
@@ -283,16 +272,16 @@ export default function Home() {
         return unsubscribe;
     }, [navigation]);
 
-    // Early return for loading state - after all hooks
-    if (isLoading) {
-        return (
-            <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
-                <Text style={[styles.loadingText, { color: theme.text }]}>
-                    {translations.loading || 'Loading...'}
-                </Text>
-            </View>
-        );
-    }
+    // useFocusEffect yerine navigation listener kullan - sadece gerektiğinde data refresh
+    useFocusEffect(
+        useCallback(() => {
+            // Sadece favoriler güncellensin, tüm ürünler yeniden yüklenmesin
+            console.log('Home screen focused - skipping full product refresh');
+            return () => {
+                // Cleanup function
+            };
+        }, [])
+    );
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -301,18 +290,26 @@ export default function Home() {
                 barStyle={isDarkMode ? "light-content" : "dark-content"}
             />
 
-            <FlatList
-                ref={scrollViewRef}
-                data={homeData}
-                renderItem={renderMainItem}
-                keyExtractor={(item, index) => `home-${item.type}-${index}`}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.mainContainer}
-                removeClippedSubviews={false}
-                initialNumToRender={3}
-                maxToRenderPerBatch={3}
-                windowSize={5}
-            />
+            {isLoading ? (
+                <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
+                    <Text style={[styles.loadingText, { color: theme.text }]}>
+                        {translations.loading || 'Loading...'}
+                    </Text>
+                </View>
+            ) : (
+                <FlatList
+                    ref={scrollViewRef}
+                    data={homeData}
+                    renderItem={renderMainItem}
+                    keyExtractor={(item, index) => `home-${item.type}-${index}`}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.mainContainer}
+                    removeClippedSubviews={false}
+                    initialNumToRender={3}
+                    maxToRenderPerBatch={3}
+                    windowSize={5}
+                />
+            )}
         </View>
     );
 }
