@@ -85,7 +85,7 @@ export default function Payment() {
       }
     } catch (error) {
       console.error('Error loading payment data:', error);
-      Alert.alert('Hata', 'Ödeme bilgileri yüklenemedi');
+      Alert.alert(translations.error || 'Hata', translations.paymentDataLoadError || 'Ödeme bilgileri yüklenemedi');
     } finally {
       setLoading(false);
     }
@@ -175,9 +175,9 @@ export default function Payment() {
           category: item.category
         })),
         totalAmount: calculateTotal().toFixed(2),
-        paymentMethod: selectedCard ? selectedCard.cardTitle || 'Kartım' : 'Kart bilgisi bulunamadı',
-        shippingAddress: selectedAddress ? `${selectedAddress.title} - ${selectedAddress.addressLine1}, ${selectedAddress.district}/${selectedAddress.city}` : 'Adres bilgisi bulunamadı',
-        billingAddress: selectedAddress ? `${selectedAddress.title} - ${selectedAddress.addressLine1}, ${selectedAddress.district}/${selectedAddress.city}` : 'Adres bilgisi bulunamadı'
+        paymentMethod: selectedCard ? selectedCard.cardTitle || translations.myCard : translations.cardNotFound,
+        shippingAddress: selectedAddress ? `${selectedAddress.title} - ${selectedAddress.addressLine1}, ${selectedAddress.district}/${selectedAddress.city}` : translations.addressNotFound,
+        billingAddress: selectedAddress ? `${selectedAddress.title} - ${selectedAddress.addressLine1}, ${selectedAddress.district}/${selectedAddress.city}` : translations.addressNotFound
       };
 
       // Siparişi kaydet
@@ -231,7 +231,7 @@ export default function Payment() {
     return (
       <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color={theme.primary} />
-        <Text style={[styles.loadingText, { color: theme.text }]}>Yükleniyor...</Text>
+        <Text style={[styles.loadingText, { color: theme.text }]}>{translations.loading}</Text>
       </View>
     );
   }
@@ -257,21 +257,21 @@ export default function Payment() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle2, { color: theme.text }]}>
-              Kayıtlı Kartlarım
+              {translations.savedCards}
             </Text>
             <TouchableOpacity
               style={[styles.addButton, { borderColor: theme.primary }]}
               onPress={() => navigation.navigate('AddCreditCard')}
             >
               <Ionicons name="add" size={16} color={theme.primary} />
-              <Text style={[styles.addButtonText, { color: theme.primary }]}>Kart Ekle</Text>
+              <Text style={[styles.addButtonText, { color: theme.primary }]}>{translations.addCard}</Text>
             </TouchableOpacity>
           </View>
 
           {creditCards.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                Henüz kayıtlı kartınız bulunmamaktadır
+                {translations.noCardsYet}
               </Text>
             </View>
           ) : (
@@ -294,7 +294,7 @@ export default function Payment() {
                     styles.creditCardView,
                     { backgroundColor: selectedCard?.id === card.id ? '#4A90E2' : '#5BA4F2' }
                   ]}>
-                    <Text style={styles.cardTitle}>{card.cardTitle || 'Kartım'}</Text>
+                    <Text style={styles.cardTitle}>{card.cardTitle || translations.myCard}</Text>
                     <Text style={styles.cardNumber}>
                       **** **** **** {card.cardNumber ? card.cardNumber.slice(-4) : '****'}
                     </Text>
@@ -323,21 +323,21 @@ export default function Payment() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle2, { color: theme.text }]}>
-              Teslimat Adreslerim
+              {translations.deliveryAddresses}
             </Text>
             <TouchableOpacity
               style={[styles.addButton, { borderColor: theme.primary }]}
               onPress={() => navigation.navigate('AddAddress')}
             >
               <Ionicons name="add" size={16} color={theme.primary} />
-              <Text style={[styles.addButtonText, { color: theme.primary }]}>Adres Ekle</Text>
+              <Text style={[styles.addButtonText, { color: theme.primary }]}>{translations.addAddress}</Text>
             </TouchableOpacity>
           </View>
 
           {addresses.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                Henüz kayıtlı adresiniz bulunmamaktadır
+                {translations.noAddressesYet}
               </Text>
             </View>
           ) : (

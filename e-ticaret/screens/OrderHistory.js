@@ -182,19 +182,19 @@ export default function OrderHistory() {
                             <View style={styles.quickInfoRow}>
                                 <View style={[styles.quickInfoItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
                                     <Ionicons name="card" size={16} color={isDarkMode ? '#ce6302' : '#ce6302'} />
-                                    <Text style={[styles.quickInfoLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>Ödeme</Text>
+                                    <Text style={[styles.quickInfoLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{translations.payment}</Text>
                                     <Text style={[styles.quickInfoValue, { color: isDarkMode ? '#fff' : '#333' }]}>
                                         {selectedOrder?.paymentMethod || 'Kart'}
                                     </Text>
                                 </View>
                                 <View style={[styles.quickInfoItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
                                     <Ionicons name="cube" size={16} color={isDarkMode ? '#ce6302' : '#ce6302'} />
-                                    <Text style={[styles.quickInfoLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>Ürün</Text>
-                                    <Text style={[styles.quickInfoValue, { color: isDarkMode ? '#fff' : '#333' }]}>{selectedOrder?.items?.length || 0} adet</Text>
+                                    <Text style={[styles.quickInfoLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{translations.product}</Text>
+                                    <Text style={[styles.quickInfoValue, { color: isDarkMode ? '#fff' : '#333' }]}>{selectedOrder?.items?.length || 0} {translations.pieces}</Text>
                                 </View>
                                 <View style={[styles.quickInfoItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
                                     <Ionicons name="cash" size={16} color={isDarkMode ? '#ce6302' : '#ce6302'} />
-                                    <Text style={[styles.quickInfoLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>Toplam</Text>
+                                    <Text style={[styles.quickInfoLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{translations.total}</Text>
                                     <Text style={[styles.quickInfoValue, { color: isDarkMode ? '#fff' : '#333' }]}>{selectedOrder?.totalAmount} ₺</Text>
                                 </View>
                             </View>
@@ -202,7 +202,7 @@ export default function OrderHistory() {
                             {/* Items Section */}
                             <View style={styles.itemsSection}>
                                 <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                    Sipariş Edilen Ürünler ({selectedOrder?.items?.length || 0} Adet)
+                                    {translations.orderedProducts} ({selectedOrder?.items?.length || 0} {translations.piece})
                                 </Text>
                                 {selectedOrder?.items?.map((item, index) => (
                                     <View key={index} style={[styles.modernItemCard, { backgroundColor: isDarkMode ? '#333' : '#fff', borderColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
@@ -217,18 +217,18 @@ export default function OrderHistory() {
                                                 <Text style={[styles.modernItemName, { color: isDarkMode ? '#fff' : '#333' }]}>{item.name}</Text>
                                                 <Text style={[styles.modernItemCategory, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{item.category}</Text>
 
-                                                {/* Ürün Detayları */}
+                                                {/* {translations.productDetails} */}
                                                 <View style={styles.itemDetailsContainer}>
                                                     <View style={styles.detailGroup}>
-                                                        <Text style={[styles.detailGroupTitle, { color: isDarkMode ? '#fff' : '#000' }]}>Beden & Adet</Text>
+                                                        <Text style={[styles.detailGroupTitle, { color: isDarkMode ? '#fff' : '#000' }]}>{translations.sizeAndQuantity}</Text>
                                                         <View style={styles.detailRow}>
                                                             <View style={[styles.detailItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
                                                                 <Ionicons name="shirt" size={16} color="#D06E16" />
-                                                                <Text style={[styles.detailText, { color: isDarkMode ? '#fff' : '#333' }]}>Beden: {item.size}</Text>
+                                                                <Text style={[styles.detailText, { color: isDarkMode ? '#fff' : '#333' }]}>{translations.size}: {item.size}</Text>
                                                             </View>
                                                             <View style={[styles.detailItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
                                                                 <Ionicons name="cube" size={16} color="#D06E16" />
-                                                                <Text style={[styles.detailText, { color: isDarkMode ? '#fff' : '#333' }]}>Adet: {item.amount}</Text>
+                                                                <Text style={[styles.detailText, { color: isDarkMode ? '#fff' : '#333' }]}>{translations.quantity}: {item.amount}</Text>
                                                             </View>
                                                         </View>
                                                     </View>
@@ -237,10 +237,10 @@ export default function OrderHistory() {
                                             </View>
                                         </View>
                                         <View style={styles.detailGroup}>
-                                            <Text style={[styles.detailGroupTitle, { color: isDarkMode ? '#fff' : '#000' }]}>Fiyat</Text>
+                                            <Text style={[styles.detailGroupTitle, { color: isDarkMode ? '#fff' : '#000' }]}>{translations.price}</Text>
                                             <View style={[styles.priceContainer, { backgroundColor: isDarkMode ? '#1a2a3a' : '#e3f2fd', borderLeftColor: '#FF6B35' }]}>
                                                 <Text style={[styles.totalPrice, { color: isDarkMode ? '#fff' : '#000' }]}>
-                                                    Toplam: <Text style={{ color: '#FF6B35' }}>{((typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace('₺', '').replace(',', '.')) || 0) * item.amount).toFixed(2)} ₺</Text>
+                                                    {translations.total}: <Text style={{ color: '#FF6B35' }}>{((typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace('₺', '').replace(',', '.')) || 0) * item.amount).toFixed(2)} ₺</Text>
                                                 </Text>
                                             </View>
                                         </View>
@@ -251,7 +251,7 @@ export default function OrderHistory() {
                             {/* Payment Details Section */}
                             <View style={styles.paymentSection}>
                                 <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                    Sipariş Bilgileri
+                                    {translations.orderInfo}
                                 </Text>
                                 <View style={[styles.paymentDetailsCard, { backgroundColor: isDarkMode ? '#333' : '#fff', borderColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
                                     <View style={styles.paymentDetailRow}>
@@ -259,10 +259,10 @@ export default function OrderHistory() {
                                             <Ionicons name="card-outline" size={20} color="#FF6B35" />
                                             <View style={styles.paymentDetailInfo}>
                                                 <Text style={[styles.paymentDetailLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-                                                    Kullanılan Kart
+                                                    {translations.usedCard}
                                                 </Text>
                                                 <Text style={[styles.paymentDetailValue, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                                    {selectedOrder?.paymentMethod || 'Kart bilgisi bulunamadı'}
+                                                    {selectedOrder?.paymentMethod || translations.cardNotFound}
                                                 </Text>
                                             </View>
                                         </View>
@@ -273,10 +273,10 @@ export default function OrderHistory() {
                                             <Ionicons name="location-outline" size={20} color="#FF6B35" />
                                             <View style={styles.paymentDetailInfo}>
                                                 <Text style={[styles.paymentDetailLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-                                                    Teslimat Adresi
+                                                    {translations.deliveryAddress}
                                                 </Text>
                                                 <Text style={[styles.paymentDetailValue, { color: isDarkMode ? '#fff' : '#333' }]} numberOfLines={3}>
-                                                    {selectedOrder?.shippingAddress || 'Adres bilgisi bulunamadı'}
+                                                    {selectedOrder?.shippingAddress || translations.addressNotFound}
                                                 </Text>
                                             </View>
                                         </View>
@@ -287,7 +287,7 @@ export default function OrderHistory() {
                             {/* Total Summary */}
                             <View style={[styles.totalSummaryCard, { backgroundColor: isDarkMode ? '#333' : '#f8f9fa', borderColor: isDarkMode ? '#444' : '#e0e0e0' }]}>
                                 <View style={styles.totalSummaryRow}>
-                                    <Text style={[styles.totalSummaryLabel, { color: isDarkMode ? '#fff' : '#333' }]}>Toplam Tutar</Text>
+                                    <Text style={[styles.totalSummaryLabel, { color: isDarkMode ? '#fff' : '#333' }]}>{translations.totalAmount}</Text>
                                     <Text style={[styles.totalSummaryValue, { color: '#FF6B35' }]}>{selectedOrder?.totalAmount} ₺</Text>
                                 </View>
                             </View>
@@ -352,9 +352,8 @@ export default function OrderHistory() {
                         style={[
                             styles.clearButtonModern,
                             {
-                                backgroundColor: '#c84955',
-                                borderColor: '#b02a2f',
-                                shadowColor: '#dc3545'
+                                backgroundColor: '#ce6302',
+                                borderColor: '#ce6302'
                             }
                         ]}
                         onPress={handleClearHistory}

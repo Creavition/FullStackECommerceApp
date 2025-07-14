@@ -176,6 +176,7 @@ const translations = {
         //Favorites
         favoritesText: "You don't have any favorite products yet.",
         favoritesProduct: "Product",
+        startShopping: 'Start Shopping',
 
         // Payment
         name: 'Name Surname',
@@ -191,7 +192,19 @@ const translations = {
         cartEmpty: 'Your cart is empty!',
         pleaseSelectCard: 'Please select a card!',
         pleaseSelectAddress: 'Please select a delivery address!',
+        addressNotFound: 'Address information not found',
+        cardNotFound: 'Card information not found',
 
+        // Payment Screen
+        loading: 'Loading...',
+        savedCards: 'My Saved Cards',
+        addCard: 'Add Card',
+        noCardsYet: 'You don\'t have any saved cards yet',
+        deliveryAddresses: 'My Delivery Addresses',
+        addAddress: 'Add Address',
+        noAddressesYet: 'You don\'t have any saved addresses yet',
+        paymentDataLoadError: 'Could not load payment information',
+        myCard: 'My Card',
         // Credit Card
         creditCard: 'CREDIT CARD',
         nameSurname: 'Name Surname',
@@ -419,8 +432,9 @@ const translations = {
         tshirt: 'Tişört',
 
         //Favorites
-        favoritesText: "Henüz favori ürününüz yok",
+        favoritesText: "Henüz favori ürününüz yok.",
         favoritesProduct: "Ürün",
+        startShopping: 'Alışverişe Başla',
 
         // Payment
         paymentInformation: 'Ödeme Bilgileri',
@@ -435,7 +449,19 @@ const translations = {
         cartEmpty: 'Sepetiniz boş!',
         pleaseSelectCard: 'Lütfen bir kart seçin!',
         pleaseSelectAddress: 'Lütfen bir teslimat adresi seçin!',
+        addressNotFound: 'Adres bilgisi bulunamadı',
+        cardNotFound: 'Kart bilgisi bulunamadı',
 
+        // Payment Screen
+        loading: 'Yükleniyor...',
+        savedCards: 'Kayıtlı Kartlarım',
+        addCard: 'Kart Ekle',
+        noCardsYet: 'Henüz kayıtlı kartınız bulunmamaktadır',
+        deliveryAddresses: 'Teslimat Adreslerim',
+        addAddress: 'Adres Ekle',
+        noAddressesYet: 'Henüz kayıtlı adresiniz bulunmamaktadır',
+        paymentDataLoadError: 'Ödeme bilgileri yüklenemedi',
+        myCard: 'Kartım',
         // Credit Card
         creditCard: 'KREDİ KARTI',
         nameSurname: 'Ad Soyad',

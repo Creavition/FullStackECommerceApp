@@ -97,13 +97,13 @@ export default function Favorites() {
                 />
                 <Ionicons name="heart-outline" size={80} color="#ce6302" />
                 <Text style={[styles.emptyTitle, { color: theme.text }]}>{translations.favorites}</Text>
-                <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>Henüz favori ürününüz yok</Text>
+                <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>{translations.favoritesText}</Text>
                 <TouchableOpacity
                     style={styles.shopButton}
                     onPress={() => navigation.navigate('Home')}
                 >
                     <Ionicons name="storefront" size={20} color="#fff" style={{ marginRight: 8 }} />
-                    <Text style={styles.shopButtonText}>Alışverişe Başla</Text>
+                    <Text style={styles.shopButtonText}>{translations.startShopping}</Text>
                 </TouchableOpacity>
             </View>
         );

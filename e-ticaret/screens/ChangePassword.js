@@ -73,8 +73,8 @@ export default function ChangePassword() {
 
             <View style={styles.content}>
                 <View style={[styles.infoCard, { backgroundColor: isDarkMode ? '#1a2a3a' : '#e3f2fd' }]}>
-                    <Ionicons name="information-circle" size={20} color="#007BFF" />
-                    <Text style={[styles.infoText, { color: isDarkMode ? '#4da6ff' : '#1976d2' }]}>{translations.passwordChangeInfo}</Text>
+                    <Ionicons name="information-circle" size={20} color="#ce6302" />
+                    <Text style={[styles.infoText, { color: isDarkMode ? '#ce6302' : '#ce6302' }]}>{translations.passwordChangeInfo}</Text>
                 </View>
 
                 <View style={[styles.form, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}>
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     changeButton: {
-        backgroundColor: '#007BFF',
+        backgroundColor: '#ce6302',
         borderRadius: 8,
         paddingVertical: 15,
         paddingHorizontal: 20,
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
         shadowRadius: 2.22,
     },
     disabledButton: {
-        backgroundColor: '#ccc',
+        backgroundColor: '#ce6302',
         elevation: 0,
     },
     buttonText: {
