@@ -183,7 +183,9 @@ export default function OrderHistory() {
                                 <View style={[styles.quickInfoItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
                                     <Ionicons name="card" size={16} color={isDarkMode ? '#ce6302' : '#ce6302'} />
                                     <Text style={[styles.quickInfoLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>Ödeme</Text>
-                                    <Text style={[styles.quickInfoValue, { color: isDarkMode ? '#fff' : '#333' }]}>Kart</Text>
+                                    <Text style={[styles.quickInfoValue, { color: isDarkMode ? '#fff' : '#333' }]}>
+                                        {selectedOrder?.paymentMethod || 'Kart'}
+                                    </Text>
                                 </View>
                                 <View style={[styles.quickInfoItem, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
                                     <Ionicons name="cube" size={16} color={isDarkMode ? '#ce6302' : '#ce6302'} />
@@ -199,7 +201,10 @@ export default function OrderHistory() {
 
                             {/* Items Section */}
                             <View style={styles.itemsSection}>
-                                <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>Sipariş Edilen Ürünler ({selectedOrder?.items?.length || 0} Adet)</Text>                                {selectedOrder?.items?.map((item, index) => (
+                                <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
+                                    Sipariş Edilen Ürünler ({selectedOrder?.items?.length || 0} Adet)
+                                </Text>
+                                {selectedOrder?.items?.map((item, index) => (
                                     <View key={index} style={[styles.modernItemCard, { backgroundColor: isDarkMode ? '#333' : '#fff', borderColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
                                         <View style={{ flexDirection: "row" }}>
                                             <Image
@@ -238,15 +243,52 @@ export default function OrderHistory() {
                                                 <Text style={styles.totalPrice}>
                                                     Toplam: {((typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace('₺', '').replace(',', '.')) || 0) * item.amount).toFixed(2)} ₺
                                                 </Text>
-                                            </View>                                        </View>
+                                            </View>
+                                        </View>
                                     </View>
                                 ))}
                             </View>
 
+                            {/* Payment Details Section */}
+                            <View style={styles.paymentSection}>
+                                <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
+                                    Ödeme Bilgileri
+                                </Text>
+                                <View style={[styles.paymentDetailsCard, { backgroundColor: isDarkMode ? '#333' : '#fff', borderColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
+                                    <View style={styles.paymentDetailRow}>
+                                        <View style={styles.paymentDetailItem}>
+                                            <Ionicons name="card-outline" size={20} color="#007BFF" />
+                                            <View style={styles.paymentDetailInfo}>
+                                                <Text style={[styles.paymentDetailLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
+                                                    Kullanılan Kart
+                                                </Text>
+                                                <Text style={[styles.paymentDetailValue, { color: isDarkMode ? '#fff' : '#333' }]}>
+                                                    {selectedOrder?.paymentMethod || 'Kart bilgisi bulunamadı'}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </View>
+
+                                    <View style={[styles.paymentDetailRow, { borderTopWidth: 1, borderTopColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
+                                        <View style={styles.paymentDetailItem}>
+                                            <Ionicons name="location-outline" size={20} color="#007BFF" />
+                                            <View style={styles.paymentDetailInfo}>
+                                                <Text style={[styles.paymentDetailLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
+                                                    Teslimat Adresi
+                                                </Text>
+                                                <Text style={[styles.paymentDetailValue, { color: isDarkMode ? '#fff' : '#333' }]} numberOfLines={3}>
+                                                    {selectedOrder?.shippingAddress || 'Adres bilgisi bulunamadı'}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                </View>
+                            </View>
+
                             {/* Total Summary */}
-                            <View style={[styles.totalSummaryCard, { backgroundColor: isDarkMode ? 'white' : 'white' }]}>
+                            <View style={[styles.totalSummaryCard, { backgroundColor: 'white' }]}>
                                 <View style={styles.totalSummaryRow}>
-                                    <Text style={[styles.totalSummaryLabel, { color: isDarkMode ? "" : "" }]}>Toplam Tutar</Text>
+                                    <Text style={[styles.totalSummaryLabel, { color: '#333' }]}>Toplam Tutar</Text>
                                     <Text style={styles.totalSummaryValue}>{selectedOrder?.totalAmount} ₺</Text>
                                 </View>
                             </View>
@@ -1081,5 +1123,44 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         color: '#007BFF',
+    },
+
+    // Payment Details Styles
+    paymentSection: {
+        marginVertical: 20,
+        paddingHorizontal: 16,
+    },
+    paymentDetailsCard: {
+        borderRadius: 12,
+        borderWidth: 1,
+        marginTop: 12,
+        overflow: 'hidden',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    paymentDetailRow: {
+        paddingVertical: 16,
+        paddingHorizontal: 16,
+    },
+    paymentDetailItem: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+    },
+    paymentDetailInfo: {
+        marginLeft: 12,
+        flex: 1,
+    },
+    paymentDetailLabel: {
+        fontSize: 14,
+        marginBottom: 4,
+        fontWeight: '500',
+    },
+    paymentDetailValue: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        lineHeight: 22,
     },
 });

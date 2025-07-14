@@ -10,6 +10,10 @@ import HomeScreen from './screens/HomeScreen';
 import ProductDetail from './screens/ProductDetail';
 import ProductReviews from './screens/ProductReviews';
 import Payment from './screens/Payment';
+import AddCreditCard from './screens/AddCreditCard';
+import EditCreditCard from './screens/EditCreditCard';
+import AddAddress from './screens/AddAddress';
+import EditAddress from './screens/EditAddress';
 import Filter from './screens/Filter';
 import Home from './screens/Home';
 import OrderHistory from './screens/OrderHistory';
@@ -74,6 +78,26 @@ function AppNavigator() {
           name="Payment"
           component={Payment}
           options={{ title: translations.payment, headerShown: false }}
+        />
+        <Stack.Screen
+          name="AddCreditCard"
+          component={AddCreditCard}
+          options={{ title: 'Add Credit Card', headerShown: false }}
+        />
+        <Stack.Screen
+          name="EditCreditCard"
+          component={EditCreditCard}
+          options={{ title: 'Edit Credit Card', headerShown: false }}
+        />
+        <Stack.Screen
+          name="AddAddress"
+          component={AddAddress}
+          options={{ title: 'Add Address', headerShown: false }}
+        />
+        <Stack.Screen
+          name="EditAddress"
+          component={EditAddress}
+          options={{ title: 'Edit Address', headerShown: false }}
         />
         <Stack.Screen
           name="Filter"

@@ -16,6 +16,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Product> Products { get; set; }
     public DbSet<ProductSize> ProductSizes { get; set; }
     public DbSet<Review> Reviews { get; set; }
+    public DbSet<Address> Addresses { get; set; }
+    public DbSet<CreditCard> CreditCards { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -91,6 +93,40 @@ public class ApplicationDbContext : DbContext
 
             // Bir kullanıcı aynı ürüne sadece bir yorum yapabilir
             entity.HasIndex(r => new { r.UserId, r.ProductId }).IsUnique();
+        });
+
+        modelBuilder.Entity<Address>(entity =>
+        {
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.Title).IsRequired();
+            entity.Property(e => e.AddressLine1).IsRequired();
+            entity.Property(e => e.City).IsRequired();
+            entity.Property(e => e.District).IsRequired();
+            entity.Property(e => e.PostalCode).IsRequired();
+            entity.Property(e => e.Country).IsRequired();
+
+            entity.HasOne(a => a.User)
+                  .WithMany()
+                  .HasForeignKey(a => a.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CreditCard>(entity =>
+        {
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.CardHolderName).IsRequired();
+            entity.Property(e => e.CardNumber).IsRequired();
+            entity.Property(e => e.ExpiryMonth).IsRequired();
+            entity.Property(e => e.ExpiryYear).IsRequired();
+            entity.Property(e => e.CVV).IsRequired();
+
+            entity.HasOne(c => c.User)
+                  .WithMany()
+                  .HasForeignKey(c => c.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Aynı kullanıcının aynı kart numarasını birden fazla kez kaydetmesini engelle
+            entity.HasIndex(c => new { c.UserId, c.CardNumber }).IsUnique();
         });
     }
 }
