@@ -285,7 +285,7 @@ export default function Cart() {
       <View style={[styles.checkoutContainer, { backgroundColor: isDarkMode ? '#2d2d2d' : '#fff' }]}>
         <View style={styles.totalContainer}>
           <Text style={[styles.totalLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{translations.totalAmount || 'Total Amount'}</Text>
-          <Text style={[styles.total, { color: isDarkMode ? '#fff' : '#333' }]}>{total.toFixed(2)} ₺</Text>
+          <Text style={[styles.total, { color: '#FF8C00' }]}>{total.toFixed(2)} ₺</Text>
         </View>
         <TouchableOpacity
           style={styles.checkoutButton}
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
   },
   subtotalValue: {
     fontSize: 16,
-    color: '#7f4612',
+    color: '#FF8C00',
     fontWeight: 'bold',
   },
   removeButton: {
@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
   total: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FF8C00',
   },
   checkoutButton: {
     backgroundColor: "#d27c2e",

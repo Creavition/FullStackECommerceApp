@@ -340,7 +340,7 @@ export default function ProductDetail({ route }) {
                 )}
             </View>
             <Text style={[styles.name, { color: isDarkMode ? '#fff' : '#000' }]}>{product.name}</Text>
-            <Text style={[styles.price, { color: isDarkMode ? '#ce6302' : '#ce6302' }]}>{product.price}</Text>
+            <Text style={[styles.price, { color: isDarkMode ? '#ce6302' : '#ce6302' }]}>{product.price} ₺</Text>
 
             {/* Rating Section */}
             <View style={styles.ratingSection}>
@@ -363,7 +363,7 @@ export default function ProductDetail({ route }) {
                     style={styles.rateButton}
                     onPress={handleRateProduct}
                 >
-                    <Ionicons name="star-outline" size={18} color="#FFD700" />
+                    <Ionicons name="star" size={20} color="#FF8C00" />
                     <Text style={styles.rateButtonText}>Ürünü Değerlendir</Text>
                 </TouchableOpacity>
 
@@ -372,7 +372,7 @@ export default function ProductDetail({ route }) {
                         style={styles.viewReviewsButton}
                         onPress={handleViewReviews}
                     >
-                        <Ionicons name="chatbubble-outline" size={18} color="#007BFF" />
+                        <Ionicons name="chatbubble-outline" size={18} color="#FF8C00" />
                         <Text style={styles.viewReviewsButtonText}>Değerlendirmeleri Gör</Text>
                     </TouchableOpacity>
                 )}
@@ -486,7 +486,7 @@ export default function ProductDetail({ route }) {
                     styles.toast,
                     {
                         opacity: toastOpacity,
-                        backgroundColor: isDarkMode ? '#333' : '#4CAF50',
+                        backgroundColor: isDarkMode ? '#333' : '#FF8C00',
                     }
                 ]}
                 pointerEvents="none"
@@ -589,39 +589,58 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
-        gap: 15,
+        gap: 10,
+        paddingHorizontal: 10,
     },
     rateButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFF8DC',
+        backgroundColor: '#FFF4E6',
         paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#FFD700',
-        gap: 5,
+        paddingVertical: 10,
+        borderRadius: 25,
+        borderWidth: 2,
+        borderColor: '#FF8C00',
+        gap: 6,
+        elevation: 3,
+        shadowColor: '#FF8C00',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        flex: 1,
+        maxWidth: '48%',
     },
     rateButtonText: {
-        color: '#B8860B',
-        fontSize: 14,
-        fontWeight: '500',
+        color: '#FF6B00',
+        fontSize: 13,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        flexShrink: 1,
     },
     viewReviewsButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F0F8FF',
+        backgroundColor: '#FFF4E6',
         paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#007BFF',
-        gap: 5,
+        paddingVertical: 10,
+        borderRadius: 25,
+        borderWidth: 2,
+        borderColor: '#FF8C00',
+        gap: 6,
+        elevation: 3,
+        shadowColor: '#FF8C00',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        flex: 1,
+        maxWidth: '48%',
     },
     viewReviewsButtonText: {
-        color: '#007BFF',
-        fontSize: 14,
-        fontWeight: '500',
+        color: '#FF6B00',
+        fontSize: 13,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        flexShrink: 1,
     },
     sizeTitle: {
         fontSize: 18,

@@ -5,6 +5,16 @@ import { decode as base64Decode } from 'base-64';
 
 const API_BASE_URL = 'http://192.168.1.3:5207/Auth';
 
+// Auth token'ı al
+export const getAuthToken = async () => {
+    try {
+        return await AsyncStorage.getItem('authToken');
+    } catch (error) {
+        console.error('Error getting auth token:', error);
+        return null;
+    }
+};
+
 // Tüm kullanıcıları getir
 export const getAllUsers = async () => {
     const usersData = await AsyncStorage.getItem('users');

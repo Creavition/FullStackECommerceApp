@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import StarRating from './StarRating';
+import { getAuthToken } from '../utils/authStorage';
 
 const { width } = Dimensions.get('window');
 
@@ -44,17 +45,21 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
         setIsSubmitting(true);
 
         try {
-            // Önce authToken'ı dene, sonra token'ı dene
-            let token = await AsyncStorage.getItem('authToken');
-            if (!token) {
-                token = await AsyncStorage.getItem('token');
-            }
+            // Token'ı authStorage utility'sinden al
+            const token = await getAuthToken();
 
             console.log('Token found:', token ? 'Yes' : 'No');
             console.log('Token value:', token ? token.substring(0, 50) + '...' : 'null');
 
             if (!token) {
-                Alert.alert('Hata', 'Giriş yapmalısınız.');
+                Alert.alert('Hata', 'Lütfen giriş yapın ve tekrar deneyin.');
+                setIsSubmitting(false);
+                return;
+            }
+
+            // Token formatını kontrol et
+            if (typeof token !== 'string' || token.length < 10) {
+                Alert.alert('Hata', 'Geçersiz oturum. Lütfen tekrar giriş yapın.');
                 setIsSubmitting(false);
                 return;
             }
@@ -276,8 +281,8 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     commentInput: {
-        borderWidth: 1,
-        borderColor: '#E0E0E0',
+        borderWidth: 2,
+        borderColor: '#000000',
         borderRadius: 8,
         padding: 15,
         fontSize: 16,
@@ -312,7 +317,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     submitButton: {
-        backgroundColor: '#000000',
+        backgroundColor: '#FF8C00',
     },
     submitButtonText: {
         color: '#FFFFFF',

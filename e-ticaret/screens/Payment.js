@@ -416,7 +416,9 @@ export default function Payment() {
               </View>
             ))
           )}
-        </View>        {/* Sipariş Özeti */}
+        </View>
+
+        {/* Sipariş Özeti */}
         <View style={[
           styles.orderSummary,
           {
