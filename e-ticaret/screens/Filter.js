@@ -5,128 +5,40 @@ import {
     TextInput,
     StyleSheet,
     TouchableOpacity,
-    ScrollView
+    ScrollView,
+    ActivityIndicator,
+    Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useProduct } from '../contexts/ProductContext';
 import { useFilter } from '../contexts/FilterContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { fetchCategoriesFromAPI, checkApiStatus, categoryUtils } from '../utils/productUtils';
+import { useNavigation } from '@react-navigation/native';
 import { categoryApi } from '../utils/categoryApi';
 
 export default function Filter() {
     const navigation = useNavigation();
-    const route = useRoute();
-    const { sizeMap } = useProduct() || { sizeMap: {} };
-    const { filters, applyFilters } = useFilter() || {
-        filters: {
-            selectedCategory: null,
-            selectedSize: null,
-            minPrice: null,
-            maxPrice: null
-        },
-        applyFilters: () => { }
-    };
-    const { translations } = useLanguage() || { translations: {} };
-    const { theme, isDarkMode } = useTheme() || { theme: {}, isDarkMode: false };
+    const { filters, applyFilters, clearFilters } = useFilter(); //Filtreleme
+    const { theme, isDarkMode } = useTheme();
 
-    // Route params'tan gelen kategori ve size bilgileri
-    const { categories: routeCategories = [], sizeOptions: routeSizeOptions = [] } = route.params || {};
+    // State'ler
+    const [categories, setCategories] = useState([]); //Kategoriler
+    const [allSizes, setAllSizes] = useState([]); //Tum bedenler
+    const [categorySizes, setCategorySizes] = useState([]);//Category bedenleri
+    const [loading, setLoading] = useState(true); //Yuklenme durumu
 
-    // API'den gelen kategoriler için state'ler
-    const [apiCategories, setApiCategories] = useState(routeCategories.length > 0 ? routeCategories : []);
-    const [apiSizeMap, setApiSizeMap] = useState({});
-    const [categorySizes, setCategorySizes] = useState([]);
-    const [allCategorySizes, setAllCategorySizes] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [apiStatus, setApiStatus] = useState(true);
-
-    // Kategori listesi (Route params'tan, API'den gelen veya fallback)
-    const categories = apiCategories && apiCategories.length > 0 ?
-        apiCategories.map(cat => cat && cat.categoryName ? cat.categoryName : cat) :
-        (sizeMap && typeof sizeMap === 'object' ? Object.keys(sizeMap) : ['Jacket', 'Pants', 'Shoes', 'T-Shirt']);
-
+    // Filter durumlari
+    //Secilen kategori basta null
     const [selectedCategory, setSelectedCategory] = useState(filters?.selectedCategory || null);
-    const [selectedSizes, setSelectedSizes] = useState(filters?.selectedSizes || []);
+    const [selectedSizes, setSelectedSizes] = useState(filters?.selectedSizes || []); //secilenBeden
     const [minPrice, setMinPrice] = useState(filters?.minPrice ? filters.minPrice.toString() : '');
     const [maxPrice, setMaxPrice] = useState(filters?.maxPrice ? filters.maxPrice.toString() : '');
 
-    // API'den kategorileri yükle
+    // Başlangıçta verileri yükle
     useEffect(() => {
-        const loadCategories = async () => {
-            try {
-                setLoading(true);
-                const apiOk = checkApiStatus();
-                setApiStatus(apiOk);
-
-                console.log('Loading categories for filter...');
-
-                // Kategorileri API'den al
-                const categoriesFromAPI = await categoryApi.getAllCategories();
-
-                if (categoriesFromAPI && categoriesFromAPI.length > 0) {
-                    setApiCategories(categoriesFromAPI);
-
-                    // Tüm kategorilerin bedenlerini birleştir
-                    const allSizes = new Set();
-                    const sizeMapFromAPI = {};
-
-                    categoriesFromAPI.forEach(category => {
-                        if (category.sizes && Array.isArray(category.sizes)) {
-                            const sizesForCategory = category.sizes.map(size => size.sizeName || size);
-                            sizeMapFromAPI[category.categoryName] = sizesForCategory;
-
-                            // Tüm bedenler setine ekle
-                            sizesForCategory.forEach(size => allSizes.add(size));
-                        }
-                    });
-
-                    setApiSizeMap(sizeMapFromAPI);
-                    setAllCategorySizes(Array.from(allSizes));
-                    console.log(`Filter loaded ${categoriesFromAPI.length} categories from API`);
-                    console.log('All categories sizes combined:', Array.from(allSizes));
-                } else {
-                    console.log('No API categories, using fallback data');
-                    setApiSizeMap(sizeMap && typeof sizeMap === 'object' ? sizeMap : {});
-
-                    // Fallback için tüm bedenler
-                    const fallbackAllSizes = new Set();
-                    Object.values(sizeMap || {}).forEach(sizes => {
-                        if (Array.isArray(sizes)) {
-                            sizes.forEach(size => fallbackAllSizes.add(size));
-                        }
-                    });
-                    setAllCategorySizes(Array.from(fallbackAllSizes));
-                }
-            } catch (error) {
-                console.error('Error loading categories for filter:', error);
-                try {
-                    const testResult = await categoryUtils.testApiConnection();
-                    setApiStatus(testResult);
-                } catch (testError) {
-                    console.error('Error testing API connection in Filter:', testError);
-                    setApiStatus(false);
-                }
-                setApiSizeMap(sizeMap && typeof sizeMap === 'object' ? sizeMap : {});
-
-                // Error durumunda fallback tüm bedenler
-                const fallbackAllSizes = new Set();
-                Object.values(sizeMap || {}).forEach(sizes => {
-                    if (Array.isArray(sizes)) {
-                        sizes.forEach(size => fallbackAllSizes.add(size));
-                    }
-                });
-                setAllCategorySizes(Array.from(fallbackAllSizes));
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadCategories();
+        loadInitialData();
     }, []);
 
+    // Context'teki filtreleri local state ile senkronize et
     // Context'teki filtreleri local state ile senkronize et
     useEffect(() => {
         if (filters) {
@@ -134,97 +46,163 @@ export default function Filter() {
             setSelectedSizes(filters.selectedSizes || []);
             setMinPrice(filters.minPrice ? filters.minPrice.toString() : '');
             setMaxPrice(filters.maxPrice ? filters.maxPrice.toString() : '');
-        }
-    }, [filters]);
 
-    const toggleCategory = (cat) => {
-        const newCategory = cat === selectedCategory ? null : cat;
+            // Eğer kategori seçiliyse ve kategoriler yüklenmişse, o kategorinin bedenlerini yükle
+            if (filters.selectedCategory && categories.length > 0) {
+                const selectedCategoryData = categories.find(cat => cat.categoryName === filters.selectedCategory);
+                if (selectedCategoryData) {
+                    loadCategorySizes(selectedCategoryData);
+                }
+            } else if (!filters.selectedCategory) {
+                // Kategori seçimi kaldırıldıysa category sizes'ı temizle
+                setCategorySizes([]);
+            }
+        }
+    }, [filters, categories]);
+
+    // Başlangıç verilerini yükle
+    const loadInitialData = async () => {
+        try {
+            setLoading(true);
+
+            console.log('Kategori ve Bedenler Apide Aliniyor');
+
+            // API'den kategorileri al
+            const categoriesFromAPI = await categoryApi.getAllCategories();
+
+            // Kategorileri state'e kaydet
+            setCategories(categoriesFromAPI);
+
+            // Tüm kategorilerin bedenlerini birleştir
+            const allSizesSet = new Set();
+
+            categoriesFromAPI.forEach(category => {
+                if (category.sizes && Array.isArray(category.sizes)) {
+                    category.sizes.forEach(size => {
+                        const sizeName = size.sizeName || size;
+                        if (sizeName) {
+                            allSizesSet.add(sizeName);
+                        }
+                    });
+                }
+            });
+
+            setAllSizes(Array.from(allSizesSet));
+
+            console.log(`Loaded ${categoriesFromAPI.length} categories`);
+            console.log(`Found ${allSizesSet.size} unique sizes`);
+
+        } catch (error) {
+            console.error('Error loading initial data:', error);
+            setError(error.message || 'Veriler yüklenirken hata oluştu');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Kategori seçimi
+    const toggleCategory = async (category) => {
+        const newCategory = category.categoryName === selectedCategory ? null : category.categoryName;
         setSelectedCategory(newCategory);
         setSelectedSizes([]); // Kategori değişince bedenler sıfırlansın
 
-        // Kategori seçildiğinde o kategorinin bedenlerini yükle
+        // Kategori degistigi icin o kategoriye gore bedenler gelir
         if (newCategory) {
-            loadCategorySizes(newCategory);
+            await loadCategorySizes(category);
         } else {
-            // Kategori seçimi kaldırıldığında tüm bedenler gösterilsin
             setCategorySizes([]);
         }
     };
 
-    // Seçili kategorinin bedenlerini API'den yükle
-    const loadCategorySizes = async (categoryName) => {
+    // Seçili kategorinin bedenlerini yükle
+    const loadCategorySizes = async (category) => {
         try {
-            const categoryData = apiCategories.find(cat => cat.categoryName === categoryName);
-            if (categoryData && categoryData.id) {
-                console.log(`Loading sizes for category: ${categoryName} (ID: ${categoryData.id})`);
-                const sizes = await categoryApi.getCategorySizes(categoryData.id);
+            console.log(`Loading sizes for category: ${category.categoryName}`);
+
+            if (category.sizes && Array.isArray(category.sizes)) {
+                const sizeNames = category.sizes.map(size => size.sizeName || size);
+                setCategorySizes(sizeNames);
+                console.log(`Loaded ${sizeNames.length} sizes for ${category.categoryName}`);
+            } else {
+                // Kategori ID'si ile API'den bedenleri al
+                const sizes = await categoryApi.getCategorySizes(category.id);
                 const sizeNames = sizes.map(size => size.sizeName || size);
                 setCategorySizes(sizeNames);
-                console.log(`Loaded ${sizeNames.length} sizes for ${categoryName}:`, sizeNames);
-            } else {
-                // Fallback - API'den gelen kategori verilerinde arama yap
-                const sizesFromApiMap = apiSizeMap[categoryName] || [];
-                setCategorySizes(sizesFromApiMap);
-                console.log(`Using cached sizes for ${categoryName}:`, sizesFromApiMap);
+                console.log(`Loaded ${sizeNames.length} sizes from API for ${category.categoryName}`);
             }
         } catch (error) {
-            console.error(`Error loading sizes for category ${categoryName}:`, error);
-            // Fallback - önceden yüklenmiş verilerden al
-            const sizesFromApiMap = apiSizeMap[categoryName] || [];
-            setCategorySizes(sizesFromApiMap);
+            console.error(`Error loading sizes for category ${category.categoryName}:`, error);
+            setCategorySizes([]);
         }
     };
 
+    // Beden seçimi
     const toggleSize = (size) => {
         setSelectedSizes(prevSizes => {
+            // Daha once secilen bedene bidaha tiklanirsa onu kaldirir.
             if (prevSizes.includes(size)) {
-                // Size zaten seçili, kaldır
                 return prevSizes.filter(s => s !== size);
             } else {
-                // Size seçili değil, ekle
                 return [...prevSizes, size];
             }
         });
     };
 
-    // Seçili kategorinin bedenlerini al (Route params, API'den veya fallback'ten)
-    const getSizesForCategory = (category) => {
-        if (!category) {
-            // Kategori seçili değilse tüm kategorilerin bedenlerini göster
-            return allCategorySizes;
+    // Gösterilecek kategori bedenlerini al
+    const getDisplaySizes = () => {
+        if (selectedCategory) {
+            return categorySizes;
         }
-
-        // Kategori seçiliyse o kategorinin bedenlerini göster
-        return categorySizes;
+        return allSizes;
     };
 
-    // Kategori isimlerini çevir
-    const getCategoryName = (category) => {
-        if (!translations) return category;
+    // Filtreleri temizle
+    const handleClearFilters = () => {
+        clearFilters();
 
-        switch (category) {
-            case 'Jacket': return translations.jacket || 'Jacket';
-            case 'Pants': return translations.pants || 'Pants';
-            case 'Shoes': return translations.shoes || 'Shoes';
-            case 'T-Shirt': return translations.tshirt || 'T-Shirt';
-            default: return category;
-        }
+        setSelectedCategory(null);
+        setSelectedSizes([]);
+        setMinPrice('');
+        setMaxPrice('');
+        setCategorySizes([]);
     };
 
-    // Loading state için gösterim
+    // Filtreleri uygula
+    const handleApplyFilters = () => {
+        // Filtreye parametre olarak girecek veriler. minPrice ve maxPrice string old icin number cevrimi
+        const filterData = {
+            minPrice: minPrice ? parseFloat(minPrice) : null,
+            maxPrice: maxPrice ? parseFloat(maxPrice) : null,
+            selectedCategory,
+            selectedSizes: selectedSizes || []
+        };
+
+        // Validation
+        if (filterData.minPrice && filterData.maxPrice && filterData.minPrice > filterData.maxPrice) {
+            Alert.alert('Hata', 'Minimum fiyat, maksimum fiyattan büyük olamaz');
+            return;
+        }
+
+        applyFilters(filterData); //FilterContextteki fonksiyon kullanilir.
+        navigation.goBack();
+    };
+
+
+    // Yuklenme durumu
     if (loading) {
         return (
             <View style={[styles.container, styles.loadingContainer, { backgroundColor: isDarkMode ? theme.background : '#fff' }]}>
                 <TouchableOpacity
-                    style={{ alignSelf: "flex-start", paddingTop: 20 }}
+                    style={styles.closeButton}
                     onPress={() => navigation.goBack()}
                 >
                     <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#333'} />
                 </TouchableOpacity>
+
                 <View style={styles.loadingContent}>
-                    <Ionicons name="refresh" size={40} color="#FF6B35" />
+                    <ActivityIndicator size="large" color="#FF6B35" />
                     <Text style={[styles.loadingText, { color: isDarkMode ? theme.text : '#000' }]}>
-                        {translations?.loading || 'Loading categories...'}
+                        Kategoriler yükleniyor...
                     </Text>
                 </View>
             </View>
@@ -232,309 +210,162 @@ export default function Filter() {
     }
 
     return (
-        <ScrollView contentContainerStyle={[styles.container, { backgroundColor: isDarkMode ? theme.background : '#fff' }]}>
+        <ScrollView
+            contentContainerStyle={[styles.container, { backgroundColor: isDarkMode ? theme.background : '#fff' }]}
+            showsVerticalScrollIndicator={false}
+        >
+            {/* Close Button */}
             <TouchableOpacity
-                style={{ alignSelf: "flex-start", paddingTop: 20 }}
+                style={styles.closeButton}
                 onPress={() => navigation.goBack()}
             >
                 <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#333'} />
             </TouchableOpacity>
 
-            {/* API Status Indicator */}
-            <View style={styles.apiStatusContainer}>
-                <Ionicons
-                    name={apiStatus ? "checkmark-circle" : "alert-circle"}
-                    size={16}
-                    color={apiStatus ? "#4CAF50" : "#FF6B35"}
-                />
-                <Text style={[styles.apiStatusText, { color: apiStatus ? "#4CAF50" : "#FF6B35" }]}>
-                    {apiStatus ? "API Connected" : "Using Offline Data"}
-                </Text>
-            </View>
             {/* Price Filter */}
-            <Text style={[styles.text, { color: isDarkMode ? theme.text : '#000' }]}>{translations?.price || 'Price'}</Text>
-            <View style={styles.rowContainer}>
-                <TextInput
-                    style={[
-                        styles.textBox,
-                        {
-                            borderColor: isDarkMode ? theme.border : 'black',
-                            backgroundColor: isDarkMode ? theme.surface : '#fff',
-                            color: isDarkMode ? theme.text : '#000'
-                        }
-                    ]}
-                    keyboardType='numeric'
-                    placeholder={translations?.minAmount || 'Min Amount'}
-                    placeholderTextColor={isDarkMode ? theme.textTertiary : '#999'}
-                    value={minPrice}
-                    onChangeText={setMinPrice}
-                />
-                <Text style={[styles.dash, { color: isDarkMode ? theme.text : '#000' }]}>-</Text>
-                <TextInput
-                    style={[
-                        styles.textBox,
-                        {
-                            borderColor: isDarkMode ? theme.border : 'black',
-                            backgroundColor: isDarkMode ? theme.surface : '#fff',
-                            color: isDarkMode ? theme.text : '#000'
-                        }
-                    ]}
-                    keyboardType='numeric'
-                    placeholder={translations?.maxAmount || 'Max Amount'}
-                    placeholderTextColor={isDarkMode ? theme.textTertiary : '#999'}
-                    value={maxPrice}
-                    onChangeText={setMaxPrice}
-                />
+            <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: isDarkMode ? theme.text : '#000' }]}>
+                    Fiyat Aralığı
+                </Text>
+                <View style={styles.priceContainer}>
+                    <TextInput
+                        style={[
+                            styles.priceInput,
+                            {
+                                borderColor: isDarkMode ? theme.border : '#ddd',
+                                backgroundColor: isDarkMode ? theme.surface : '#fff',
+                                color: isDarkMode ? theme.text : '#000'
+                            }
+                        ]}
+                        keyboardType="numeric"
+                        placeholder="Min Tutar"
+                        placeholderTextColor={isDarkMode ? theme.textTertiary : '#999'}
+                        value={minPrice}
+                        onChangeText={setMinPrice}
+                    />
+                    <Text style={[styles.dash, { color: isDarkMode ? theme.text : '#000' }]}>
+                        -
+                    </Text>
+                    <TextInput
+                        style={[
+                            styles.priceInput,
+                            {
+                                borderColor: isDarkMode ? theme.border : '#ddd',
+                                backgroundColor: isDarkMode ? theme.surface : '#fff',
+                                color: isDarkMode ? theme.text : '#000'
+                            }
+                        ]}
+                        keyboardType="numeric"
+                        placeholder="Max Tutar"
+                        placeholderTextColor={isDarkMode ? theme.textTertiary : '#999'}
+                        value={maxPrice}
+                        onChangeText={setMaxPrice}
+                    />
+                </View>
             </View>
 
-            {/* Category Buttons */}
-            <Text style={[styles.text, { color: isDarkMode ? theme.text : '#000' }]}>{translations?.category || 'Category'}</Text>
-            <View style={styles.rowContainer}>
-                {Array.isArray(categories) && categories.map((cat) => {
-                    if (!cat) return null;
-                    return (
+            {/* Category Filter */}
+            <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: isDarkMode ? theme.text : '#000' }]}>
+                    Kategori
+                </Text>
+                <View style={styles.optionsContainer}>
+                    {categories.map((category) => (
                         <TouchableOpacity
-                            key={cat}
-                            onPress={() => toggleCategory(cat)}
+                            key={category.id}
+                            onPress={() => toggleCategory(category)}
                             style={[
                                 styles.categoryButton,
                                 {
-                                    borderColor: isDarkMode ? theme.border : 'gray',
+                                    borderColor: isDarkMode ? theme.border : '#ddd',
                                     backgroundColor: isDarkMode ? theme.surface : '#fff'
                                 },
-                                selectedCategory === cat && styles.categoryButtonSelected
+                                selectedCategory === category.categoryName && styles.selectedButton
                             ]}
                         >
                             <Text
                                 style={[
                                     styles.categoryText,
-                                    { color: isDarkMode ? theme.text : 'black' },
-                                    selectedCategory === cat && styles.categoryTextSelected
+                                    { color: isDarkMode ? theme.text : '#000' },
+                                    selectedCategory === category.categoryName && styles.selectedText
                                 ]}
                             >
-                                {getCategoryName(cat)}
+                                {category.categoryName}
                             </Text>
                         </TouchableOpacity>
-                    );
-                })}
+                    ))}
+                </View>
             </View>
 
-            {/* Size Options */}
-            <Text style={[styles.text, { color: isDarkMode ? theme.text : '#000' }]}>{translations?.sizeOptionsFilter || 'Size Options'}</Text>
-            <View style={styles.rowContainer}>
-                {getSizesForCategory(selectedCategory).map((size) => {
-                    if (!size) return null;
-                    const isSelected = selectedSizes.includes(size);
-                    return (
+            {/* Size Filter */}
+            <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: isDarkMode ? theme.text : '#000' }]}>
+                    Beden
+                </Text>
+                <View style={styles.optionsContainer}>
+                    {getDisplaySizes().map((size) => (
                         <TouchableOpacity
                             key={size}
                             onPress={() => toggleSize(size)}
                             style={[
-                                styles.sizeBox,
+                                styles.sizeButton,
                                 {
-                                    borderColor: isDarkMode ? theme.border : '#999',
-                                    backgroundColor: isDarkMode ? theme.surface : '#f2f2f2'
+                                    borderColor: isDarkMode ? theme.border : '#ddd',
+                                    backgroundColor: isDarkMode ? theme.surface : '#f8f8f8'
                                 },
-                                isSelected && styles.sizeBoxSelected
+                                selectedSizes.includes(size) && styles.selectedButton
                             ]}
                         >
-                            <Text style={[
-                                styles.sizeText,
-                                { color: isDarkMode ? theme.text : '#333' },
-                                isSelected && styles.sizeTextSelected
-                            ]}>
+                            <Text
+                                style={[
+                                    styles.sizeText,
+                                    { color: isDarkMode ? theme.text : '#333' },
+                                    selectedSizes.includes(size) && styles.selectedText
+                                ]}
+                            >
                                 {size}
                             </Text>
                         </TouchableOpacity>
-                    );
-                })}
-            </View>
-            {!selectedCategory && (
-                <Text style={[styles.infoText, { color: isDarkMode ? theme.textSecondary : '#666' }]}>
-                    {translations?.allCategorySizes || 'Showing sizes from all categories'}
-                </Text>
-            )}
-            {selectedSizes.length > 0 && (
-                <Text style={[styles.selectedSizesText, { color: isDarkMode ? theme.primary : '#ce6302' }]}>
-                    {translations?.selectedSizes || 'Selected sizes'}: {selectedSizes.join(', ')}
-                </Text>
-            )}
+                    ))}
+                </View>
 
-            {/* Buttons */}
+            </View>
+
+            {/* Action Buttons */}
             <View style={styles.buttonContainer}>
                 <TouchableOpacity
                     style={[styles.button, styles.clearButton]}
-                    onPress={() => {
-                        // Filtreleri temizle
-                        setSelectedCategory(null);
-                        setSelectedSizes([]);
-                        setMinPrice('');
-                        setMaxPrice('');
-
-                        // Context'i de temizle
-                        if (applyFilters && typeof applyFilters === 'function') {
-                            applyFilters({
-                                minPrice: null,
-                                maxPrice: null,
-                                selectedCategory: null,
-                                selectedSizes: []
-                            });
-                        }
-                    }}
+                    onPress={handleClearFilters}
                 >
-                    <Text style={[styles.buttonText, styles.clearButtonText]}>{translations?.clear || 'Clear'}</Text>
+                    <Text style={[styles.buttonText, styles.clearButtonText]}>
+                        Temizle
+                    </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={styles.button}
-                    onPress={() => {
-                        // FilterContext'e filtreleri kaydet
-                        if (applyFilters && typeof applyFilters === 'function') {
-                            applyFilters({
-                                minPrice: minPrice ? parseFloat(minPrice) : null,
-                                maxPrice: maxPrice ? parseFloat(maxPrice) : null,
-                                selectedCategory,
-                                selectedSizes
-                            });
-                        }
-
-                        // Geri dön - hangi sayfadan geldiyse oraya
-                        navigation.goBack();
-                    }}
+                    style={[styles.button, styles.applyButton]}
+                    onPress={handleApplyFilters}
                 >
-                    <Text style={styles.buttonText}>{translations?.apply || 'Apply'}</Text>
+                    <Text style={[styles.buttonText, styles.applyButtonText]}>
+                        Filtreleri Uygula
+                    </Text>
                 </TouchableOpacity>
             </View>
-
         </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
+        flexGrow: 1,
         padding: 20,
-        alignItems: 'center',
-    },
-    text: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginTop: 20,
-        marginBottom: 10,
-        color: '#000',
-    },
-    dash: {
-        fontSize: 24,
-        marginHorizontal: 10,
-    },
-    rowContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 15,
-    },
-    textBox: {
-        borderRadius: 6,
-        borderWidth: 2,
-        borderColor: 'black',
-        backgroundColor: '#fff',
-        height: 50,
-        width: 140,
-        paddingLeft: 15,
-        color: '#000',
-    },
-    categoryButton: {
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        margin: 6,
-        borderRadius: 6,
-        borderWidth: 2,
-        borderColor: 'gray',
-        backgroundColor: '#fff',
-    },
-    categoryButtonSelected: {
-        backgroundColor: '#ce6302',
-        borderColor: '#ce6302',
-    },
-    categoryText: {
-        color: 'black',
-        fontWeight: '500',
-    },
-    categoryTextSelected: {
-        color: 'white',
-    },
-    sizeBox: {
-        borderWidth: 1,
-        borderColor: '#999',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        margin: 6,
-        backgroundColor: '#f2f2f2',
-    },
-    sizeBoxSelected: {
-        backgroundColor: '#ce6302',
-        borderColor: '#ce6302',
-    },
-    sizeText: {
-        fontSize: 14,
-        color: '#333',
-    },
-    sizeTextSelected: {
-        color: 'white',
-    },
-    placeholderText: {
-        fontSize: 16,
-        fontStyle: 'italic',
-        color: '#888',
-        marginTop: 10,
-        textAlign: 'center',
-    },
-    infoText: {
-        fontSize: 14,
-        fontStyle: 'italic',
-        color: '#666',
-        marginTop: 8,
-        textAlign: 'center',
-    },
-    selectedSizesText: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#ce6302',
-        marginTop: 8,
-        textAlign: 'center',
-        paddingHorizontal: 10,
-    },
-    buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-        paddingHorizontal: 20,
-        marginTop: 20,
-    },
-    button: {
-        width: 140,
-        height: 50,
-        borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#ce6302',
-    },
-    clearButton: {
-        backgroundColor: '#f0f0f0',
-        borderWidth: 2,
-        borderColor: '#ccc',
-    },
-    buttonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    clearButtonText: {
-        color: '#666',
     },
     loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
@@ -544,24 +375,146 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         flex: 1,
     },
+    errorContent: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        paddingHorizontal: 20,
+    },
     loadingText: {
-        marginTop: 10,
+        marginTop: 15,
         fontSize: 16,
         fontWeight: '500',
     },
-    apiStatusContainer: {
+    errorText: {
+        marginTop: 15,
+        marginBottom: 20,
+        fontSize: 16,
+        textAlign: 'center',
+        lineHeight: 22,
+    },
+    retryButton: {
+        backgroundColor: '#FF6B35',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 8,
+    },
+    retryButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    closeButton: {
+        alignSelf: 'flex-start',
+        padding: 10,
+        marginBottom: 10,
+    },
+    section: {
+        marginBottom: 25,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 15,
+    },
+    priceContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 10,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
-        backgroundColor: 'rgba(0,0,0,0.05)',
-        alignSelf: 'center',
+        justifyContent: 'center',
     },
-    apiStatusText: {
+    priceInput: {
+        flex: 1,
+        height: 50,
+        borderWidth: 2,
+        borderRadius: 8,
+        paddingHorizontal: 15,
+        fontSize: 16,
+        maxWidth: 120,
+    },
+    dash: {
+        fontSize: 20,
+        marginHorizontal: 15,
+        fontWeight: '500',
+    },
+    optionsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+    },
+    categoryButton: {
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        margin: 4,
+        borderRadius: 8,
+        borderWidth: 1,
+        minWidth: 80,
+        alignItems: 'center',
+    },
+    sizeButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        margin: 4,
+        borderRadius: 8,
+        borderWidth: 1,
+        minWidth: 50,
+        alignItems: 'center',
+    },
+    selectedButton: {
+        backgroundColor: '#ce6302',
+        borderColor: '#ce6302',
+    },
+    categoryText: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    sizeText: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    selectedText: {
+        color: '#fff',
+    },
+    infoText: {
+        fontSize: 12,
+        fontStyle: 'italic',
+        textAlign: 'center',
+        marginTop: 10,
+    },
+    selectedInfo: {
         fontSize: 12,
         fontWeight: '500',
-        marginLeft: 6,
+        textAlign: 'center',
+        marginTop: 10,
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+        gap: 15,
+    },
+    button: {
+        flex: 1,
+        height: 50,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    clearButton: {
+        backgroundColor: '#f0f0f0',
+        borderWidth: 1,
+        borderColor: '#ccc',
+    },
+    applyButton: {
+        backgroundColor: '#ce6302',
+    },
+    buttonText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    clearButtonText: {
+        color: '#666',
+    },
+    applyButtonText: {
+        color: '#fff',
     },
 });

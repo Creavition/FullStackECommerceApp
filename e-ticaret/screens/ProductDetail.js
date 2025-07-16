@@ -5,7 +5,6 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { CartContext } from '../contexts/CartContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import { useProduct } from '../contexts/ProductContext';
 import { categoryApi } from '../utils/categoryApi';
 import { productApi } from '../utils/productApi';
@@ -71,7 +70,6 @@ export default function ProductDetail({ route }) {
     const { product } = route.params;
     const { addToCart } = useContext(CartContext);
     const { theme, isDarkMode } = useTheme();
-    const { translations } = useLanguage();
     const { getImageUrl } = useProduct();
     const navigation = useNavigation();
 
@@ -237,7 +235,7 @@ export default function ProductDetail({ route }) {
         console.log('handleAddToCart called with selectedSize:', selectedSize);
 
         if (!selectedSize) {
-            Alert.alert(translations.error, translations.pleaseSelectSize || 'Lütfen bir beden seçin');
+            Alert.alert('Hata','Lütfen bir beden seçin');
             return;
         }
 
@@ -247,13 +245,13 @@ export default function ProductDetail({ route }) {
             amount: 1,
         };
 
-        console.log('Item being added to cart:', itemToAdd);
+        console.log('Sepetinize Eklendi', itemToAdd);
 
         // CartContext'teki addToCart'a gönder
         addToCart(itemToAdd);
 
         // Toast bildirimi göster
-        showToast(translations.productAddedToCart);
+        showToast('Sepetinize Eklendi');
 
         // Go to Cart butonunu göster
         setShowGoToCart(true);
@@ -265,7 +263,7 @@ export default function ProductDetail({ route }) {
             setSelectedSize(size);
         } else {
             // Mevcut olmayan beden için uyarı toast'ı
-            showToast(translations.sizeNotAvailable || 'Bu beden mevcut değil');
+            showToast('Bu beden mevcut değil');
         }
     };
 
@@ -302,7 +300,7 @@ export default function ProductDetail({ route }) {
                     <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#333'} />
                 </TouchableOpacity>
                 <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#000' }]}>
-                    {translations.loading || 'Loading...'}
+                    Yükleniyor
                 </Text>
             </View>
         );
@@ -366,13 +364,13 @@ export default function ProductDetail({ route }) {
                     onPress={handleRateProduct}
                 >
                     <Ionicons name="star" size={20} color="#FF8C00" />
-                    <Text style={styles.rateButtonText}>{translations.rateProduct || 'Ürünü Değerlendir'}</Text>
+                    <Text style={styles.rateButtonText}>Ürünü Değerlendir'</Text>
                 </TouchableOpacity>
 
             </View>
 
             <Text style={[styles.sizeTitle, { color: isDarkMode ? '#fff' : '#000' }]}>
-                {translations.sizeOptions}
+                Beden Seçenekleri
             </Text>
 
             <View style={styles.sizeContainer}>
@@ -455,7 +453,7 @@ export default function ProductDetail({ route }) {
                         style={{ marginRight: 8 }}
                     />
                     <Text style={styles.cartButtonText}>
-                        {translations.addToCart}
+                        Sepete Ekle
                     </Text>
                 </TouchableOpacity>
 
@@ -467,7 +465,7 @@ export default function ProductDetail({ route }) {
                     >
                         <Ionicons name="cart" size={20} color="#fff" style={{ marginRight: 8 }} />
                         <Text style={styles.goToCartButtonText}>
-                            {translations.goToCart}
+                            Sepete Git
                         </Text>
                     </TouchableOpacity>
                 )}
@@ -485,7 +483,7 @@ export default function ProductDetail({ route }) {
                 pointerEvents="none"
             >
                 <Ionicons name="checkmark-circle" size={20} color="#fff" style={{ marginRight: 8 }} />
-                <Text style={styles.toastText}>{translations.productAddedToCart}</Text>
+                <Text style={styles.toastText}>Sepete Eklendi</Text>
             </Animated.View>
 
             {/* Review Modal */}

@@ -8,7 +8,6 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useFavorites } from '../contexts/FavoritesContext';
 import { useFilter } from '../contexts/FilterContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useProduct } from '../contexts/ProductContext';
 
@@ -32,22 +31,20 @@ export default function Search() {
         },
         updateFilters: () => { }
     };
-    const { translations, language } = useLanguage() || { translations: {}, language: 'en' };
     const { theme, isDarkMode } = useTheme() || { theme: {}, isDarkMode: false };
-    const { products, loading, fetchProducts, fetchProductsByCategory, updateProductFavoriteStatus } = useProduct();
+    const { products, loading, fetchProducts,updateProductFavoriteStatus } = useProduct();
 
     const [searchText, setSearchText] = useState('');
     const [sortOption, setSortOption] = useState(null);
     const [categories] = useState(['Jacket', 'Pants', 'Shoes', 'T-Shirt']); // Static categories
-    const [apiStatus, setApiStatus] = useState(true);
 
     const { minPrice, maxPrice, selectedCategory, selectedSizes } = filters || {};
 
     // Navigation başlığını güncelle
     useEffect(() => {
         const title = selectedCategory
-            ? `${selectedCategory} ${translations?.products || 'Products'}`
-            : translations?.allProducts || 'All Products';
+            ? `${selectedCategory} 'Ürün'`
+            : 'Tüm Ürünler';
 
         navigation.setOptions({
             title: title,
@@ -59,7 +56,7 @@ export default function Search() {
                 fontWeight: 'bold',
             },
         });
-    }, [selectedCategory, navigation, translations, theme.primary]);
+    }, [selectedCategory, navigation, theme.primary]);
 
     // Güvenli fiyat parsing için utility kullan
 
@@ -219,8 +216,8 @@ export default function Search() {
 
             const priceA = parsePrice(a.price);
             const priceB = parsePrice(b.price);
-            const lowestPrice = translations?.lowestPrice;
-            const highestPrice = translations?.highestPrice;
+            const lowestPrice = 'En Düşük Fiyat';
+            const highestPrice = 'En Yüksek Fiyat';
 
             switch (sortOption) {
                 case lowestPrice: return priceA - priceB;
@@ -228,7 +225,7 @@ export default function Search() {
                 default: return 0;
             }
         });
-    }, [products, searchText, minPrice, maxPrice, selectedCategory, selectedSizes, sortOption, translations?.lowestPrice, translations?.highestPrice]); // Updated to use products from context
+    }, [products, searchText, minPrice, maxPrice, selectedCategory, selectedSizes, sortOption]); // Updated to use products from context
 
     const handleProductPress = useCallback(product => {
         navigation.navigate('ProductDetail', { product });
@@ -238,7 +235,7 @@ export default function Search() {
         console.log(`Search: Toggling favorite for product ${productId}`);
 
         // Context'teki toggle fonksiyonunu kullan ve ProductContext'i güncelle
-        const newFavoriteStatus = await toggleFavorite(productId, 'Search', updateProductFavoriteStatus);
+        const newFavoriteStatus = await toggleFavorite(productId, updateProductFavoriteStatus);
 
         // Eğer API'den cevap gelmişse durumu logla
         if (newFavoriteStatus !== null) {
@@ -252,11 +249,10 @@ export default function Search() {
             item={item}
             onProductPress={handleProductPress}
             onFavoritePress={handleFavoritePress}
-            translations={translations}
             isDarkMode={isDarkMode}
             favoriteItems={favoriteItems}
         />
-    ), [handleProductPress, handleFavoritePress, translations, isDarkMode]);
+    ), [handleProductPress, handleFavoritePress, isDarkMode]);
 
     // Optimize getItemLayout
     const getItemLayout = useCallback((data, index) => ({
@@ -272,9 +268,9 @@ export default function Search() {
     const EmptyComponent = useCallback(() => (
         <View style={styles.emptyContainer}>
             <Ionicons name="search" size={60} color="#ccc" />
-            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>{translations?.noProductsFound || 'No products found'}</Text>
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>Ürün Bulunamadı</Text>
         </View>
-    ), [theme.textSecondary, translations?.noProductsFound]);
+    ), [theme.textSecondary]);
 
     const clearSearch = useCallback(() => setSearchText(''), []);
 
@@ -283,7 +279,7 @@ export default function Search() {
             <View style={styles.loadingContainer}>
                 <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.statusBarBackground} />
                 <Ionicons name="refresh" size={40} color="#FF6B35" />
-                <Text style={styles.loadingText}>{translations?.loading || 'Loading...'}</Text>
+                <Text style={styles.loadingText}>Yükleniyor</Text>
             </View>
         );
     }
@@ -299,7 +295,7 @@ export default function Search() {
                     <Ionicons name="search" size={22} color={theme.textSecondary} style={styles.searchIcon} />
                     <TextInput
                         style={[styles.textInput, { color: theme.text }]}
-                        placeholder={translations?.searchForProducts || 'Search for products...'}
+                        placeholder={'Ürün Arama'}
                         placeholderTextColor={theme.textTertiary}
                         value={searchText}
                         onChangeText={setSearchText}
@@ -321,11 +317,11 @@ export default function Search() {
             {/* Product Count */}
             <View style={styles.countContainer}>
                 <Text style={[styles.countText, { color: theme.textSecondary }]}>
-                    {filteredProducts.length} {translations?.productsFound || 'products found'}
+                    {filteredProducts.length} Ürün Bulundu
                 </Text>
             </View>
         </View>
-    ), [isDarkMode, theme, searchText, translations, clearSearch, categories, products, updateFilters, setSortOption, filteredProducts.length]);
+    ), [isDarkMode, theme, searchText, clearSearch, categories, products, updateFilters, setSortOption, filteredProducts.length]);
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>

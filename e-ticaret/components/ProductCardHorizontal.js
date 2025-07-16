@@ -9,7 +9,6 @@ const ProductCardHorizontal = memo(({
     item,
     onProductPress,
     onFavoritePress,
-    translations,
     isDarkMode,
     favoriteItems: propFavoriteItems,
 }) => {
@@ -33,11 +32,6 @@ const ProductCardHorizontal = memo(({
     // Önce context'i kontrol et (daha güncel), sonra API'den gelen veri
     const isFavorite = contextFavorite !== undefined ? contextFavorite : (apiFavorite || false);
 
-    // Debug log - sadece değişen ürünler için
-    if (contextFavorite !== undefined || apiFavorite !== false) {
-        console.log(`ProductCardHorizontal ${item.id}: contextFavorite=${contextFavorite}, apiFavorite=${apiFavorite}, final=${isFavorite}`);
-    }
-
     const isFlashSale = item.badge_FlashSale || false;
     const isBestSelling = item.badge_BestSelling || false;
     const hasLabelBestSeller = item.label_BestSeller || false;
@@ -51,11 +45,13 @@ const ProductCardHorizontal = memo(({
         <View
             style={[styles.card, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}
         >
-            <Badge
-                isFlashSale={isFlashSale}
-                isBestSelling={isBestSelling}
-                translations={translations}
-            />
+            {/* Badge - sadece gerektiğinde render et */}
+            {(isFlashSale || isBestSelling) && (
+                <Badge
+                    isFlashSale={isFlashSale}
+                    isBestSelling={isBestSelling}
+                />
+            )}
 
             <View style={styles.imageContainer}>
                 <TouchableOpacity
@@ -86,11 +82,13 @@ const ProductCardHorizontal = memo(({
                 </TouchableOpacity>
             </View>
 
-            <Label
-                hasFastDelivery={hasFastDelivery}
-                hasLabelBestSeller={hasLabelBestSeller}
-                translations={translations}
-            />
+            {/* Label - sadece gerektiğinde render et */}
+            {(hasFastDelivery || hasLabelBestSeller) && (
+                <Label
+                    hasFastDelivery={hasFastDelivery}
+                    hasLabelBestSeller={hasLabelBestSeller}
+                />
+            )}
 
             <Text
                 style={[styles.name, { color: isDarkMode ? '#fff' : '#2c3e50' }]}
@@ -115,61 +113,52 @@ const ProductCardHorizontal = memo(({
         prevProps.item.name === nextProps.item.name &&
         prevProps.item.price === nextProps.item.price &&
         prevFavorite === nextFavorite &&
-        prevProps.isDarkMode === nextProps.isDarkMode &&
-        prevProps.translations === nextProps.translations
+        prevProps.isDarkMode === nextProps.isDarkMode
     );
 });
 
-const Badge = memo(({ isFlashSale, isBestSelling, translations }) => {
-    // Sadece badge true ise göster
+const Badge = memo(({ isFlashSale, isBestSelling }) => {
+    // Priority: Flash sale badge öncelikli
     if (isFlashSale) {
         return (
             <View style={styles.flashSaleBadge}>
-                <Text style={styles.flashSaleText}>{translations.flashSale.split(' ')[0]}</Text>
-                <Text style={styles.flashSaleText}>{translations.flashSale.split(' ')[1]}</Text>
+                <Text style={styles.flashSaleText}>FLASH</Text>
+                <Text style={styles.flashSaleText}>İNDİRİM</Text>
             </View>
         );
     }
 
-    if (isBestSelling) {
-        return (
-            <View style={styles.bestSellingBadge}>
-                <Text style={styles.bestSellingText}>{translations.bestSellingLine1}</Text>
-                <Text style={styles.bestSellingText}>{translations.bestSellingLine2}</Text>
-            </View>
-        );
-    }
-
-    // Hiçbir badge true değilse badge gösterme
-    return null;
+    // Best selling badge
+    return (
+        <View style={styles.bestSellingBadge}>
+            <Text style={styles.bestSellingText}>EN ÇOK</Text>
+            <Text style={styles.bestSellingText}>SATAN</Text>
+        </View>
+    );
 });
 
-const Label = memo(({ hasFastDelivery, hasLabelBestSeller, translations }) => {
-    // Sadece label true ise göster
+const Label = memo(({ hasFastDelivery, hasLabelBestSeller }) => {
+    // Priority: Fast delivery label öncelikli
     if (hasFastDelivery) {
         return (
             <View style={styles.fastDeliveryBadge}>
                 <Ionicons name="flash" size={12} color="white" style={styles.deliveryIcon} />
                 <Text style={styles.fastDeliveryText}>
-                    {translations.fastDelivery}
+                    Hızlı Teslimat
                 </Text>
             </View>
         );
     }
 
-    if (hasLabelBestSeller) {
-        return (
-            <View style={styles.bestSellerBadge}>
-                <Ionicons name="star" size={12} color="white" style={styles.deliveryIcon} />
-                <Text style={styles.bestSellerText}>
-                    {translations.bestSeller}
-                </Text>
-            </View>
-        );
-    }
-
-    // Hiçbir label true değilse label gösterme
-    return null;
+    // Best seller label
+    return (
+        <View style={styles.bestSellerBadge}>
+            <Ionicons name="star" size={12} color="white" style={styles.deliveryIcon} />
+            <Text style={styles.bestSellerText}>
+                EN ÇOK SATAN
+            </Text>
+        </View>
+    );
 });
 
 const styles = StyleSheet.create({

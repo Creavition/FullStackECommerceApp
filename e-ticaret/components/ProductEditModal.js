@@ -12,12 +12,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { useProduct } from '../contexts/ProductContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 export default function ProductEditModal({ visible, product, onClose, onUpdate }) {
     const { updateProductCategory, updateProductSizes, updateProductCategoryAndSizes } = useProduct();
-    const { translations } = useLanguage();
     const { theme, isDarkMode } = useTheme();
 
     const [selectedCategoryId, setSelectedCategoryId] = useState(null);
@@ -72,8 +70,8 @@ export default function ProductEditModal({ visible, product, onClose, onUpdate }
 
         if (selectedSizeIds.length === 0) {
             Alert.alert(
-                translations.error || 'Error',
-                'Please select at least one size'
+                'Hata',
+                'Lütfen Beden Seçiniz'
             );
             return;
         }
@@ -88,21 +86,21 @@ export default function ProductEditModal({ visible, product, onClose, onUpdate }
 
             if (success) {
                 Alert.alert(
-                    translations.success || 'Success',
-                    'Product updated successfully'
+                    'Başarılı',
+                    'Ürün Başarıyla Güncellendi'
                 );
                 onUpdate?.();
                 onClose();
             } else {
                 Alert.alert(
-                    translations.error || 'Error',
+                    'Hata',
                     'Failed to update product'
                 );
             }
         } catch (error) {
             Alert.alert(
-                translations.error || 'Error',
-                error.message || 'Something went wrong'
+                'Hata',
+                'Yanlış Giden Bir Şeyler Var'
             );
         } finally {
             setLoading(false);

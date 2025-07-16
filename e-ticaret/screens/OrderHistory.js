@@ -3,14 +3,12 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal, Scrol
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { OrderContext } from '../contexts/OrderContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useProduct } from '../contexts/ProductContext';
 
 export default function OrderHistory() {
     const navigation = useNavigation();
     const { orderHistory, loadOrderHistory, clearOrderHistory } = useContext(OrderContext);
-    const { translations } = useLanguage();
     const { theme, isDarkMode } = useTheme();
     const { getImageUrl } = useProduct();
     const [selectedOrder, setSelectedOrder] = useState(null); {/* Modal'da gosterilecek secili siparis */ }
@@ -54,27 +52,27 @@ export default function OrderHistory() {
     // Clear order history fonksiyonu
     const handleClearHistory = () => {
         Alert.alert(
-            translations.clearHistory || 'Clear History',
-            translations.clearHistoryConfirm || 'Are you sure you want to clear all order history? This action cannot be undone.',
+            'Geçmişi Temizle',
+            'Tüm sipariş geçmişini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
             [
                 {
-                    text: translations.cancel || 'Cancel',
+                    text: 'İptal',
                     style: 'cancel',
                 },
                 {
-                    text: translations.clear || 'Clear',
+                    text: 'Temizle',
                     style: 'destructive',
                     onPress: async () => {
                         try {
                             await clearOrderHistory();
                             Alert.alert(
-                                translations.success || 'Success',
-                                translations.historyCleared || 'Order history has been cleared successfully.'
+                                'Başarılı',
+                                'Sipariş geçmişi başarıyla temizlendi.'
                             );
                         } catch (error) {
                             Alert.alert(
-                                translations.error || 'Error',
-                                translations.clearHistoryError || 'Failed to clear order history. Please try again.'
+                                'Hata',
+                                'Sipariş geçmişi temizlenemedi. Lütfen tekrar deneyin.'
                             );
                             console.error('Error clearing order history:', error);
                         }
@@ -104,13 +102,13 @@ export default function OrderHistory() {
                 </View>
                 <View style={styles.metaItem}>
                     <Ionicons name="cube" size={16} color={isDarkMode ? '#b3b3b3' : '#666'} />
-                    <Text style={[styles.metaText, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{item.items?.length || 0} {translations.items}</Text>
+                    <Text style={[styles.metaText, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{item.items?.length || 0} Ürün</Text>
                 </View>
             </View>
 
             <View style={[styles.cardFooter, { borderTopColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
                 <View style={styles.totalSection}>
-                    <Text style={[styles.totalLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{translations.total}</Text>
+                    <Text style={[styles.totalLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>Toplam</Text>
                     <Text style={[styles.totalAmount, { color: isDarkMode ? '#fff' : '#333' }]}>{item.totalAmount} ₺</Text>
                 </View>
                 <TouchableOpacity
@@ -120,7 +118,7 @@ export default function OrderHistory() {
                         setModalVisible(true);
                     }}
                 >
-                    <Text style={styles.detailsButtonText}>{translations.viewDetails}</Text>
+                    <Text style={styles.detailsButtonText}>Detayları Göster</Text>
                     <Ionicons name="chevron-forward" size={16} color="#E88A35" />
                 </TouchableOpacity>
             </View>
@@ -153,7 +151,7 @@ export default function OrderHistory() {
                             <View style={styles.headerLeft}>
                                 <Ionicons name="receipt" size={24} color="#ce6302" />
                                 <Text style={[styles.bottomSheetTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                    {translations.orderDetails}
+                                    Sipariş Detayları
                                 </Text>
                             </View>
                             <TouchableOpacity
@@ -187,10 +185,10 @@ export default function OrderHistory() {
                                     </View>
                                     <View style={styles.summaryInfo}>
                                         <Text style={[styles.summaryTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                            {translations.orderSummary || 'Sipariş Özeti'}
+                                            'Sipariş Özeti'
                                         </Text>
                                         <Text style={[styles.summarySubtitle, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-                                            {selectedOrder?.items?.length || 0} {translations.products} • {selectedOrder?.totalAmount} ₺
+                                            {selectedOrder?.items?.length || 0} Ürün • {selectedOrder?.totalAmount} ₺
                                         </Text>
                                     </View>
                                 </View>
@@ -201,7 +199,7 @@ export default function OrderHistory() {
                                 <View style={styles.statusHeader}>
                                     <Ionicons name="time" size={18} color="#FF6B35" />
                                     <Text style={[styles.statusTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                        {translations.orderStatus || 'Sipariş Durumu'}
+                                        Sipariş Durumu
                                     </Text>
                                 </View>
                                 <View style={[styles.statusBadgeContainer, { backgroundColor: getStatusColor(selectedOrder?.status) }]}>
@@ -216,7 +214,7 @@ export default function OrderHistory() {
                                     <View style={styles.productsHeaderLeft}>
                                         <Ionicons name="bag-handle" size={18} color="#FF6B35" />
                                         <Text style={[styles.productsTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                            {translations.orderedProducts}
+                                            Sipariş Edilmiş Ürünler
                                         </Text>
                                     </View>
                                     <View style={[styles.productsCount, { backgroundColor: '#FF6B35' }]}>
@@ -273,7 +271,7 @@ export default function OrderHistory() {
                                 <View style={styles.infoHeader}>
                                     <Ionicons name="information-circle" size={18} color="#FF6B35" />
                                     <Text style={[styles.infoTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                        {translations.orderInfo}
+                                        Sipariş Detayları
                                     </Text>
                                 </View>
 
@@ -283,10 +281,10 @@ export default function OrderHistory() {
                                             <Ionicons name="card" size={16} color="#fff" />
                                         </View>
                                         <Text style={[styles.infoCardLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-                                            {translations.payment}
+                                            Ödeme
                                         </Text>
                                         <Text style={[styles.infoCardValue, { color: isDarkMode ? '#fff' : '#333' }]} numberOfLines={2}>
-                                            {selectedOrder?.paymentMethod || translations.cardNotFound}
+                                            {selectedOrder?.paymentMethod || 'Kart Bulunamadı'}
                                         </Text>
                                     </View>
 
@@ -295,10 +293,10 @@ export default function OrderHistory() {
                                             <Ionicons name="location" size={16} color="#fff" />
                                         </View>
                                         <Text style={[styles.infoCardLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-                                            {translations.delivery}
+                                            Teslimat
                                         </Text>
                                         <Text style={[styles.infoCardValue, { color: isDarkMode ? '#fff' : '#333' }]} numberOfLines={3}>
-                                            {selectedOrder?.shippingAddress || translations.addressNotFound}
+                                            {selectedOrder?.shippingAddress || 'Adres Bulunamadı'}
                                         </Text>
                                     </View>
                                 </View>
@@ -309,7 +307,7 @@ export default function OrderHistory() {
                                 <View style={styles.totalContainer}>
                                     <View style={styles.totalLeft}>
                                         <Text style={[styles.totalLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-                                            {translations.totalAmount}
+                                            Toplam Miktar
                                         </Text>
                                         <Text style={[styles.totalAmount, { color: isDarkMode ? '#fff' : '#333' }]}>
                                             {selectedOrder?.totalAmount} ₺
@@ -343,14 +341,14 @@ export default function OrderHistory() {
                     <View style={[styles.emptyIconContainer, { backgroundColor: isDarkMode ? '#444' : '#f5f5f5' }]}>
                         <Ionicons name="receipt-outline" size={80} color={isDarkMode ? '#ce6302' : '#ce6302'} />
                     </View>
-                    <Text style={[styles.emptyTitle, { color: isDarkMode ? '#fff' : '#333' }]}>{translations.noOrders}</Text>
-                    <Text style={[styles.emptySubtitle, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{translations.noOrdersMessage}</Text>
+                    <Text style={[styles.emptyTitle, { color: isDarkMode ? '#fff' : '#333' }]}>Henüz Sipariş Yok</Text>
+                    <Text style={[styles.emptySubtitle, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>Herhangi bir sipariş vermediniz.</Text>
                     <TouchableOpacity
                         style={styles.shopButton}
                         onPress={() => navigation.navigate('HomeScreen', { screen: 'Home' })}
                     >
                         <Ionicons name="storefront" size={20} color="#fff" />
-                        <Text style={styles.shopButtonText}>{translations.startShopping || 'Start Shopping'}</Text>
+                        <Text style={styles.shopButtonText}>Alışverişe Başla</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -369,7 +367,7 @@ export default function OrderHistory() {
                 </TouchableOpacity>
 
                 <Text style={[styles.headerTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                    {translations.orderHistory || 'Order History'}
+                    Sipariş Geçmişi
                 </Text>
 
                 <View style={styles.placeholder} />
@@ -392,7 +390,7 @@ export default function OrderHistory() {
                         <View style={styles.clearButtonContent}>
                             <Ionicons name="trash-outline" size={18} color="#000" />
                             <Text style={[styles.clearButtonTextModern, { color: '#000' }]}>
-                                {translations.clear || 'Clear'}
+                                Temizle
                             </Text>
                         </View>
                     </TouchableOpacity>

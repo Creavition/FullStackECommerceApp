@@ -1,29 +1,11 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://192.168.1.210:5207/api';
-
-const api = axios.create({
-    baseURL: API_BASE_URL,
-    timeout: 10000,
-    headers: {
-        'Content-Type': 'application/json',
-    },
-});
-
-// Response interceptor for error handling
-api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        console.error('Product API Error:', error.response?.data || error.message);
-        throw error;
-    }
-);
+const API_BASE_URL = 'http://10.241.64.12:5207/api';
 
 export const productApi = {
-    // Tüm ürünleri getir
     getAllProducts: async () => {
         try {
-            const response = await api.get('/Product');
+            const response = await axios.get(`${API_BASE_URL}/Product`);
             return response.data;
         } catch (error) {
             console.error('Error fetching all products:', error);
@@ -31,10 +13,9 @@ export const productApi = {
         }
     },
 
-    // Belirli bir ürünü getir
     getProductById: async (id) => {
         try {
-            const response = await api.get(`/Product/${id}`);
+            const response = await axios.get(`${API_BASE_URL}/Product/${id}`);
             return response.data;
         } catch (error) {
             console.error(`Error fetching product ${id}:`, error);
@@ -42,10 +23,9 @@ export const productApi = {
         }
     },
 
-    // Kategoriye göre ürünleri getir
     getProductsByCategory: async (categoryId) => {
         try {
-            const response = await api.get(`/Product/category/${categoryId}`);
+            const response = await axios.get(`${API_BASE_URL}/Product/category/${categoryId}`);
             return response.data;
         } catch (error) {
             console.error(`Error fetching products for category ${categoryId}:`, error);
@@ -53,22 +33,14 @@ export const productApi = {
         }
     },
 
-    // En çok satanları getir - API endpoint'i olmadığı için tüm ürünleri çekip filtrele
     getBestSellers: async () => {
         try {
-            console.log('Fetching best sellers...');
-            // Backend'de özel endpoint yok, tüm ürünleri çekip badge_BestSelling olanları filtrele
-            const response = await api.get('/Product');
-            const allProducts = response.data || [];
-            const bestSellers = allProducts.filter(product => product.badge_BestSelling === true);
-            console.log('Best sellers found:', bestSellers.length);
-            return bestSellers;
+            const response = await axios.get(`${API_BASE_URL}/Product`);
+            return (response.data || []).filter(p => p.badge_BestSelling);
         } catch (error) {
             console.error('Error fetching best sellers:', error);
-            console.log('API best sellers not available, using all products');
-            // Fallback: tüm ürünleri döndür
             try {
-                const response = await api.get('/Product');
+                const response = await axios.get(`${API_BASE_URL}/Product`);
                 return response.data || [];
             } catch (fallbackError) {
                 console.error('Fallback also failed:', fallbackError);
@@ -77,22 +49,14 @@ export const productApi = {
         }
     },
 
-    // Flash sale ürünlerini getir - API endpoint'i olmadığı için tüm ürünleri çekip filtrele
     getFlashSaleProducts: async () => {
         try {
-            console.log('Fetching flash sale products...');
-            // Backend'de özel endpoint yok, tüm ürünleri çekip badge_FlashSale olanları filtrele
-            const response = await api.get('/Product');
-            const allProducts = response.data || [];
-            const flashSaleProducts = allProducts.filter(product => product.badge_FlashSale === true);
-            console.log('Flash sale products found:', flashSaleProducts.length);
-            return flashSaleProducts;
+            const response = await axios.get(`${API_BASE_URL}/Product`);
+            return (response.data || []).filter(p => p.badge_FlashSale);
         } catch (error) {
             console.error('Error fetching flash sale products:', error);
-            console.log('API flash sale products not available, using all products');
-            // Fallback: tüm ürünleri döndür
             try {
-                const response = await api.get('/Product');
+                const response = await axios.get(`${API_BASE_URL}/Product`);
                 return response.data || [];
             } catch (fallbackError) {
                 console.error('Fallback also failed:', fallbackError);
@@ -101,22 +65,14 @@ export const productApi = {
         }
     },
 
-    // Hızlı teslimat ürünlerini getir - API endpoint'i olmadığı için tüm ürünleri çekip filtrele
     getFastDeliveryProducts: async () => {
         try {
-            console.log('Fetching fast delivery products...');
-            // Backend'de özel endpoint yok, tüm ürünleri çekip label_FastDelivery olanları filtrele
-            const response = await api.get('/Product');
-            const allProducts = response.data || [];
-            const fastDeliveryProducts = allProducts.filter(product => product.label_FastDelivery === true);
-            console.log('Fast delivery products found:', fastDeliveryProducts.length);
-            return fastDeliveryProducts;
+            const response = await axios.get(`${API_BASE_URL}/Product`);
+            return (response.data || []).filter(p => p.label_FastDelivery);
         } catch (error) {
             console.error('Error fetching fast delivery products:', error);
-            console.log('API fast delivery products not available, using all products');
-            // Fallback: tüm ürünleri döndür
             try {
-                const response = await api.get('/Product');
+                const response = await axios.get(`${API_BASE_URL}/Product`);
                 return response.data || [];
             } catch (fallbackError) {
                 console.error('Fallback also failed:', fallbackError);
@@ -125,10 +81,9 @@ export const productApi = {
         }
     },
 
-    // Ürünleri filtrele
     filterProducts: async (filters) => {
         try {
-            const response = await api.post('/Product/filter', filters);
+            const response = await axios.post(`${API_BASE_URL}/Product/filter`, filters);
             return response.data;
         } catch (error) {
             console.error('Error filtering products:', error);
@@ -136,10 +91,9 @@ export const productApi = {
         }
     },
 
-    // Yeni ürün oluştur
     createProduct: async (productData) => {
         try {
-            const response = await api.post('/Product', productData);
+            const response = await axios.post(`${API_BASE_URL}/Product`, productData);
             return response.data;
         } catch (error) {
             console.error('Error creating product:', error);
@@ -147,10 +101,9 @@ export const productApi = {
         }
     },
 
-    // Ürün güncelle
     updateProduct: async (id, productData) => {
         try {
-            const response = await api.put(`/Product/${id}`, productData);
+            const response = await axios.put(`${API_BASE_URL}/Product/${id}`, productData);
             return response.data;
         } catch (error) {
             console.error(`Error updating product ${id}:`, error);
@@ -158,10 +111,9 @@ export const productApi = {
         }
     },
 
-    // Ürün sil
     deleteProduct: async (id) => {
         try {
-            const response = await api.delete(`/Product/${id}`);
+            const response = await axios.delete(`${API_BASE_URL}/Product/${id}`);
             return response.data;
         } catch (error) {
             console.error(`Error deleting product ${id}:`, error);
@@ -169,12 +121,9 @@ export const productApi = {
         }
     },
 
-    // Favori durumunu güncelle
     toggleFavorite: async (productId, isFavorite) => {
         try {
-            const response = await api.put(`/Product/${productId}`, {
-                isFavorite: isFavorite
-            });
+            const response = await axios.put(`${API_BASE_URL}/Product/${productId}`, { isFavorite });
             return response.data;
         } catch (error) {
             console.error(`Error toggling favorite for product ${productId}:`, error);
@@ -182,23 +131,9 @@ export const productApi = {
         }
     },
 
-    // Ürünü güncelle (CategoryId ve AvailableSizes dahil)
-    updateProduct: async (productId, updateData) => {
-        try {
-            const response = await api.put(`/Product/${productId}`, updateData);
-            return response.data;
-        } catch (error) {
-            console.error(`Error updating product ${productId}:`, error);
-            throw error;
-        }
-    },
-
-    // Ürün kategorisini güncelle
     updateProductCategory: async (productId, categoryId) => {
         try {
-            const response = await api.put(`/Product/${productId}`, {
-                categoryId: categoryId
-            });
+            const response = await axios.put(`${API_BASE_URL}/Product/${productId}`, { categoryId });
             return response.data;
         } catch (error) {
             console.error(`Error updating product category for ${productId}:`, error);
@@ -206,12 +141,9 @@ export const productApi = {
         }
     },
 
-    // Ürün available sizes'ını güncelle (özel endpoint kullanarak)
     updateProductSizes: async (productId, sizeIds) => {
         try {
-            const response = await api.put(`/Product/${productId}/sizes`, {
-                sizeIds: sizeIds
-            });
+            const response = await axios.put(`${API_BASE_URL}/Product/${productId}/sizes`, { sizeIds });
             return response.data;
         } catch (error) {
             console.error(`Error updating product sizes for ${productId}:`, error);
@@ -219,12 +151,9 @@ export const productApi = {
         }
     },
 
-    // Ürün available sizes'ını güncelle (genel endpoint kullanarak)
     updateProductSizesGeneral: async (productId, sizeIds) => {
         try {
-            const response = await api.put(`/Product/${productId}`, {
-                sizeIds: sizeIds
-            });
+            const response = await axios.put(`${API_BASE_URL}/Product/${productId}`, { sizeIds });
             return response.data;
         } catch (error) {
             console.error(`Error updating product sizes (general) for ${productId}:`, error);
@@ -232,13 +161,9 @@ export const productApi = {
         }
     },
 
-    // Ürün kategori ve available sizes'ını beraber güncelle
     updateProductCategoryAndSizes: async (productId, categoryId, sizeIds) => {
         try {
-            const response = await api.put(`/Product/${productId}`, {
-                categoryId: categoryId,
-                sizeIds: sizeIds
-            });
+            const response = await axios.put(`${API_BASE_URL}/Product/${productId}`, { categoryId, sizeIds });
             return response.data;
         } catch (error) {
             console.error(`Error updating product category and sizes for ${productId}:`, error);
@@ -246,40 +171,26 @@ export const productApi = {
         }
     },
 
-    // JSON formatında available sizes güncelle
     updateProductSizesFromJson: async (productId, sizesData) => {
         try {
-            // sizesData can be:
-            // 1. Array of size IDs: [1, 2, 3]
-            // 2. Array of size names: ["S", "M", "L"]
-            // 3. Object with sizeIds property: { sizeIds: [1, 2, 3] }
-
             let sizeIds = [];
 
             if (Array.isArray(sizesData)) {
-                // If it's an array, check if it contains numbers or strings
-                if (sizesData.length > 0 && typeof sizesData[0] === 'number') {
-                    // Array of size IDs
+                if (typeof sizesData[0] === 'number') {
                     sizeIds = sizesData;
-                } else if (sizesData.length > 0 && typeof sizesData[0] === 'string') {
-                    // Array of size names - convert to IDs
+                } else if (typeof sizesData[0] === 'string') {
                     const sizeNameToId = {
                         'XS': 1, 'S': 2, 'M': 3, 'L': 4, 'XL': 5, 'XXL': 6
                     };
-                    sizeIds = sizesData.map(name => sizeNameToId[name]).filter(id => id);
+                    sizeIds = sizesData.map(name => sizeNameToId[name]).filter(Boolean);
                 }
-            } else if (sizesData && typeof sizesData === 'object' && sizesData.sizeIds) {
-                // Object with sizeIds property
+            } else if (sizesData?.sizeIds) {
                 sizeIds = sizesData.sizeIds;
             }
 
-            if (sizeIds.length === 0) {
-                throw new Error('No valid size IDs provided');
-            }
+            if (sizeIds.length === 0) throw new Error('No valid size IDs provided');
 
-            const response = await api.put(`/Product/${productId}/sizes`, {
-                sizeIds: sizeIds
-            });
+            const response = await axios.put(`${API_BASE_URL}/Product/${productId}/sizes`, { sizeIds });
             return response.data;
         } catch (error) {
             console.error(`Error updating product sizes from JSON for ${productId}:`, error);
@@ -288,7 +199,6 @@ export const productApi = {
     }
 };
 
-// Ürün filtreleme yardımcı fonksiyonları
 export const createProductFilter = ({
     categoryId = null,
     minPrice = null,
@@ -302,10 +212,7 @@ export const createProductFilter = ({
     page = 1,
     pageSize = 20
 } = {}) => {
-    const filter = {
-        page,
-        pageSize
-    };
+    const filter = { page, pageSize };
 
     if (categoryId !== null) filter.categoryId = categoryId;
     if (minPrice !== null) filter.minPrice = minPrice;

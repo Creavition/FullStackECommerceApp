@@ -1,37 +1,20 @@
 // Cart.js - Size debugging ile
-import { useContext, useMemo, useCallback, useState, useEffect } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, StatusBar } from 'react-native';
-import { CartContext } from '../contexts/CartContext';
+import { useCart } from '../contexts/CartContext';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getAllProducts } from '../utils/productUtils';
-import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useProduct } from '../contexts/ProductContext';
 
 export default function Cart() {
-  const { cartItems, removeFromCart, increaseAmount, decreaseAmount, updateAllCartItemsLanguage } = useContext(CartContext);
+  const { cartItems, removeFromCart, increaseAmount, decreaseAmount } = useCart();
   const navigation = useNavigation();
-  const { translations, language } = useLanguage();
   const { theme, isDarkMode } = useTheme();
   const { getImageUrl } = useProduct();
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Debug için cartItems'ı console'a yazdır
-  useEffect(() => {
-    console.log('Current cartItems:', cartItems);
-    cartItems.forEach((item, index) => {
-      const keyExtracted = `${item.id}-${item.size || 'nosize'}-${index}`;
-      console.log(`Item ${index}:`, {
-        id: item.id,
-        name: item.name,
-        size: item.size,
-        amount: item.amount,
-        generatedKey: keyExtracted
-      });
-    });
-  }, [cartItems]);
 
   // Ürünleri yükle
   const loadProducts = useCallback(async () => {
@@ -46,17 +29,11 @@ export default function Cart() {
     }
   }, []);
 
-  // Sayfa yüklendiğinde ve dil değiştiğinde ürünleri yükle
+  // Sayfa yüklendiğinde ürünleri yükle
   useEffect(() => {
     loadProducts();
-  }, [loadProducts, language]);
+  }, [loadProducts]);
 
-  // Dil değiştiğinde sepetteki ürün isimlerini güncelle
-  useEffect(() => {
-    if (allProducts.length > 0 && cartItems.length > 0 && updateAllCartItemsLanguage) {
-      updateAllCartItemsLanguage(allProducts);
-    }
-  }, [allProducts, language]);
 
   const parsePrice = (priceValue) => {
     // Null/undefined kontrolü
@@ -123,21 +100,9 @@ export default function Cart() {
     const isFlashSale = flashSaleProducts.has(item.id);
     const hasFastDelivery = fastDeliveryProducts.has(item.id);
 
-    // Debug için item bilgilerini yazdır
-    console.log(`Rendering item ${index}:`, {
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      priceType: typeof item.price,
-      size: item.size,
-      sizeType: typeof item.size,
-      hasSize: !!item.size,
-      hasPrice: !!item.price
-    });
-
     // Price güvenlik kontrolü
     if (!item.price) {
-      console.warn(`Item ${index} has no price:`, item);
+      console.warn(`Cart item ${index} has no price:`, item.name);
     }
 
     return (
@@ -148,20 +113,16 @@ export default function Cart() {
           {isFlashSale ? (
             <View style={styles.flashSaleBadge}>
               <Text style={styles.flashSaleText}>
-                {translations.flashSale && typeof translations.flashSale === 'string'
-                  ? translations.flashSale.split(' ')[0] || 'Flash'
-                  : 'Flash'}
+                FLASH
               </Text>
               <Text style={styles.flashSaleText}>
-                {translations.flashSale && typeof translations.flashSale === 'string'
-                  ? translations.flashSale.split(' ')[1] || 'Sale'
-                  : 'Sale'}
+                İNDİRİM
               </Text>
             </View>
           ) : (
             <View style={styles.bestSellingBadge}>
-              <Text style={styles.bestSellingText}>{translations.bestSellingLine1 || 'Best'}</Text>
-              <Text style={styles.bestSellingText}>{translations.bestSellingLine2 || 'Selling'}</Text>
+              <Text style={styles.bestSellingText}>EN ÇOK</Text>
+              <Text style={styles.bestSellingText}>SATAN</Text>
             </View>
           )}
 
@@ -178,12 +139,12 @@ export default function Cart() {
           {hasFastDelivery ? (
             <View style={styles.fastDeliveryBadge}>
               <Ionicons name="flash" size={12} color="white" style={styles.deliveryIcon} />
-              <Text style={styles.fastDeliveryText}>{translations.fastDelivery || 'Fast Delivery'}</Text>
+              <Text style={styles.fastDeliveryText}>Hızlı Teslimat</Text>
             </View>
           ) : (
             <View style={styles.bestSellerBadge}>
               <Ionicons name="star" size={12} color="white" style={styles.deliveryIcon} />
-              <Text style={styles.bestSellerText}>{translations.bestSeller || 'Best Seller'}</Text>
+              <Text style={styles.bestSellerText}>En Çok Satan Satıcı</Text>
             </View>
           )}
 
@@ -205,17 +166,17 @@ export default function Cart() {
 
           <View style={styles.detailsRow}>
             <Text style={[styles.detailLabel, { color: isDarkMode ? 'white' : "#333" }]}>
-              {translations.size || 'Size'}:
+              Beden:
             </Text>
-            {/* Size değerini görüntüle - eğer yoksa "N/A" göster */}
+
             <Text style={[styles.detailValue, { color: isDarkMode ? '#fff' : '#333' }]}>
-              {item.size || 'N/A'}
+              {'Beden' || 'Bulunmadı'}
             </Text>
           </View>
 
           <View style={styles.detailsRow}>
             <Text style={[styles.detailLabel, { color: isDarkMode ? 'white' : "#333" }]}>
-              {translations.quantity || 'Quantity'}:
+              Adet:
             </Text>
             <View style={styles.amountContainer}>
               <TouchableOpacity
@@ -238,7 +199,7 @@ export default function Cart() {
 
           <View style={styles.detailsRow}>
             <Text style={[styles.detailLabel, { color: isDarkMode ? 'white' : "#333" }]}>
-              {translations.total || 'Total'}:
+              Toplam:
             </Text>
             <Text style={styles.subtotalValue}>
               {item.price ? (parsePrice(item.price) * (item.amount || 1)).toFixed(2) : '0.00'} ₺
@@ -247,7 +208,7 @@ export default function Cart() {
         </View>
       </View>
     );
-  }, [flashSaleProducts, fastDeliveryProducts, decreaseAmount, increaseAmount, removeFromCart, translations, isDarkMode, getImageUrl]);
+  }, [flashSaleProducts, fastDeliveryProducts, decreaseAmount, increaseAmount, removeFromCart, isDarkMode, getImageUrl]);
 
   const total = cartItems.reduce((sum, item) => {
     if (!item.price) {
@@ -263,11 +224,11 @@ export default function Cart() {
     return (
       <View style={[styles.emptyContainer, { backgroundColor: isDarkMode ? theme.background : '#f8f9fa' }]}>
         <Image style={styles.image} source={require("../assets/images/abandoned-cart.png")} />
-        <Text style={[styles.emptyTitle, { color: isDarkMode ? '#fff' : '#333' }]}>{translations.yourCartEmpty || 'Your Cart is Empty'}</Text>
-        <Text style={[styles.emptySubtitle, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{translations.noItemsInCart || 'No items in your cart'}</Text>
+        <Text style={[styles.emptyTitle, { color: isDarkMode ? '#fff' : '#333' }]}>Sepetiniz Boş</Text>
+        <Text style={[styles.emptySubtitle, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>Henüz sepetinize ürün eklemediniz</Text>
         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
           <Ionicons name="storefront-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-          <Text style={styles.buttonText}>{translations.continueShopping || 'Continue Shopping'}</Text>
+          <Text style={styles.buttonText}>Alışverişe Devam Et</Text>
         </TouchableOpacity>
       </View>
     );
@@ -276,25 +237,30 @@ export default function Cart() {
   return (
     <View style={[styles.container, { backgroundColor: isDarkMode ? theme.background : '#f8f9fa' }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.statusBarBackground} />
-      <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#333' }]}>{translations.cart || 'Cart'}</Text>
+      <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#333' }]}>Sepet</Text>
       <FlatList
         data={cartItems}
         keyExtractor={(item, index) => `${item.id}-${item.size || 'nosize'}-${index}`}
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 20 }}
-        extraData={language}
       />
       <View style={[styles.checkoutContainer, { backgroundColor: isDarkMode ? '#2d2d2d' : '#fff' }]}>
         <View style={styles.totalContainer}>
-          <Text style={[styles.totalLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{translations.totalAmount || 'Total Amount'}</Text>
+          <Text style={[styles.totalLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>Toplam Fiyat</Text>
           <Text style={[styles.total, { color: '#FF8C00' }]}>{total.toFixed(2)} ₺</Text>
         </View>
         <TouchableOpacity
           style={styles.checkoutButton}
-          onPress={() => { navigation.navigate("Payment") }}
+          onPress={() => {
+            // Tab navigator'ın parent navigation'ını kullan
+            const parentNavigation = navigation.getParent();
+            if (parentNavigation) {
+              parentNavigation.navigate("Payment");
+            }
+          }}
         >
           <Ionicons name="card-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-          <Text style={styles.checkoutButtonText}>{translations.proceedToPayment || 'Proceed to Payment'}</Text>
+          <Text style={styles.checkoutButtonText}>Ödemeye Geç</Text>
         </TouchableOpacity>
       </View>
     </View>

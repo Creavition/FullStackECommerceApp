@@ -1,95 +1,121 @@
-import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
-import { useProduct } from './ProductContext';
+import React, { createContext, useState, useContext, useCallback, useMemo } from 'react';
+import { toggleProductFavorite } from '../utils/productUtils';
 
 const FavoritesContext = createContext();
 
-// API Base URL
-const API_BASE_URL = 'http://192.168.1.210:5207';
-
 export const FavoritesProvider = ({ children }) => {
-    // Favoriye eklenen urunler favoriteItems degiskeninde obje olarak tutuluyor.
-    // Mesela {"1":true, "2":true} seklinde tutuluyor.
+    // Favoriye eklenen ürünler - sadece true/false
     const [favoriteItems, setFavoriteItems] = useState({});
 
-    // Ürünün hangi sayfadan eklendiği bilgisini tutuyor
-    // Mesela {"1":"Home", "2":"Search"} seklinde tutuluyor.
-    const [favoriteSource, setFavoriteSource] = useState({});
+    // Basit toggle fonksiyonu 
+    // FavoritesContext.js içindeki toggleFavorite fonksiyonunu bu şekilde değiştirin:
 
-    // FavoriteItems'ı manuel olarak güncelleme fonksiyonu
-    const updateFavoriteItems = useCallback((productId, isFavorite) => {
-        setFavoriteItems(prev => ({
-            ...prev,
-            [productId]: isFavorite
-        }));
-    }, []);
-
-    // API ile favori durumunu toggle et
-    const toggleFavorite = useCallback(async (itemId, source = 'Search', updateProductContext = null) => {
+    const toggleFavorite = useCallback(async (itemId, updateProductContext = null) => {
         try {
-            console.log('Toggling favorite for product ID:', itemId);
+            console.log('=== TOGGLE FAVORITE START ===');
+            console.log('Product ID:', itemId);
 
-            // API'ye favori toggle isteği gönder
-            const response = await fetch(`${API_BASE_URL}/api/Product/${itemId}/favorite`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            // State'i functional update ile güncelle
+            let currentStatus;
+            let newStatus;
+
+            setFavoriteItems(prev => {
+                currentStatus = Boolean(prev[itemId]);
+                newStatus = !currentStatus;
+
+                console.log('Current favoriteItems state:', prev);
+                console.log('Current status:', currentStatus);
+                console.log('New status will be:', newStatus);
+
+                const newState = {
+                    ...prev,
+                    [itemId]: newStatus
+                };
+                console.log('New favoriteItems state:', newState);
+                return newState;
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to toggle favorite');
+            // ProductContext'i güncelle
+            if (updateProductContext && typeof updateProductContext === 'function') {
+                console.log('Updating ProductContext...');
+                updateProductContext(itemId, newStatus);
             }
 
-            const data = await response.json();
-            console.log('API response:', data);
+            // API çağrısını yap
+            console.log('Making API call...');
+            const success = await toggleProductFavorite(itemId, newStatus);
 
-            // API'den gelen yeni favori durumunu local state'e yansıt
-            setFavoriteItems(prev => {
-                const newFavorites = {
+            if (success) {
+                console.log('✅ API call successful');
+                console.log(`Product ${itemId} favorite status changed to: ${newStatus}`);
+                console.log('=== TOGGLE FAVORITE SUCCESS ===');
+                return newStatus;
+            } else {
+                console.error('❌ API call failed - reverting changes');
+
+                // API başarısız olursa değişiklikleri geri al
+                setFavoriteItems(prev => ({
                     ...prev,
-                    [itemId]: data.isFavorite
-                };
+                    [itemId]: currentStatus
+                }));
 
-                // Eğer favoriye ekleniyor ise source bilgisini kaydet
-                if (data.isFavorite) {
-                    setFavoriteSource(prevSource => ({
-                        ...prevSource,
-                        [itemId]: source
-                    }));
-                } else {
-                    // Eğer favoriden çıkarılıyor ise source bilgisini sil
-                    setFavoriteSource(prevSource => {
-                        const newSource = { ...prevSource };
-                        delete newSource[itemId];
-                        return newSource;
-                    });
+                if (updateProductContext && typeof updateProductContext === 'function') {
+                    updateProductContext(itemId, currentStatus);
                 }
 
-                return newFavorites;
-            });
-
-            // ProductContext'i güncelle (eğer fonksiyon verilmişse)
-            if (updateProductContext && typeof updateProductContext === 'function') {
-                updateProductContext(itemId, data.isFavorite);
+                console.log('=== TOGGLE FAVORITE FAILED ===');
+                return null;
             }
 
-            // Local favoriteItems'ı da güncelle
-            updateFavoriteItems(itemId, data.isFavorite);
-
-            return data.isFavorite; // Yeni durumu geri döndür
-
         } catch (error) {
-            console.error('Error toggling favorite:', error);
-            // Hata durumunda kullanıcıya bilgi verilebilir
+            console.error('❌ Error in toggleFavorite:', error);
+
+            // Hata durumunda da geri al - functional update kullan
+            setFavoriteItems(prev => {
+                const originalStatus = Boolean(prev[itemId]);
+                console.log('Reverting to original status:', originalStatus);
+                return {
+                    ...prev,
+                    [itemId]: originalStatus  // Orijinal duruma geri al
+                };
+            });
+
+            if (updateProductContext && typeof updateProductContext === 'function') {
+                // Error durumunda context'i güncelle
+                updateProductContext(itemId, Boolean(favoriteItems[itemId]));
+            }
+
+            console.log('=== TOGGLE FAVORITE ERROR ===');
             return null;
         }
-    }, []); // Dependency array boş
+    }, []); // Dependency array'i boş bırakıyoruz 
+
+    // Basit context value
+    const value = useMemo(() => ({
+        // State
+        favoriteItems,
+
+        // Functions
+        toggleFavorite,
+
+        // Helpers
+        isFavorite: (productId) => favoriteItems[productId] || false,
+        getFavoriteCount: () => Object.values(favoriteItems).filter(Boolean).length,
+        getFavoriteIds: () => Object.keys(favoriteItems).filter(id => favoriteItems[id]),
+        hasFavorites: Object.values(favoriteItems).some(Boolean)
+    }), [favoriteItems]); // sadece favoriteItems dependency
 
     return (
-        <FavoritesContext.Provider value={{ favoriteItems, favoriteSource, toggleFavorite, updateFavoriteItems }}>
+        <FavoritesContext.Provider value={value}>
             {children}
         </FavoritesContext.Provider>
     );
 };
 
-export const useFavorites = () => useContext(FavoritesContext);
+export const useFavorites = () => {
+    const context = useContext(FavoritesContext);
+    if (!context) {
+        throw new Error('useFavorites must be used within FavoritesProvider');
+    }
+    return context;
+};

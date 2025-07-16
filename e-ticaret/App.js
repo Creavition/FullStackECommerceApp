@@ -8,19 +8,13 @@ import Login from "./screens/Login";
 import Register from './screens/Register';
 import HomeScreen from './screens/HomeScreen';
 import ProductDetail from './screens/ProductDetail';
-import ProductReviews from './screens/ProductReviews';
 import Payment from './screens/Payment';
-import AddCreditCard from './screens/AddCreditCard';
-import EditCreditCard from './screens/EditCreditCard';
-import AddAddress from './screens/AddAddress';
-import EditAddress from './screens/EditAddress';
-import Filter from './screens/Filter';
-import Home from './screens/Home';
 import OrderHistory from './screens/OrderHistory';
-import ChangePassword from './screens/ChangePassword';
-import FastDelivery from './screens/FastDelivery';
-import FlashSale from './screens/FlashSale';
+import Filter from './screens/Filter';
 import BestSeller from './screens/BestSeller';
+import FlashSale from './screens/FlashSale';
+import FastDelivery from './screens/FastDelivery';
+import ChangePassword from './screens/ChangePassword';
 
 // Splash Screen
 import SplashScreen
@@ -32,102 +26,69 @@ import { CartProvider } from './contexts/CartContext';
 import { ProductProvider } from './contexts/ProductContext';
 import { FilterProvider } from './contexts/FilterContext';
 import { OrderProvider } from './contexts/OrderContext';
-import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 
 const Stack = createNativeStackNavigator();
 
 // Create a separate component for the navigation stack
 function AppNavigator() {
-  const { translations, language } = useLanguage();
-
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Login">
         <Stack.Screen
           name="Login"
           component={Login}
-          options={{ title: translations.login, headerShown: false }}
+          options={{ title: 'Giriş Yap', headerShown: false }}
         />
         <Stack.Screen
           name="Register"
           component={Register}
-          options={{ title: translations.register, headerShown: false }}
+          options={{ title: 'Kayıt Ol', headerShown: false }}
         />
         <Stack.Screen
           name="HomeScreen"
           component={HomeScreen}
-          options={{ title: translations.home, headerShown: false }}
-        />
-        <Stack.Screen
-          name="Home"
-          component={Home}
-          options={{ title: translations.home, headerShown: false }}
+          options={{ title: 'Ana Sayfa', headerShown: false }}
         />
         <Stack.Screen
           name="ProductDetail"
           component={ProductDetail}
-          options={{ title: translations.productDetail, headerShown: false }}
-        />
-        <Stack.Screen
-          name="ProductReviews"
-          component={ProductReviews}
-          options={{ title: 'Değerlendirmeler', headerShown: false }}
+          options={{ title: 'Ürün Detayı', headerShown: false }}
         />
         <Stack.Screen
           name="Payment"
           component={Payment}
-          options={{ title: translations.payment, headerShown: false }}
-        />
-        <Stack.Screen
-          name="AddCreditCard"
-          component={AddCreditCard}
-          options={{ title: 'Add Credit Card', headerShown: false }}
-        />
-        <Stack.Screen
-          name="EditCreditCard"
-          component={EditCreditCard}
-          options={{ title: 'Edit Credit Card', headerShown: false }}
-        />
-        <Stack.Screen
-          name="AddAddress"
-          component={AddAddress}
-          options={{ title: 'Add Address', headerShown: false }}
-        />
-        <Stack.Screen
-          name="EditAddress"
-          component={EditAddress}
-          options={{ title: 'Edit Address', headerShown: false }}
-        />
-        <Stack.Screen
-          name="Filter"
-          component={Filter}
-          options={{ title: translations.filter, headerShown: false }}
+          options={{ title: 'Ödeme', headerShown: false }}
         />
         <Stack.Screen
           name="OrderHistory"
           component={OrderHistory}
-          options={{ title: translations.orderHistory, headerShown: false }}
+          options={{ title: 'Sipariş Geçmişi', headerShown: false }}
         />
         <Stack.Screen
-          name="ChangePassword"
-          component={ChangePassword}
-          options={{ title: translations.changePassword, headerShown: false }}
-        />
-        <Stack.Screen
-          name="FastDelivery"
-          component={FastDelivery}
-          options={{ title: 'Fast Delivery', headerShown: false }}
-        />
-        <Stack.Screen
-          name="FlashSale"
-          component={FlashSale}
-          options={{ title: 'Flash Sale', headerShown: false }}
+          name="Filter"
+          component={Filter}
+          options={{ title: 'Filtrele', headerShown: false }}
         />
         <Stack.Screen
           name="BestSeller"
           component={BestSeller}
-          options={{ title: 'BestSeller', headerShown: false }}
+          options={{ title: 'En Çok Satanlar', headerShown: false }}
+        />
+        <Stack.Screen
+          name="FlashSale"
+          component={FlashSale}
+          options={{ title: 'Fırsat Ürünleri', headerShown: false }}
+        />
+        <Stack.Screen
+          name="FastDelivery"
+          component={FastDelivery}
+          options={{ title: 'Hızlı Teslimat', headerShown: false }}
+        />
+        <Stack.Screen
+          name="ChangePassword"
+          component={ChangePassword}
+          options={{ title: 'Şifre Değiştir', headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>
@@ -148,25 +109,23 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <LanguageProvider>
-        <OrderProvider>
-          <FilterProvider>
-            <ProductProvider>
-              <CartProvider>
-                <FavoritesProvider>
-                  {showSplash ? (
-                    <SplashScreen
-                      onAnimationEnd={() => setShowSplash(false)}
-                    />
-                  ) : (
-                    <AppNavigator />
-                  )}
-                </FavoritesProvider>
-              </CartProvider>
-            </ProductProvider>
-          </FilterProvider>
-        </OrderProvider>
-      </LanguageProvider>
+      <OrderProvider>
+        <FilterProvider>
+          <ProductProvider>
+            <CartProvider>
+              <FavoritesProvider>
+                {showSplash ? (
+                  <SplashScreen
+                    onAnimationEnd={() => setShowSplash(false)}
+                  />
+                ) : (
+                  <AppNavigator />
+                )}
+              </FavoritesProvider>
+            </CartProvider>
+          </ProductProvider>
+        </FilterProvider>
+      </OrderProvider>
     </ThemeProvider>
   );
 }

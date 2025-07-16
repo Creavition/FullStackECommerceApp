@@ -7,17 +7,15 @@ import {
     TouchableOpacity,
     StyleSheet,
 } from "react-native";
-import { useLanguage } from "../contexts/LanguageContext";
 import { useTheme } from "../contexts/ThemeContext";
 
 export default function SelectableOptions({ onSelect, categories = [], sizeOptions = [] }) {
     const navigation = useNavigation();
-    const { translations } = useLanguage();
     const { theme, isDarkMode } = useTheme();
     const [selected, setSelected] = useState(null);
     const [open, setOpen] = useState(false);
 
-    const options = [translations.lowestPrice, translations.highestPrice];
+    const options = ['En Düşük Fiyat', 'En Yüksek Fiyat'];
 
     const toggleDropdown = () => setOpen(!open);
 
@@ -51,7 +49,7 @@ export default function SelectableOptions({ onSelect, categories = [], sizeOptio
                         style={{ marginRight: 8 }}
                     />
                     <Text style={[styles.selectorText, { color: isDarkMode ? theme.text : '#333' }]}>
-                        {selected || translations.sortBy}
+                        {selected || 'Sırala'}
                     </Text>
                 </TouchableOpacity>
 
@@ -110,7 +108,7 @@ export default function SelectableOptions({ onSelect, categories = [], sizeOptio
                     color={isDarkMode ? theme.text : "black"}
                 />
                 <Text style={{ color: isDarkMode ? theme.text : '#333' }}>
-                    {translations.filter}
+                    Filtrele
                 </Text>
             </TouchableOpacity>
         </View>

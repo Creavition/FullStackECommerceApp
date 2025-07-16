@@ -19,7 +19,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { saveUser, registerUser } from "../utils/authStorage";
-import { useLanguage } from '../contexts/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -32,7 +31,6 @@ export default function Register({ navigation }) {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
-    const { translations } = useLanguage();
 
     // Animation değerleri
     const [fadeAnim] = useState(new Animated.Value(0));
@@ -58,27 +56,27 @@ export default function Register({ navigation }) {
         const newErrors = {};
 
         if (!name.trim()) {
-            newErrors.name = translations.pleaseEnterAllFields;
+            newErrors.name = 'Lütfen tüm alanları doldurun.';
         } else if (name.trim().length < 2) {
             newErrors.name = 'Ad en az 2 karakter olmalıdır';
         }
 
         if (!email.trim()) {
-            newErrors.email = translations.pleaseEnterAllFields;
+            newErrors.email = 'Lütfen tüm alanları doldurun.';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             newErrors.email = 'Geçerli bir e-posta adresi girin';
         }
 
         if (!password.trim()) {
-            newErrors.password = translations.pleaseEnterAllFields;
+            newErrors.password = 'Lütfen tüm alanları doldurun.';
         } else if (password.length < 6) {
-            newErrors.password = translations.passwordTooShort;
+            newErrors.password = 'Şifre en az 6 karakter olmalı';
         }
 
         if (!confirmPassword.trim()) {
-            newErrors.confirmPassword = translations.pleaseEnterAllFields;
+            newErrors.confirmPassword = 'Lütfen tüm alanları doldurun.';
         } else if (password !== confirmPassword) {
-            newErrors.confirmPassword = translations.passwordsDoNotMatch;
+            newErrors.confirmPassword = 'Şifreler eşleşmiyor';
         }
 
         setErrors(newErrors);
@@ -95,20 +93,20 @@ export default function Register({ navigation }) {
         try {
             const response = await registerUser(name.trim(), email.trim(), password, confirmPassword);
             Alert.alert(
-                translations.success,
-                translations.registrationSuccessful,
+                'Başarılı',
+                'Başarıyla Kayıt Olundu',
                 [{
-                    text: translations.ok,
+                    text: 'Tamam',
                     onPress: () => navigation.navigate('Login')
                 }]
             );
         } catch (error) {
             Alert.alert(
-                translations.error,
-                error.message || translations.registrationError,
-                [{ text: translations.ok }]
+                'Hata',
+                'Kayıt Olunamadı',
+                [{ text: 'Tamam' }]
             );
-            console.error("Register Error:", error);
+            console.error("Kayıt Hatası:", error);
         } finally {
             setLoading(false);
         }
@@ -163,7 +161,7 @@ export default function Register({ navigation }) {
                                             <Ionicons name="person" size={20} color="#666" style={styles.inputIcon} />
                                             <TextInput
                                                 style={styles.input}
-                                                placeholder={translations.nameLabel}
+                                                placeholder={'İsim'}
                                                 value={name}
                                                 onChangeText={setName}
                                                 autoCapitalize="words"
@@ -183,7 +181,7 @@ export default function Register({ navigation }) {
                                             <Ionicons name="mail" size={20} color="#666" style={styles.inputIcon} />
                                             <TextInput
                                                 style={styles.input}
-                                                placeholder={translations.emailLabel}
+                                                placeholder={'E-Mail'}
                                                 value={email}
                                                 onChangeText={setEmail}
                                                 autoCapitalize="none"
@@ -204,7 +202,7 @@ export default function Register({ navigation }) {
                                             <Ionicons name="lock-closed" size={20} color="#666" style={styles.inputIcon} />
                                             <TextInput
                                                 style={styles.input}
-                                                placeholder={translations.passwordLabel}
+                                                placeholder={'Şifre'}
                                                 value={password}
                                                 onChangeText={setPassword}
                                                 secureTextEntry={!showPassword}
@@ -234,7 +232,7 @@ export default function Register({ navigation }) {
                                             <Ionicons name="lock-closed" size={20} color="#666" style={styles.inputIcon} />
                                             <TextInput
                                                 style={styles.input}
-                                                placeholder={translations.confirmPasswordLabel}
+                                                placeholder={'Şifrenizi onaylayın'}
                                                 value={confirmPassword}
                                                 onChangeText={setConfirmPassword}
                                                 secureTextEntry={!showConfirmPassword}
@@ -267,7 +265,7 @@ export default function Register({ navigation }) {
                                                 color={password.length >= 6 ? '#4CAF50' : '#f44336'}
                                             />
                                             <Text style={[styles.requirementText, { color: password.length >= 6 ? '#4CAF50' : '#f44336' }]}>
-                                                {translations.atLeast6Characters}
+                                                En az 6 karakter
                                             </Text>
                                         </View>
                                         <View style={styles.requirementItem}>
@@ -277,7 +275,7 @@ export default function Register({ navigation }) {
                                                 color={password === confirmPassword && password.length > 0 ? '#4CAF50' : '#f44336'}
                                             />
                                             <Text style={[styles.requirementText, { color: password === confirmPassword && password.length > 0 ? '#4CAF50' : '#f44336' }]}>
-                                                {translations.passwordsMatch}
+                                                Şifreler eşleşiyor
                                             </Text>
                                         </View>
                                     </View>
@@ -291,19 +289,19 @@ export default function Register({ navigation }) {
                                         {loading ? (
                                             <ActivityIndicator color="#fff" size="small" />
                                         ) : (
-                                            <Text style={styles.registerButtonText}>{translations.registerButton}</Text>
+                                            <Text style={styles.registerButtonText}>Kayıt Ol</Text>
                                         )}
                                     </TouchableOpacity>
                                 </View>
 
                                 {/* Login Link */}
                                 <View style={styles.loginContainer}>
-                                    <Text style={styles.loginText}>{translations.alreadyHaveAccount}</Text>
+                                    <Text style={styles.loginText}>Zaten hesabınız var mı?</Text>
                                     <TouchableOpacity
                                         onPress={() => navigation.navigate('Login')}
                                         style={styles.loginButton}
                                     >
-                                        <Text style={styles.loginButtonText}>{translations.loginButton}</Text>
+                                        <Text style={styles.loginButtonText}>Giriş Yap</Text>
                                     </TouchableOpacity>
                                 </View>
                             </Animated.View>

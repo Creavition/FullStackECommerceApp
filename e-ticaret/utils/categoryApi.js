@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://192.168.1.210:5207/api/Category';
+const API_BASE_URL = 'http://10.241.64.12:5207/api/Category';
 
 export const categoryApi = {
     // Tüm kategorileri getir (bedenler dahil)

@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { decode as base64Decode } from 'base-64';
 
-const API_BASE_URL = 'http://192.168.1.210:5207/Auth';
+const API_BASE_URL = 'http://10.241.64.12:5207/Auth';
 
 // Auth token'ı al
 export const getAuthToken = async () => {
@@ -15,32 +15,7 @@ export const getAuthToken = async () => {
     }
 };
 
-// Tüm kullanıcıları getir
-export const getAllUsers = async () => {
-    const usersData = await AsyncStorage.getItem('users');
-    return usersData ? JSON.parse(usersData) : [];
-};
 
-// Yeni kullanıcı kaydet
-export const saveUser = async (name, email, password) => {
-    const users = await getAllUsers();
-
-    const emailExists = users.some(u => u.email === email);
-    if (emailExists) {
-        throw new Error("Bu e-posta zaten kayıtlı.");
-    }
-
-    const newUser = { name, email, password };
-    users.push(newUser);
-
-    await AsyncStorage.setItem('users', JSON.stringify(users));
-};
-
-// Giriş yapan kullanıcıyı bul
-export const findUser = async (email, password) => {
-    const users = await getAllUsers();
-    return users.find(u => u.email === email && u.password === password) || null;
-};
 
 // Giriş yapan kullanıcıyı oturumda tut
 export const setCurrentUser = async (user) => {

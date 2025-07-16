@@ -7,7 +7,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import { useFavorites } from '../contexts/FavoritesContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 import ProductCard from '../components/ProductCard';
@@ -16,7 +15,6 @@ import { getAllProducts, productUtils, toggleProductFavorite } from '../utils/pr
 export default function FastDelivery() {
     const navigation = useNavigation();
     const { favoriteItems, toggleFavorite } = useFavorites();
-    const { translations } = useLanguage();
     const { theme, isDarkMode } = useTheme();
 
     const [allProducts, setAllProducts] = useState([]);
@@ -100,10 +98,9 @@ export default function FastDelivery() {
             item={item}
             onProductPress={handleProductPress}
             onFavoritePress={handleFavoritePress}
-            translations={translations}
             isDarkMode={isDarkMode}
         />
-    ), [handleProductPress, handleFavoritePress, translations, isDarkMode]);
+    ), [handleProductPress, handleFavoritePress, isDarkMode]);
 
     const keyExtractor = useCallback((item) => item.id, []);
 
@@ -121,7 +118,7 @@ export default function FastDelivery() {
             <View style={styles.loadingContainer}>
                 <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.statusBarBackground} />
                 <Ionicons name="refresh" size={40} color="#FF6B35" />
-                <Text style={styles.loadingText}>{translations.loading}</Text>
+                <Text style={styles.loadingText}>Yükleniyor</Text>
             </View>
         );
     }

@@ -20,7 +20,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { findUser, setCurrentUser, loginUser } from '../utils/authStorage';
-import { useLanguage } from '../contexts/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,7 +29,6 @@ export default function Login({ navigation }) {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
-    const { translations } = useLanguage();
 
     // Animation değerleri
     const [fadeAnim] = useState(new Animated.Value(0));
@@ -56,15 +54,15 @@ export default function Login({ navigation }) {
         const newErrors = {};
 
         if (!email.trim()) {
-            newErrors.email = translations.pleaseEnterEmailPassword;
+            newErrors.email = 'Lütfen e-posta ve şifre girin.';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             newErrors.email = 'Geçerli bir e-posta adresi girin';
         }
 
         if (!password.trim()) {
-            newErrors.password = translations.pleaseEnterEmailPassword;
+            newErrors.password = 'Lütfen e-posta ve şifre girin.';
         } else if (password.length < 6) {
-            newErrors.password = translations.passwordTooShort;
+            newErrors.password = 'Şifre en az 6 karakter olmalı';
         }
 
         setErrors(newErrors);
@@ -84,9 +82,9 @@ export default function Login({ navigation }) {
         } catch (err) {
             // Console error mesajını kaldırdık
             Alert.alert(
-                translations.error,
-                err.message || translations.somethingWentWrong,
-                [{ text: translations.ok }]
+                'Hata',
+                err.message || 'Bir şeyler yanlış gitti',
+                [{ text: 'Tamam' }]
             );
         } finally {
             setLoading(false);
@@ -133,7 +131,7 @@ export default function Login({ navigation }) {
                                 </View>
 
                                 {/* Welcome Slogan */}
-                                <Text style={styles.sloganText}>{translations.loginSlogan}</Text>
+                                <Text style={styles.sloganText}>Gardırobunuz sadece bir tık uzakta.</Text>
 
                                 {/* Form Card */}
                                 <View style={styles.formCard}>
@@ -143,7 +141,7 @@ export default function Login({ navigation }) {
                                             <Ionicons name="mail" size={20} color="#666" style={styles.inputIcon} />
                                             <TextInput
                                                 style={styles.input}
-                                                placeholder={translations.emailLabel}
+                                                placeholder="E-posta adresi"
                                                 value={email}
                                                 onChangeText={setEmail}
                                                 autoCapitalize="none"
@@ -164,7 +162,7 @@ export default function Login({ navigation }) {
                                             <Ionicons name="lock-closed" size={20} color="#666" style={styles.inputIcon} />
                                             <TextInput
                                                 style={styles.input}
-                                                placeholder={translations.passwordLabel}
+                                                placeholder="Şifre"
                                                 value={password}
                                                 onChangeText={setPassword}
                                                 secureTextEntry={!showPassword}
@@ -197,7 +195,7 @@ export default function Login({ navigation }) {
                                         {loading ? (
                                             <ActivityIndicator color="#fff" size="small" />
                                         ) : (
-                                            <Text style={styles.loginButtonText}>{translations.loginButton}</Text>
+                                            <Text style={styles.loginButtonText}>Giriş Yap</Text>
                                         )}
                                     </TouchableOpacity>
 
@@ -206,12 +204,12 @@ export default function Login({ navigation }) {
 
                                 {/* Register Link */}
                                 <View style={styles.registerContainer}>
-                                    <Text style={styles.registerText}>{translations.dontHaveAccount}</Text>
+                                    <Text style={styles.registerText}>Hesabınız yok mu?</Text>
                                     <TouchableOpacity
                                         onPress={() => navigation.navigate('Register')}
                                         style={styles.registerButton}
                                     >
-                                        <Text style={styles.registerButtonText}>{translations.registerButton}</Text>
+                                        <Text style={styles.registerButtonText}>Kayıt Ol</Text>
                                     </TouchableOpacity>
                                 </View>
                             </Animated.View>

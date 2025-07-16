@@ -3,7 +3,6 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView,
 import { Ionicons } from '@expo/vector-icons';
 import { changePassword } from '../utils/authStorage';
 import { useNavigation } from '@react-navigation/native';
-import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 export default function ChangePassword() {
@@ -16,22 +15,21 @@ export default function ChangePassword() {
     const [loading, setLoading] = useState(false);
 
     const navigation = useNavigation();
-    const { translations } = useLanguage();
     const { theme, isDarkMode } = useTheme();
 
     const handleChangePassword = async () => {
         if (!currentPassword || !newPassword || !confirmPassword) {
-            Alert.alert(translations.error, translations.fillAllFields);
+            Alert.alert('Hata', 'Lütfen tüm alanları doldurun');
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            Alert.alert(translations.error, translations.passwordsDoNotMatch);
+            Alert.alert('Hata', 'Şifreler eşleşmiyor');
             return;
         }
 
         if (newPassword.length < 6) {
-            Alert.alert(translations.error, translations.passwordTooShort);
+            Alert.alert('Şifre en az 6 karakter olmalı');
             return;
         }
 
@@ -41,10 +39,10 @@ export default function ChangePassword() {
             await changePassword(currentPassword, newPassword, confirmPassword);
 
             Alert.alert(
-                translations.success,
-                translations.passwordChangedSuccessfully,
+                'Başarılı',
+                'Şifre başarıyla değiştirildi',
                 [{
-                    text: translations.ok,
+                    text: 'Tamam',
                     onPress: () => navigation.goBack()
                 }]
             );
@@ -56,7 +54,7 @@ export default function ChangePassword() {
 
         } catch (error) {
             console.error('Password change error:', error);
-            Alert.alert(translations.error, error.message || translations.somethingWentWrong);
+            Alert.alert('Hata', error.message || 'Bir şeyler yanlış gitti');
         } finally {
             setLoading(false);
         }
@@ -74,16 +72,16 @@ export default function ChangePassword() {
             <View style={styles.content}>
                 <View style={[styles.infoCard, { backgroundColor: isDarkMode ? '#1a2a3a' : '#e3f2fd' }]}>
                     <Ionicons name="information-circle" size={20} color="#ce6302" />
-                    <Text style={[styles.infoText, { color: isDarkMode ? '#ce6302' : '#ce6302' }]}>{translations.passwordChangeInfo}</Text>
+                    <Text style={[styles.infoText, { color: isDarkMode ? '#ce6302' : '#ce6302' }]}>'Güvenlik nedeniyle, yeni şifreye geçmek için mevcut şifrenizi girin.'</Text>
                 </View>
 
                 <View style={[styles.form, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}>
                     {/* Current Password */}
-                    <Text style={[styles.label, { color: isDarkMode ? '#fff' : '#333' }]}>{translations.currentPassword}</Text>
+                    <Text style={[styles.label, { color: isDarkMode ? '#fff' : '#333' }]}>'Mevcut Şifre'</Text>
                     <View style={[styles.passwordContainer, { borderColor: isDarkMode ? '#555' : '#ddd', backgroundColor: isDarkMode ? '#444' : '#f9f9f9' }]}>
                         <TextInput
                             style={[styles.passwordInput, { color: isDarkMode ? '#fff' : '#333' }]}
-                            placeholder={translations.enterCurrentPassword}
+                            placeholder={'Mevcut şifrenizi girin'}
                             secureTextEntry={!showCurrentPassword}
                             value={currentPassword}
                             onChangeText={setCurrentPassword}
@@ -102,11 +100,11 @@ export default function ChangePassword() {
                     </View>
 
                     {/* New Password */}
-                    <Text style={[styles.label, { color: isDarkMode ? '#fff' : '#333' }]}>{translations.newPassword}</Text>
+                    <Text style={[styles.label, { color: isDarkMode ? '#fff' : '#333' }]}>Yeni Şifre</Text>
                     <View style={[styles.passwordContainer, { borderColor: isDarkMode ? '#555' : '#ddd', backgroundColor: isDarkMode ? '#444' : '#f9f9f9' }]}>
                         <TextInput
                             style={[styles.passwordInput, { color: isDarkMode ? '#fff' : '#333' }]}
-                            placeholder={translations.enterNewPassword}
+                            placeholder={'Yeni şifre girin'}
                             secureTextEntry={!showNewPassword}
                             value={newPassword}
                             onChangeText={setNewPassword}
@@ -125,11 +123,11 @@ export default function ChangePassword() {
                     </View>
 
                     {/* Confirm Password */}
-                    <Text style={[styles.label, { color: isDarkMode ? '#fff' : '#333' }]}>{translations.confirmNewPassword}</Text>
+                    <Text style={[styles.label, { color: isDarkMode ? '#fff' : '#333' }]}>Yeni Şifreyi Onayla</Text>
                     <View style={[styles.passwordContainer, { borderColor: isDarkMode ? '#555' : '#ddd', backgroundColor: isDarkMode ? '#444' : '#f9f9f9' }]}>
                         <TextInput
                             style={[styles.passwordInput, { color: isDarkMode ? '#fff' : '#333' }]}
-                            placeholder={translations.confirmNewPassword}
+                            placeholder={'Yeni Şifreyi Onayla'}
                             secureTextEntry={!showConfirmPassword}
                             value={confirmPassword}
                             onChangeText={setConfirmPassword}
@@ -149,7 +147,7 @@ export default function ChangePassword() {
 
                     {/* Password Requirements */}
                     <View style={[styles.requirementsContainer, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}>
-                        <Text style={[styles.requirementsTitle, { color: isDarkMode ? '#fff' : '#333' }]}>{translations.passwordRequirements}:</Text>
+                        <Text style={[styles.requirementsTitle, { color: isDarkMode ? '#fff' : '#333' }]}>Şifre Gereksinimleri:</Text>
                         <View style={styles.requirement}>
                             <Ionicons
                                 name={newPassword.length >= 6 ? "checkmark-circle" : "ellipse-outline"}
@@ -161,7 +159,7 @@ export default function ChangePassword() {
                                 { color: isDarkMode ? '#b3b3b3' : '#666' },
                                 newPassword.length >= 6 && styles.requirementMet
                             ]}>
-                                {translations.atLeast6Characters}
+                                En az 6 karakter
                             </Text>
                         </View>
                         <View style={styles.requirement}>
@@ -175,7 +173,7 @@ export default function ChangePassword() {
                                 { color: isDarkMode ? '#b3b3b3' : '#666' },
                                 newPassword === confirmPassword && newPassword.length > 0 && styles.requirementMet
                             ]}>
-                                {translations.passwordsMatch}
+                                Şifreler eşleşiyor
                             </Text>
                         </View>
                     </View>
@@ -191,7 +189,7 @@ export default function ChangePassword() {
                         ) : (
                             <>
                                 <Ionicons name="lock-closed" size={20} color="#fff" style={{ marginRight: 8 }} />
-                                <Text style={styles.buttonText}>{translations.changePassword}</Text>
+                                <Text style={styles.buttonText}>Mevcut Şifre</Text>
                             </>
                         )}
                     </TouchableOpacity>

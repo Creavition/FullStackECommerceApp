@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, StatusBar,
 import { Ionicons } from '@expo/vector-icons';
 import { getCurrentUser, clearCurrentUser } from '../utils/authStorage';
 import { useNavigation } from '@react-navigation/native';
-import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { OrderContext } from '../contexts/OrderContext';
 
@@ -11,7 +10,6 @@ export default function Account() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const navigation = useNavigation();
-    const { language, toggleLanguage, translations } = useLanguage();
     const { isDarkMode, toggleTheme, theme } = useTheme();
     const { orderHistory } = useContext(OrderContext);
 
@@ -39,15 +37,15 @@ export default function Account() {
 
     const handleLogout = () => {
         Alert.alert(
-            translations.logoutConfirmTitle,
-            translations.logoutConfirmMessage,
+            'Çıkış Yap',
+            'Çıkış yapmak istediğinizden emin misiniz?',
             [
                 {
-                    text: translations.cancel,
+                    text: 'İptal',
                     style: 'cancel',
                 },
                 {
-                    text: translations.logout,
+                    text: 'Çıkış Yap',
                     style: 'destructive',
                     onPress: async () => {
                         await clearCurrentUser();
@@ -59,44 +57,45 @@ export default function Account() {
     };
 
     const handleOrderHistory = () => {
-        navigation.navigate('OrderHistory');
+        // Tab navigator'ın parent navigation'ını kullan
+        const parentNavigation = navigation.getParent();
+        if (parentNavigation) {
+            parentNavigation.navigate('OrderHistory');
+        }
     };
 
     const handleChangePassword = () => {
-        navigation.navigate('ChangePassword');
+        // Tab navigator'ın parent navigation'ını kullan
+        const parentNavigation = navigation.getParent();
+        if (parentNavigation) {
+            parentNavigation.navigate('ChangePassword');
+        }
     };
 
     const menuItems = [
         {
             id: 'orders',
-            title: translations.orderHistory,
+            title: 'Sipariş Geçmişi',
             icon: 'receipt-outline',
             onPress: handleOrderHistory,
             badge: orderHistory.length > 0 ? orderHistory.length.toString() : null,
         },
         {
             id: 'password',
-            title: translations.changePassword,
+            title: 'Şifre Değiştir',
             icon: 'lock-closed-outline',
             onPress: handleChangePassword,
         },
         {
-            id: 'language',
-            title: translations.changeLanguage,
-            icon: 'language-outline',
-            onPress: toggleLanguage,
-            rightText: language === 'tr' ? 'TR' : 'EN',
-        },
-        {
             id: 'theme',
-            title: translations.theme,
+            title: 'Tema',
             icon: isDarkMode ? 'moon' : 'moon-outline',
             onPress: toggleTheme,
-            rightText: isDarkMode ? translations.darkMode : translations.lightMode,
+            rightText: isDarkMode ? 'Karanlık Mod' : 'Açık Mod',
         },
         {
             id: 'logout',
-            title: translations.logout,
+            title: 'Çıkış Yap',
             icon: 'log-out-outline',
             onPress: handleLogout,
             isDestructive: true,
@@ -112,7 +111,7 @@ export default function Account() {
                     translucent={false}
                 />
                 <ActivityIndicator size="large" color={theme.primary} />
-                <Text style={[styles.loadingText, { color: theme.text }]}>{translations.loading}</Text>
+                <Text style={[styles.loadingText, { color: theme.text }]}>Yükleniyor</Text>
             </View>
         );
     }
@@ -151,7 +150,7 @@ export default function Account() {
                 </View>
 
                 <View style={styles.profileInfo}>
-                    <Text style={[styles.userName, { color: theme.text }]}>{translations.welcome} {user.name}</Text>
+                    <Text style={[styles.userName, { color: theme.text }]}>Hoşgeldin {user.name}</Text>
                 </View>
             </View>
 
@@ -159,21 +158,21 @@ export default function Account() {
             <View style={[styles.infoCard, { backgroundColor: theme.surface, shadowColor: theme.shadow }]}>
                 <View style={[styles.infoHeader, { borderBottomColor: theme.border }]}>
                     <Ionicons name="person-outline" size={20} color={theme.textSecondary} />
-                    <Text style={[styles.infoTitle, { color: theme.text }]}>{translations.personalInfo}</Text>
+                    <Text style={[styles.infoTitle, { color: theme.text }]}>Kişisel Bilgiler</Text>
                 </View>
 
                 <View style={styles.infoRow}>
-                    <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>{translations.fullName}:</Text>
+                    <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Ad Soyad:</Text>
                     <Text style={[styles.infoValue, { color: theme.text }]}>{user.name}</Text>
                 </View>
 
                 <View style={styles.infoRow}>
-                    <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>{translations.email}:</Text>
+                    <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>E-posta:</Text>
                     <Text style={[styles.infoValue, { color: theme.text }]}>{user.email}</Text>
                 </View>
 
                 <View style={styles.infoRow}>
-                    <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>{translations.memberSince}:</Text>
+                    <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Uye Olma Tarihi:</Text>
                     <Text style={[styles.infoValue, { color: theme.text }]}>{new Date().getFullYear()}</Text>
                 </View>
             </View>

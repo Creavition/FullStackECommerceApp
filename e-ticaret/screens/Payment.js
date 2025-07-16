@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { CartContext } from '../contexts/CartContext';
 import { OrderContext } from '../contexts/OrderContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { creditCardApi } from '../utils/creditCardApi';
 import { addressApi } from '../utils/addressApi';
@@ -13,7 +12,6 @@ export default function Payment() {
   const navigation = useNavigation();
   const { cartItems, clearCart } = useContext(CartContext);
   const { addOrder } = useContext(OrderContext);
-  const { translations } = useLanguage();
   const { theme, isDarkMode } = useTheme();
   const [isProcessing, setIsProcessing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -26,31 +24,6 @@ export default function Payment() {
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
 
-  // Modal state'leri - Artık kullanılmıyor
-  // const [showAddCardModal, setShowAddCardModal] = useState(false);
-  // const [showAddAddressModal, setShowAddAddressModal] = useState(false);
-
-  // Yeni kart form state'leri - Artık kullanılmıyor  
-  // const [newCard, setNewCard] = useState({
-  //   cardNumber: '',
-  //   cardHolderName: '',
-  //   expiryMonth: '',
-  //   expiryYear: '',
-  //   cvv: '',
-  //   cardTitle: ''
-  // });
-
-  // Yeni adres form state'leri - Artık kullanılmıyor
-  // const [newAddress, setNewAddress] = useState({
-  //   title: '',
-  //   fullName: '',
-  //   phoneNumber: '',
-  //   addressLine1: '',
-  //   addressLine2: '',
-  //   city: '',
-  //   district: '',
-  //   postalCode: ''
-  // });
 
   // Load data on component mount
   useEffect(() => {
@@ -84,22 +57,13 @@ export default function Payment() {
         setSelectedAddress(addressesData[0]);
       }
     } catch (error) {
-      console.error('Error loading payment data:', error);
-      Alert.alert(translations.error || 'Hata', translations.paymentDataLoadError || 'Ödeme bilgileri yüklenemedi');
+      console.error('Ödeme bilgileri bulunamadı', error);
+      Alert.alert('Hata', 'Ödeme bilgileri yüklenemedi');
     } finally {
       setLoading(false);
     }
   };
 
-  // Silme fonksiyonları artık edit sayfalarında
-  // const deleteCreditCard = async (cardId) => { ... };
-  // const deleteAddress = async (addressId) => { ... };
-
-  // Yeni kart ekleme fonksiyonu - Artık ayrı sayfada
-  // const addCreditCard = async () => { ... };
-
-  // Yeni adres ekleme fonksiyonu - Artık ayrı sayfada  
-  // const addAddress = async () => { ... };
 
   // Price parsing fonksiyonu - Cart.js'den alındı
   const parsePrice = (priceValue) => {
@@ -139,19 +103,19 @@ export default function Payment() {
   const handlePayment = async () => {
     // Sepet boşluk kontrolü
     if (cartItems.length === 0) {
-      Alert.alert(translations.error || 'Hata', translations.cartEmpty || 'Sepetiniz boş!');
+      Alert.alert('Hata', 'Sepetiniz boş!');
       return;
     }
 
     // Kart seçimi kontrolü
     if (!selectedCard) {
-      Alert.alert(translations.error || 'Hata', translations.pleaseSelectCard || 'Lütfen bir kart seçin!');
+      Alert.alert('Hata', 'Lütfen bir kart seçin!');
       return;
     }
 
     // Adres seçimi kontrolü
     if (!selectedAddress) {
-      Alert.alert(translations.error || 'Hata', translations.pleaseSelectAddress || 'Lütfen bir teslimat adresi seçin!');
+      Alert.alert('Hata', 'Lütfen bir teslimat adresi seçin!');
       return;
     }
 
@@ -175,9 +139,9 @@ export default function Payment() {
           category: item.category
         })),
         totalAmount: calculateTotal().toFixed(2),
-        paymentMethod: selectedCard ? selectedCard.cardTitle || translations.myCard : translations.cardNotFound,
-        shippingAddress: selectedAddress ? `${selectedAddress.title} - ${selectedAddress.addressLine1}, ${selectedAddress.district}/${selectedAddress.city}` : translations.addressNotFound,
-        billingAddress: selectedAddress ? `${selectedAddress.title} - ${selectedAddress.addressLine1}, ${selectedAddress.district}/${selectedAddress.city}` : translations.addressNotFound
+        paymentMethod: selectedCard ? selectedCard.cardTitle || 'Kartım' : 'Kart bilgisi bulunamadı',
+        shippingAddress: selectedAddress ? `${selectedAddress.title} - ${selectedAddress.addressLine1}, ${selectedAddress.district}/${selectedAddress.city}` : 'Adres bilgisi bulunamadı',
+        billingAddress: selectedAddress ? `${selectedAddress.title} - ${selectedAddress.addressLine1}, ${selectedAddress.district}/${selectedAddress.city}` : 'Adres bilgisi bulunamadı'
       };
 
       // Siparişi kaydet
@@ -188,23 +152,26 @@ export default function Payment() {
 
       // Başarı mesajı göster
       Alert.alert(
-        translations.success || 'Başarılı',
-        translations.paymentSuccessful || 'Ödeme başarıyla tamamlandı',
+        'Başarılı',
+        'Ödeme başarıyla tamamlandı',
         [
           {
-            text: translations.viewOrderHistory || 'Sipariş Geçmişi',
+            text: 'Sipariş Geçmişi',
             onPress: () => navigation.navigate('OrderHistory')
           },
           {
-            text: translations.backToHome || 'Ana Sayfa',
-            onPress: () => navigation.navigate('HomeScreen', { screen: 'Home' })
+            text: 'Ana Sayfaya Dön',
+            onPress: () => {
+              // HomeScreen'e geri dön ve Home tab'ını seç
+              navigation.navigate('HomeScreen', { screen: 'Home' });
+            }
           }
         ]
       );
 
     } catch (error) {
       console.error('Payment error:', error);
-      Alert.alert(translations.error || 'Hata', translations.paymentError || 'Ödeme sırasında bir hata oluştu');
+      Alert.alert('Hata', 'Ödeme sırasında bir hata oluştu');
     } finally {
       setIsProcessing(false);
     }
@@ -218,7 +185,7 @@ export default function Payment() {
           {item.name || 'Ürün Adı'}
         </Text>
         <Text style={[styles.itemDetails, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-          {translations.size || 'Boyut'}: {item.size || 'N/A'} | {translations.quantity || 'Adet'}: {item.amount || 1}
+          'Boyut': {item.size || 'N/A'} | 'Adet': {item.amount || 1}
         </Text>
       </View>
       <Text style={[styles.itemPrice, { color: '#FF6B35' }]}>
@@ -231,7 +198,7 @@ export default function Payment() {
     return (
       <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color={theme.primary} />
-        <Text style={[styles.loadingText, { color: theme.text }]}>{translations.loading}</Text>
+        <Text style={[styles.loadingText, { color: theme.text }]}>Yukleniyor</Text>
       </View>
     );
   }
@@ -250,28 +217,28 @@ export default function Payment() {
 
         {/* Başlık */}
         <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-          {translations.paymentInformation || 'Ödeme Bilgileri'}
+          Ödeme Bilgileri
         </Text>
 
         {/* Kredi Kartları Bölümü */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle2, { color: theme.text }]}>
-              {translations.savedCards}
+              Kayıtlı Kartlarım
             </Text>
             <TouchableOpacity
               style={[styles.addButton, { borderColor: theme.primary }]}
               onPress={() => navigation.navigate('AddCreditCard')}
             >
               <Ionicons name="add" size={16} color={theme.primary} />
-              <Text style={[styles.addButtonText, { color: theme.primary }]}>{translations.addCard}</Text>
+              <Text style={[styles.addButtonText, { color: theme.primary }]}>Kart Ekle</Text>
             </TouchableOpacity>
           </View>
 
           {creditCards.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                {translations.noCardsYet}
+                Henüz kayıtlı kartınız yok
               </Text>
             </View>
           ) : (
@@ -294,7 +261,7 @@ export default function Payment() {
                     styles.creditCardView,
                     { backgroundColor: selectedCard?.id === card.id ? '#4A90E2' : '#5BA4F2' }
                   ]}>
-                    <Text style={styles.cardTitle}>{card.cardTitle || translations.myCard}</Text>
+                    <Text style={styles.cardTitle}>{card.cardTitle || Kartım}</Text>
                     <Text style={styles.cardNumber}>
                       **** **** **** {card.cardNumber ? card.cardNumber.slice(-4) : '****'}
                     </Text>
@@ -323,21 +290,21 @@ export default function Payment() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle2, { color: theme.text }]}>
-              {translations.deliveryAddresses}
+              Teslimat Adreslerim
             </Text>
             <TouchableOpacity
               style={[styles.addButton, { borderColor: theme.primary }]}
               onPress={() => navigation.navigate('AddAddress')}
             >
               <Ionicons name="add" size={16} color={theme.primary} />
-              <Text style={[styles.addButtonText, { color: theme.primary }]}>{translations.addAddress}</Text>
+              <Text style={[styles.addButtonText, { color: theme.primary }]}>Adres Ekle</Text>
             </TouchableOpacity>
           </View>
 
           {addresses.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                {translations.noAddressesYet}
+                Henüz kayıtlı adresiniz yok
               </Text>
             </View>
           ) : (
@@ -436,7 +403,7 @@ export default function Payment() {
               <Ionicons name="receipt" size={16} color="white" />
             </View>
             <Text style={[styles.summaryTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-              {translations.orderSummary || 'Sipariş Özeti'}
+              'Sipariş Özeti'
             </Text>
           </View>
 
@@ -458,7 +425,7 @@ export default function Payment() {
             }
           ]}>
             <Text style={[styles.totalLabel, { color: isDarkMode ? '#fff' : '#333' }]}>
-              {translations.totalAmount || 'Toplam Tutar'}:
+              Toplam Tutar:
             </Text>
             <Text style={[styles.totalAmount, { color: '#FF6B35' }]}>
               {calculateTotal().toFixed(2)} ₺
@@ -480,12 +447,12 @@ export default function Payment() {
             {isProcessing ? (
               <>
                 <Ionicons name="time" size={20} color="#fff" style={styles.buttonIcon} />
-                <Text style={styles.buttonText}>{translations.processing || 'İşleniyor...'}</Text>
+                <Text style={styles.buttonText}>'İşleniyor</Text>
               </>
             ) : (
               <>
                 <Ionicons name="card" size={20} color="#fff" style={styles.buttonIcon} />
-                <Text style={styles.buttonText}>{translations.payNow || 'Ödeme Yap'}</Text>
+                <Text style={styles.buttonText}>Ödeme Yap</Text>
               </>
             )}
           </TouchableOpacity>
@@ -495,7 +462,7 @@ export default function Payment() {
         <View style={styles.securityInfo}>
           <Ionicons name="shield-checkmark" size={16} color="#4CAF50" />
           <Text style={[styles.securityText, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-            {translations.yourPaymentSecure || 'Ödemeniz güvende'}
+            Ödemeniz güvende
           </Text>
         </View>
       </ScrollView>

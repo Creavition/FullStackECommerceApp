@@ -10,10 +10,8 @@ import {
     ScrollView,
     Dimensions,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import StarRating from './StarRating';
 import { getAuthToken } from '../utils/authStorage';
-import { useLanguage } from '../contexts/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
@@ -21,7 +19,6 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const { translations } = useLanguage();
 
     const resetForm = () => {
         setRating(0);
@@ -30,17 +27,17 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
 
     const handleSubmit = async () => {
         if (rating === 0) {
-            Alert.alert(translations.error || 'Hata', translations.pleaseSelectRating || 'Lütfen bir puan verin.');
+            Alert.alert('Hata', 'Lütfen bir puan verin.');
             return;
         }
 
         if (comment.trim().length === 0) {
-            Alert.alert(translations.error || 'Hata', translations.pleaseWriteReview || 'Lütfen bir yorum yazın.');
+            Alert.alert('Hata', 'Lütfen bir yorum yazın.');
             return;
         }
 
         if (comment.length > 1000) {
-            Alert.alert(translations.error || 'Hata', translations.reviewTooLong || 'Yorum en fazla 1000 karakter olabilir.');
+            Alert.alert('Hata', 'Yorum en fazla 1000 karakter olabilir.');
             return;
         }
 
@@ -54,26 +51,26 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
             console.log('Token value:', token ? token.substring(0, 50) + '...' : 'null');
 
             if (!token) {
-                Alert.alert(translations.error || 'Hata', translations.pleaseLogin || 'Lütfen giriş yapın ve tekrar deneyin.');
+                Alert.alert('Hata', 'Lütfen giriş yapın ve tekrar deneyin.');
                 setIsSubmitting(false);
                 return;
             }
 
             // Token formatını kontrol et
             if (typeof token !== 'string' || token.length < 10) {
-                Alert.alert(translations.error || 'Hata', translations.invalidSession || 'Geçersiz oturum. Lütfen tekrar giriş yapın.');
+                Alert.alert('Hata', 'Geçersiz oturum. Lütfen tekrar giriş yapın.');
                 setIsSubmitting(false);
                 return;
             }
 
-            console.log('Making review request to:', 'http://192.168.1.210:5207/api/Review');
+            console.log('Making review request to:', 'http://10.241.64.12:5207/api/Review');
             console.log('Request body:', {
                 productId: product.id,
                 rating: rating,
                 comment: comment.trim(),
             });
 
-            const response = await fetch('http://192.168.1.210:5207/api/Review', {
+            const response = await fetch('http://10.241.64.12:5207/api/Review', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -91,11 +88,11 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
 
             if (response.ok) {
                 Alert.alert(
-                    translations.success || 'Başarılı',
-                    translations.reviewSubmitted || 'Yorumunuz başarıyla gönderildi!',
+                    'Başarılı',
+                    'Yorumunuz başarıyla gönderildi!',
                     [
                         {
-                            text: translations.ok || 'Tamam',
+                            text: 'Tamam',
                             onPress: () => {
                                 resetForm();
                                 onClose();
@@ -111,14 +108,14 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
                 console.log('Error response:', errorData);
 
                 if (response.status === 401) {
-                    Alert.alert(translations.error || 'Hata', translations.sessionExpired || 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+                    Alert.alert('Hata', 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
                 } else {
-                    Alert.alert(translations.error || 'Hata', errorData.message || 'Yorum gönderilemedi.');
+                    Alert.alert('Hata', 'Yorum gönderilemedi.');
                 }
             }
         } catch (error) {
             console.error('Review submission error:', error);
-            Alert.alert(translations.error || 'Hata', translations.reviewError || 'Bir hata oluştu. Lütfen tekrar deneyin.');
+            Alert.alert('Hata', 'Bir hata oluştu. Lütfen tekrar deneyin.');
         } finally {
             setIsSubmitting(false);
         }
@@ -138,7 +135,7 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
         >
             <View style={styles.container}>
                 <View style={styles.header}>
-                    <Text style={styles.title}>{translations.rateProduct || 'Ürünü Değerlendir'}</Text>
+                    <Text style={styles.title}>Ürünü Değerlendir</Text>
                     <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
                         <Text style={styles.closeButtonText}>✕</Text>
                     </TouchableOpacity>
@@ -152,7 +149,7 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
                     )}
 
                     <View style={styles.ratingSection}>
-                        <Text style={styles.sectionTitle}>{translations.yourRating || 'Puanınız'}</Text>
+                        <Text style={styles.sectionTitle}>'Puanınız'</Text>
                         <View style={styles.starRatingContainer}>
                             <StarRating
                                 rating={rating}
@@ -161,21 +158,21 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
                                 showRating={false}
                             />
                             <Text style={styles.ratingDescription}>
-                                {rating === 0 && (translations.giveRating || 'Puan verin')}
-                                {rating === 1 && (translations.veryBad || 'Çok Kötü')}
-                                {rating === 2 && (translations.bad || 'Kötü')}
-                                {rating === 3 && (translations.average || 'Orta')}
-                                {rating === 4 && (translations.good || 'İyi')}
-                                {rating === 5 && (translations.excellent || 'Mükemmel')}
+                                {rating === 0 && 'Puan verin'}
+                                {rating === 1 && 'Çok Kötü'}
+                                {rating === 2 && 'Kötü'}
+                                {rating === 3 && 'Orta'}
+                                {rating === 4 && 'İyi'}
+                                {rating === 5 && 'Mükemmel'}
                             </Text>
                         </View>
                     </View>
 
                     <View style={styles.commentSection}>
-                        <Text style={styles.sectionTitle}>{translations.yourReview || 'Yorumunuz'}</Text>
+                        <Text style={styles.sectionTitle}>Yorumunuz</Text>
                         <TextInput
                             style={styles.commentInput}
-                            placeholder={translations.reviewPlaceholderText || 'Bu ürün hakkındaki düşüncelerinizi paylaşın...'}
+                            placeholder={'Bu ürün hakkındaki düşüncelerinizi paylaşın...'}
                             value={comment}
                             onChangeText={setComment}
                             multiline
@@ -184,7 +181,7 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
                             textAlignVertical="top"
                         />
                         <Text style={styles.characterCount}>
-                            {comment.length}/1000 {translations.characters || 'karakter'}
+                            {comment.length}/1000 karakter
                         </Text>
                     </View>
                 </ScrollView>
@@ -194,7 +191,7 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
                         style={[styles.button, styles.cancelButton]}
                         onPress={handleClose}
                     >
-                        <Text style={styles.cancelButtonText}>{translations.cancel || 'İptal'}</Text>
+                        <Text style={styles.cancelButtonText}>İptal</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[
@@ -206,7 +203,7 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
                         disabled={rating === 0 || comment.trim().length === 0 || isSubmitting}
                     >
                         <Text style={styles.submitButtonText}>
-                            {isSubmitting ? (translations.sending || 'Gönderiliyor...') : (translations.send || 'Gönder')}
+                            {isSubmitting ? 'Gönderiliyor' : 'Gönder'}
                         </Text>
                     </TouchableOpacity>
                 </View>

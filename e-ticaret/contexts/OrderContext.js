@@ -23,8 +23,8 @@ export const OrderProvider = ({ children }) => {
         try {
             const newOrder = {
                 id: Date.now().toString(),
-                date: new Date().toISOString(),
-                status: 'Completed',
+                date: new Date().toLocaleDateString('tr-TR'),
+                status: 'Hazırlanıyor',
                 ...orderData
             };
 
@@ -39,19 +39,6 @@ export const OrderProvider = ({ children }) => {
         }
     };
 
-    // Sipariş durumunu güncelle
-    const updateOrderStatus = async (orderId, newStatus) => {
-        try {
-            const updatedOrders = orderHistory.map(order =>
-                order.id === orderId ? { ...order, status: newStatus } : order
-            );
-
-            setOrderHistory(updatedOrders);
-            await AsyncStorage.setItem('orderHistory', JSON.stringify(updatedOrders));
-        } catch (error) {
-            console.error('Error updating order status:', error);
-        }
-    };
 
     // Sipariş geçmişini temizle
     const clearOrderHistory = async () => {
@@ -67,7 +54,6 @@ export const OrderProvider = ({ children }) => {
         orderHistory,
         loadOrderHistory,
         addOrder,
-        updateOrderStatus,
         clearOrderHistory
     };
 

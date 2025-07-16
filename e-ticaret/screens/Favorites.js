@@ -4,23 +4,23 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../contexts/FavoritesContext';
 import { useProduct } from '../contexts/ProductContext';
-import { getAllProducts, productUtils, toggleProductFavorite } from '../utils/productUtils';
-import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 import ProductCard from '../components/ProductCard';
 
 export default function Favorites() {
     const navigation = useNavigation();
-    const { favoriteItems, favoriteSource, toggleFavorite } = useFavorites();
+    const { favoriteItems, toggleFavorite, isFavorite } = useFavorites(); // ✅ isFavorite helper eklendi
     const { products, loading, fetchProducts, updateProductFavoriteStatus } = useProduct();
-    const { translations, language } = useLanguage();
     const { theme, isDarkMode } = useTheme();
 
-    // Ürünleri yükle - ProductContext'den favori olanları al
+    // ✅ DÜZELTME: Hem ProductContext hem FavoritesContext'i dinle
     const favoriteProducts = useMemo(() => {
-        return products.filter(p => p.isFavorite === true);
-    }, [products]);
+        return products.filter(product => {
+            // Hem ProductContext hem FavoritesContext'ten kontrol et
+            return product.isFavorite === true || isFavorite(product.id);
+        });
+    }, [products, favoriteItems]); // ✅ favoriteItems dependency eklendi
 
     // Sayfa yüklendiğinde sadece bir kez yükle
     useEffect(() => {
@@ -29,29 +29,39 @@ export default function Favorites() {
         }
     }, []);
 
-    // Sayfa odaklandığında sadece gerekirse yeniden yükle
+    // ✅ Sayfa focus olduğunda favoriteItems'ı sync et
     useFocusEffect(
         useCallback(() => {
-            // Eğer ürünler yoksa veya çok az varsa yeniden yükle
-            if (products.length === 0) {
-                fetchProducts();
+            console.log('Favorites screen focused - syncing data');
+
+            // Eğer ürünler varsa ama favoriteItems sync olmamışsa
+            if (products.length > 0) {
+                console.log('Current favorite products count:', favoriteProducts.length);
+                console.log('FavoriteItems:', favoriteItems);
             }
-        }, [products.length, fetchProducts])
+        }, [products.length, favoriteProducts.length, favoriteItems])
     );
 
-    // API'den gelen verilere göre ürünleri kategorize et - Favorites için basitleştir
     const handleProductPress = useCallback((product) => {
-        navigation.navigate('ProductDetail', { product });
+        // Tab navigator'ın parent navigation'ını kullan
+        const parentNavigation = navigation.getParent();
+        if (parentNavigation) {
+            parentNavigation.navigate('ProductDetail', { product });
+        }
     }, [navigation]);
 
     const handleFavoritePress = useCallback(async (productId) => {
         console.log(`Favorites: Toggling favorite for product ${productId}`);
 
+        // ✅ DÜZELTME: Daha basit kontrol
         const currentProduct = favoriteProducts.find(p => p.id === productId);
-        if (!currentProduct) return;
+        if (!currentProduct) {
+            console.log('Product not found in favoriteProducts');
+            return;
+        }
 
         // Context'teki toggle fonksiyonunu kullan ve ProductContext'i güncelle
-        const newFavoriteStatus = await toggleFavorite(productId, 'Favorites', updateProductFavoriteStatus);
+        const newFavoriteStatus = await toggleFavorite(productId, updateProductFavoriteStatus);
 
         // Eğer API'den cevap gelmişse durumu logla
         if (newFavoriteStatus !== null) {
@@ -59,17 +69,18 @@ export default function Favorites() {
         }
     }, [favoriteProducts, toggleFavorite, updateProductFavoriteStatus]);
 
+    // ✅ DÜZELTME: favoriteItems'ı da geç
     const renderItem = useCallback(({ item }) => {
         return (
             <ProductCard
                 item={item}
                 onProductPress={handleProductPress}
                 onFavoritePress={handleFavoritePress}
-                translations={translations}
                 isDarkMode={isDarkMode}
+                favoriteItems={favoriteItems} // ✅ Eksik prop eklendi
             />
         );
-    }, [handleProductPress, handleFavoritePress, translations, isDarkMode]);
+    }, [handleProductPress, handleFavoritePress, isDarkMode, favoriteItems]);
 
     if (loading) {
         return (
@@ -81,7 +92,7 @@ export default function Favorites() {
                 />
                 <View style={styles.loadingContent}>
                     <Ionicons name="refresh" size={40} color="#FF6B35" />
-                    <Text style={styles.loadingText}>{translations.loading}</Text>
+                    <Text style={styles.loadingText}>Yükleniyor</Text>
                 </View>
             </View>
         );
@@ -96,14 +107,14 @@ export default function Favorites() {
                     translucent={false}
                 />
                 <Ionicons name="heart-outline" size={80} color="#ce6302" />
-                <Text style={[styles.emptyTitle, { color: theme.text }]}>{translations.favorites}</Text>
-                <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>{translations.favoritesText}</Text>
+                <Text style={[styles.emptyTitle, { color: theme.text }]}>Favoriler</Text>
+                <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>Henüz favori ürününüz yok.</Text>
                 <TouchableOpacity
                     style={styles.shopButton}
                     onPress={() => navigation.navigate('Home')}
                 >
                     <Ionicons name="storefront" size={20} color="#fff" style={{ marginRight: 8 }} />
-                    <Text style={styles.shopButtonText}>{translations.startShopping}</Text>
+                    <Text style={styles.shopButtonText}>Alışverişe Başla</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -119,9 +130,9 @@ export default function Favorites() {
 
             {/* Header */}
             <View style={[styles.headerContainer, { backgroundColor: theme.background }]}>
-                <Text style={[styles.title, { color: theme.text }]}>{translations.favorites}</Text>
+                <Text style={[styles.title, { color: theme.text }]}>Favoriler</Text>
                 <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                    {favoriteProducts.length} {translations.favoritesProduct}
+                    {favoriteProducts.length} Ürün
                 </Text>
             </View>
 

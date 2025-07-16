@@ -1,4 +1,4 @@
-// screens/Home.js - API ile çalışacak şekilde güncellendi
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
@@ -7,14 +7,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../contexts/FavoritesContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useFilter } from '../contexts/FilterContext';
 import { useProduct } from '../contexts/ProductContext';
 
 import ProductCardHorizontal from '../components/ProductCardHorizontal';
 
-import { parsePrice, logProductDetails } from '../utils/productUtils';
+import { logProductDetails } from '../utils/productUtils';
 
 export default function Home() {
     const navigation = useNavigation();
@@ -22,10 +21,9 @@ export default function Home() {
     const scrollViewRef = useRef(null); // ScrollView için ref
 
     const { favoriteItems, toggleFavorite } = useFavorites();
-    const { translations, language } = useLanguage();
     const { theme, isDarkMode } = useTheme();
     const { updateFilters } = useFilter() || {};
-    const { products, loading, error, fetchProducts, fetchProductsByCategory, updateProductFavoriteStatus } = useProduct();
+    const { products, loading, fetchProducts, updateProductFavoriteStatus } = useProduct();
 
     const [categories] = useState(['Jacket', 'Pants', 'Shoes', 'T-Shirt']); // Static categories for now
     const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -50,7 +48,7 @@ export default function Home() {
                 }
             });
         }
-    }, [isInitialLoad]); // fetchProducts dependency'sini kaldırdık
+    }, [isInitialLoad, fetchProducts]);
 
     // Memoized products - sadece products değiştiğinde hesaplanır ve stable array döndürür
     const flashSaleProducts = useMemo(() => {
@@ -79,15 +77,19 @@ export default function Home() {
 
     // Categories listesi - başına "All" seçeneği eklenir
     const categoriesWithAll = useMemo(() => {
-        const allOption = translations.all || 'All';
+        const allOption = 'Tümü';
         return [allOption, ...(categories || [])];
-    }, [categories, translations.all]);
+    }, [categories]);
 
     const handleProductPress = useCallback((product) => {
         if (__DEV__) {
             logProductDetails(product);
         }
-        navigation.navigate('ProductDetail', { product });
+        // Tab navigator'ın parent navigation'ını kullan
+        const parentNavigation = navigation.getParent();
+        if (parentNavigation) {
+            parentNavigation.navigate('ProductDetail', { product });
+        }
     }, [navigation]);
 
     // Basit favori toggle
@@ -100,20 +102,20 @@ export default function Home() {
         }
 
         // Context'teki toggle fonksiyonunu kullan ve ProductContext'i güncelle
-        const newFavoriteStatus = await toggleFavorite(productId, 'Home', updateProductFavoriteStatus);
+        const newFavoriteStatus = await toggleFavorite(productId, updateProductFavoriteStatus);
 
         // Eğer API'den cevap gelmişse durumu logla
         if (newFavoriteStatus !== null) {
             console.log(`Home: Product ${productId} favorite status updated to: ${newFavoriteStatus}`);
         }
-    }, [products, toggleFavorite, updateProductFavoriteStatus]);
+    }, [products, toggleFavorite, updateProductFavoriteStatus]); // favoriteItems dependency'sini kaldırdık
 
-    // Kategori basma fonksiyonu - Filter context'i de güncelle - Optimized
+    // Kategori basma fonksiyonu - Filter context'i de güncelleıyor. Fıltrele sayfasında gozukmesı ıcın
     const handleCategoryPress = useCallback((category) => {
         console.log(`Home: Category pressed: ${category}`);
 
-        // "All" seçeneği için özel işlem
-        const allOption = translations.all || 'All';
+        // "All" seçeneği secılırse bısey secmemıs gıbı olur. Dırek search sayfasına yonlendırmek ıcın
+        const allOption = 'Tümü';
         const selectedCategory = category === allOption ? null : category;
 
         // Filter context'i güncelle
@@ -125,12 +127,15 @@ export default function Home() {
             });
         }
 
-        // Search sayfasına git - her seferinde yeni route ile
+        // Search sayfasına git - Tab navigation kullanarak
         navigation.navigate('Search', {
-            selectedCategory: selectedCategory,
-            timestamp: Date.now() // Her seferinde farklı bir param ekle
+            screen: 'SearchMain',
+            params: {
+                selectedCategory: selectedCategory,
+                timestamp: Date.now() // Her seferinde farklı bir param ekle
+            }
         });
-    }, [navigation, updateFilters, translations.all]);
+    }, [navigation, updateFilters]);
 
     // Tüm içeriği bir data array'i olarak hazırla
     const homeData = useMemo(() => {
@@ -143,7 +148,7 @@ export default function Home() {
         if (flashSaleProducts.length > 0) {
             data.push({
                 type: 'section',
-                title: translations.flashSale || 'Flash Sale',
+                title: 'FLASH İNDİRİM',
                 icon: 'flash',
                 seeAllRoute: 'FlashSale',
                 products: flashSaleProducts,
@@ -155,7 +160,7 @@ export default function Home() {
         if (bestSellingProducts.length > 0) {
             data.push({
                 type: 'section',
-                title: translations.bestSelling || 'Best Selling',
+                title: 'EN ÇOK SATAN',
                 icon: 'trending-up',
                 seeAllRoute: 'BestSeller',
                 products: bestSellingProducts,
@@ -167,7 +172,7 @@ export default function Home() {
         if (fastDeliveryProducts.length > 0) {
             data.push({
                 type: 'section',
-                title: translations.fastDelivery || 'Fast Delivery',
+                title: 'Hızlı Teslimat',
                 icon: 'rocket',
                 seeAllRoute: 'FastDelivery',
                 products: fastDeliveryProducts,
@@ -176,7 +181,7 @@ export default function Home() {
         }
 
         return data;
-    }, [categoriesWithAll, flashSaleProducts, bestSellingProducts, fastDeliveryProducts, translations]);
+    }, [categoriesWithAll, flashSaleProducts, bestSellingProducts, fastDeliveryProducts]);
 
     // Ana render item function
     const renderMainItem = useCallback(({ item, index }) => {
@@ -184,7 +189,7 @@ export default function Home() {
             return (
                 <View style={styles.section}>
                     <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                        {translations.categories || 'Categories'}
+                        Kategoriler
                     </Text>
                     <ScrollView
                         horizontal
@@ -228,9 +233,15 @@ export default function Home() {
                                 {item.title}
                             </Text>
                         </View>
-                        <TouchableOpacity onPress={() => navigation.navigate(item.seeAllRoute)}>
+                        <TouchableOpacity onPress={() => {
+                            // Tab navigator'ın parent navigation'ını kullan
+                            const parentNavigation = navigation.getParent();
+                            if (parentNavigation) {
+                                parentNavigation.navigate(item.seeAllRoute);
+                            }
+                        }}>
                             <Text style={[styles.seeAll, { color: theme.primary }]}>
-                                {translations.seeAll || 'See All'}
+                                Tümünü Gör
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -244,7 +255,6 @@ export default function Home() {
                                 item={product}
                                 onProductPress={handleProductPress}
                                 onFavoritePress={handleFavoritePress}
-                                translations={translations}
                                 isDarkMode={isDarkMode}
                                 favoriteItems={favoriteItems}
                             />
@@ -255,7 +265,7 @@ export default function Home() {
         }
 
         return null;
-    }, [theme, translations, navigation, handleCategoryPress, handleProductPress, handleFavoritePress, isDarkMode, favoriteItems]);
+    }, [theme, navigation, handleCategoryPress, handleProductPress, handleFavoritePress, isDarkMode, favoriteItems]);
 
     // Home tab'a basıldığında en üste kaydır
     useEffect(() => {
@@ -293,7 +303,7 @@ export default function Home() {
             {isLoading ? (
                 <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
                     <Text style={[styles.loadingText, { color: theme.text }]}>
-                        {translations.loading || 'Loading...'}
+                        Yükleniyor
                     </Text>
                 </View>
             ) : (
@@ -305,8 +315,8 @@ export default function Home() {
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.mainContainer}
                     removeClippedSubviews={false}
-                    initialNumToRender={3}
-                    maxToRenderPerBatch={3}
+                    initialNumToRender={4}
+                    maxToRenderPerBatch={4}
                     windowSize={5}
                 />
             )}

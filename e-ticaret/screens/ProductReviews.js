@@ -27,7 +27,7 @@ const ProductReviews = () => {
 
     const fetchReviews = async () => {
         try {
-            const response = await fetch(`http://192.168.1.210:5207/api/Review/Product/${productId}`);
+            const response = await fetch(`http://10.241.64.12:5207/api/Review/Product/${productId}`);
 
             if (response.ok) {
                 const data = await response.json();
@@ -52,7 +52,7 @@ const ProductReviews = () => {
 
     const fetchReviewStats = async () => {
         try {
-            const response = await fetch(`http://192.168.1.210:5207/api/Review/Stats/${productId}`);
+            const response = await fetch(`http://10.241.64.12:5207/api/Review/Stats/${productId}`);
 
             if (response.ok) {
                 const data = await response.json();
