@@ -1,19 +1,19 @@
 import { categoryApi } from './categoryApi';
 import { productApi } from './productApi';
 
-// Cache variables
+// Cache degiskenleri
 let cachedProducts = null;
 let cachedCategories = null;
 
-// Cache helper functions
+// Cacheleme
 const clearCache = () => {
     cachedProducts = null;
     cachedCategories = null;
 };
 
-// ==================== CATEGORY FUNCTIONS ====================
+// Category Fonksiyonları
 
-// Get all categories from API
+// Tüm kategorileri getirir
 export const getCategories = async () => {
     try {
         if (!cachedCategories) {
@@ -44,9 +44,9 @@ export const getCategoryById = async (categoryId) => {
     }
 };
 
-// ==================== PRODUCT FUNCTIONS ====================
+//Product fonksiyonlari
 
-// Get all products from API
+// Tüm Ürünleri Getirir
 export const getAllProducts = async () => {
     try {
         if (!cachedProducts) {
@@ -67,7 +67,7 @@ export const getAllProducts = async () => {
     }
 };
 
-// Get product by ID
+// ID ye göre Ürün
 export const getProductById = async (productId) => {
     try {
         const product = await productApi.getProductById(productId);
@@ -85,7 +85,7 @@ export const getProductById = async (productId) => {
     }
 };
 
-// Get products by category
+// Kategori Id ye gore Urunler
 export const getProductsByCategory = async (categoryId) => {
     try {
         const products = await productApi.getProductsByCategory(categoryId);
@@ -140,12 +140,12 @@ export const filterProducts = async (filters) => {
     }
 };
 
-// Toggle product favorite
+// productId ye gore urunun favori status degisimi
 export const toggleProductFavorite = async (productId, newStatus) => {
     try {
         await productApi.toggleFavorite(productId, newStatus);
 
-        // Update cache if exists
+        
         if (cachedProducts) {
             const productIndex = cachedProducts.findIndex(p => p.id === productId);
             if (productIndex !== -1) {
@@ -160,7 +160,7 @@ export const toggleProductFavorite = async (productId, newStatus) => {
     }
 };
 
-// ==================== ENRICHMENT FUNCTIONS ====================
+
 
 // Enrich products with category data
 const enrichProductsWithCategoryData = async (products) => {
@@ -209,10 +209,6 @@ const enrichProductsWithCategoryData = async (products) => {
 // Bir ürün için kategori ismi, kategori bilgisi ve tüm bedenlerini ekler.
 const enrichSingleProductWithCategoryData = async (product) => {
     try {
-        console.log('=== Enriching Single Product ===');
-        console.log('Product ID:', product.id);
-        console.log('Product CategoryID:', product.categoryId);
-
         if (product.categoryId) {
             console.log(`Fetching category with ID: ${product.categoryId}`);
             const category = await getCategoryById(product.categoryId);
@@ -234,7 +230,6 @@ const enrichSingleProductWithCategoryData = async (product) => {
             console.log('Product has no categoryId');
         }
 
-        console.log('=== Enrichment Complete ===');
         return product;
     } catch (error) {
         console.error('Error enriching single product:', error);
@@ -242,9 +237,8 @@ const enrichSingleProductWithCategoryData = async (product) => {
     }
 };
 
-// ==================== UTILITY FUNCTIONS ====================
 
-// Parse price safely
+// Tip guvenligi
 export const parsePrice = (priceValue) => {
     if (!priceValue && priceValue !== 0) return 0;
     if (typeof priceValue === 'number') return priceValue;
@@ -288,7 +282,7 @@ export const extractSizeInfo = (product) => {
     return sizeInfo;
 };
 
-// Log product details for debugging
+// Urun bilgileri icin debug kodlari
 export const logProductDetails = (product) => {
     console.log('=== Product Details ===');
     console.log('ID:', product.id);
@@ -319,9 +313,9 @@ export const refreshData = async () => {
 
 
 
-// ==================== PRODUCT UTILITIES ====================
 
-// Product utility functions
+
+// Product yardimci fonksiyonlari
 export const productUtils = {
     // Get best sellers
     getBestSellers: async () => {
@@ -363,7 +357,7 @@ export const productUtils = {
         }
     },
 
-    // Get favorite products
+    // Favori urunleri getirme
     getFavoriteProducts: async () => {
         try {
             const allProducts = await getAllProducts();
@@ -375,11 +369,11 @@ export const productUtils = {
     }
 };
 
-// ==================== CATEGORY UTILITIES ====================
 
-// Category utility functions
+
+// Kategori yardimci fonksiyonlar
 export const categoryUtils = {
-    // Add new category
+    // Yeni kategori ekleme
     addCategory: async (categoryName) => {
         try {
             console.log(`Adding new category: ${categoryName}`);
@@ -393,7 +387,7 @@ export const categoryUtils = {
         }
     },
 
-    // Update category
+    // Kategori guncelleme
     updateCategory: async (categoryId, updateData) => {
         try {
             console.log(`Updating category ${categoryId}`);

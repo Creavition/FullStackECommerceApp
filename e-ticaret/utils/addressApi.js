@@ -1,12 +1,10 @@
-import axios from 'axios';
-
-const API_BASE_URL = 'http://10.241.64.12:5207/api';
+import apiClient, { API_ENDPOINTS } from './apiClient';
 
 export const addressApi = {
     // Tüm adresleri getir
     getAllAddresses: async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/Address`);
+            const response = await apiClient.get(`${API_ENDPOINTS.ADDRESS}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching addresses:', error);
@@ -17,7 +15,7 @@ export const addressApi = {
     // Belirli bir adresi getir
     getAddressById: async (id) => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/Address/${id}`);
+            const response = await apiClient.get(`${API_ENDPOINTS.ADDRESS}/${id}`);
             return response.data;
         } catch (error) {
             console.error(`Error fetching address ${id}:`, error);
@@ -28,7 +26,7 @@ export const addressApi = {
     // Yeni adres ekle
     addAddress: async (addressData) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/Address`, addressData);
+            const response = await apiClient.post(`${API_ENDPOINTS.ADDRESS}`, addressData);
             return response.data;
         } catch (error) {
             console.error('Error adding address:', error);
@@ -39,7 +37,7 @@ export const addressApi = {
     // Adres güncelle
     updateAddress: async (id, addressData) => {
         try {
-            const response = await axios.put(`${API_BASE_URL}/Address/${id}`, addressData);
+            const response = await apiClient.put(`${API_ENDPOINTS.ADDRESS}/${id}`, addressData);
             return response.data;
         } catch (error) {
             console.error(`Error updating address ${id}:`, error);
@@ -50,7 +48,7 @@ export const addressApi = {
     // Adres sil
     deleteAddress: async (id) => {
         try {
-            const response = await axios.delete(`${API_BASE_URL}/Address/${id}`);
+            const response = await apiClient.delete(`${API_ENDPOINTS.ADDRESS}/${id}`);
             return response.status === 204;
         } catch (error) {
             console.error(`Error deleting address ${id}:`, error);
@@ -61,7 +59,7 @@ export const addressApi = {
     // Varsayılan adresi ayarla
     setDefaultAddress: async (id) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/Address/${id}/SetDefault`);
+            const response = await apiClient.post(`${API_ENDPOINTS.ADDRESS}/${id}/SetDefault`);
             return response.data;
         } catch (error) {
             console.error(`Error setting default address ${id}:`, error);

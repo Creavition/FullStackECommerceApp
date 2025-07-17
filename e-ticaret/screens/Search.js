@@ -32,11 +32,11 @@ export default function Search() {
         updateFilters: () => { }
     };
     const { theme, isDarkMode } = useTheme() || { theme: {}, isDarkMode: false };
-    const { products, loading, fetchProducts,updateProductFavoriteStatus } = useProduct();
+    const { products, loading, fetchProducts, updateProductFavoriteStatus } = useProduct();
 
     const [searchText, setSearchText] = useState('');
     const [sortOption, setSortOption] = useState(null);
-    const [categories] = useState(['Jacket', 'Pants', 'Shoes', 'T-Shirt']); // Static categories
+    const [categories] = useState(['Jacket', 'Pants', 'Shoes', 'T-Shirt']);
 
     const { minPrice, maxPrice, selectedCategory, selectedSizes } = filters || {};
 
@@ -58,30 +58,38 @@ export default function Search() {
         });
     }, [selectedCategory, navigation, theme.primary]);
 
-    // Güvenli fiyat parsing için utility kullan
 
-    // Load products using ProductContext - sadece gerektiğinde
     useEffect(() => {
-        // If products are already loaded in context, we're good
         if (products.length === 0 && !loading) {
             fetchProducts();
         }
-    }, []); // Sadece component mount'ta çalışsın
+    }, []);
 
-    // Route params'tan kategori al ve filter'a set et - Optimize edilmiş
+    // Route params'tan kategori al ve filter'a set et 
     useEffect(() => {
         const { selectedCategory: routeCategory, timestamp } = route.params || {};
         if (routeCategory && updateFilters && typeof updateFilters === 'function') {
             console.log(`Search: Route params changed - Category: ${routeCategory}, Timestamp: ${timestamp}`);
 
-            // Her seferinde güncelle (timestamp sayesinde)
             updateFilters({
                 selectedCategory: routeCategory,
                 priceRange: filters?.priceRange || { min: 0, max: 1000 },
                 selectedSizes: filters?.selectedSizes || []
             });
         }
-    }, [route.params?.selectedCategory, route.params?.timestamp]); // timestamp'i de dinle
+    }, [route.params?.selectedCategory, route.params?.timestamp]);
+
+    // FavoriteItems değiştiğinde ProductContext'teki ürünlerin isFavorite durumunu güncelle
+    useEffect(() => {
+        if (products && products.length > 0) {
+            products.forEach(product => {
+                const isFavoriteInContext = favoriteItems[product.id] || false;
+                if (product.isFavorite !== isFavoriteInContext) {
+                    updateProductFavoriteStatus(product.id, isFavoriteInContext);
+                }
+            });
+        }
+    }, [favoriteItems, products, updateProductFavoriteStatus]);
 
     // Arama tab'ına tıklandığında en üste scroll yapma
     useFocusEffect(
@@ -96,7 +104,7 @@ export default function Search() {
         }, [navigation])
     );
 
-    // useMemo'ları stable hale getir
+
     const flashSaleProducts = useMemo(() => {
         const ids = new Set();
         const productList = products || [];
@@ -112,7 +120,6 @@ export default function Search() {
                 }
             });
         } else {
-            // Fallback: computed logic
             const categoryList = categories && categories.length > 0 ? categories : ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
 
             categoryList.forEach(cat => {
@@ -127,7 +134,7 @@ export default function Search() {
             });
         }
         return ids;
-    }, [products]); // products kullan
+    }, [products]);
 
     const fastDeliveryProducts = useMemo(() => {
         const ids = new Set();
@@ -144,7 +151,6 @@ export default function Search() {
                 }
             });
         } else {
-            // Fallback: computed logic
             products.forEach(p => {
                 if (p && p.id && typeof p.id === 'string') {
                     const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
@@ -163,14 +169,13 @@ export default function Search() {
         const hasApiFlags = productList.some(p => p && typeof p.label_BestSeller === 'boolean');
 
         if (hasApiFlags) {
-            // API verilerini kullan
             productList.forEach(p => {
                 if (p && p.id && p.label_BestSeller === true) {
                     ids.add(p.id);
                 }
             });
         } else {
-            // Fallback: computed logic
+
             productList.forEach(p => {
                 if (p && p.id && typeof p.id === 'string') {
                     const hash = p.id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
@@ -181,7 +186,7 @@ export default function Search() {
         return ids;
     }, [products]);
 
-    // filteredProducts'ı optimize et - minimal dependencies
+
     const filteredProducts = useMemo(() => {
         const productList = products || [];
         const searchLower = searchText.toLowerCase();
@@ -191,12 +196,12 @@ export default function Search() {
 
             const price = parsePrice(item.price);
 
-            // Category filtreleme - API field'ı da kontrol et
+            // Category filtreleme 
             const categoryMatch = !selectedCategory ||
                 item.category === selectedCategory ||
                 item.categoryName === selectedCategory;
 
-            // Size filtreleme - Seçili tüm bedenlerin üründe bulunması gerekiyor
+            // Size filtreleme 
             const sizeMatch = !selectedSizes || selectedSizes.length === 0 ||
                 selectedSizes.every(selectedSize => {
                     return (Array.isArray(item.availableSizes) && item.availableSizes.includes(selectedSize)) ||
@@ -234,16 +239,16 @@ export default function Search() {
     const handleFavoritePress = useCallback(async (productId) => {
         console.log(`Search: Toggling favorite for product ${productId}`);
 
-        // Context'teki toggle fonksiyonunu kullan ve ProductContext'i güncelle
+
         const newFavoriteStatus = await toggleFavorite(productId, updateProductFavoriteStatus);
 
-        // Eğer API'den cevap gelmişse durumu logla
+
         if (newFavoriteStatus !== null) {
             console.log(`Search: Product ${productId} favorite status updated to: ${newFavoriteStatus}`);
         }
     }, [toggleFavorite, updateProductFavoriteStatus]);
 
-    // Optimize renderItem with stable references
+
     const renderItem = useCallback(({ item }) => (
         <ProductCard
             item={item}
@@ -252,19 +257,19 @@ export default function Search() {
             isDarkMode={isDarkMode}
             favoriteItems={favoriteItems}
         />
-    ), [handleProductPress, handleFavoritePress, isDarkMode]);
+    ), [handleProductPress, handleFavoritePress, isDarkMode, favoriteItems]);
 
-    // Optimize getItemLayout
+
     const getItemLayout = useCallback((data, index) => ({
         length: 200,
         offset: 200 * index,
         index
     }), []);
 
-    // Optimize keyExtractor
+
     const keyExtractor = useCallback((item) => item.id, []);
 
-    // Optimize empty component
+
     const EmptyComponent = useCallback(() => (
         <View style={styles.emptyContainer}>
             <Ionicons name="search" size={60} color="#ccc" />
@@ -284,7 +289,7 @@ export default function Search() {
         );
     }
 
-    // Header component for FlatList
+
     const ListHeaderComponent = useCallback(() => (
         <View>
             <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.statusBarBackground} />

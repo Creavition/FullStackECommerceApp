@@ -52,6 +52,12 @@ export default function Register({ navigation }) {
         ]).start();
     }, []);
 
+    const hasMinLength = (password) => password.length >= 6;
+    const hasUpperCase = (password) => /[A-Z]/.test(password);
+    const hasLowerCase = (password) => /[a-z]/.test(password);
+    const hasNumber = (password) => /\d/.test(password);
+    const passwordsMatch = (password, confirmPassword) => password === confirmPassword && password.length > 0;
+
     const validateForm = () => {
         const newErrors = {};
 
@@ -71,6 +77,8 @@ export default function Register({ navigation }) {
             newErrors.password = 'Lütfen tüm alanları doldurun.';
         } else if (password.length < 6) {
             newErrors.password = 'Şifre en az 6 karakter olmalı';
+        } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+            newErrors.password = 'Şifre en az bir büyük harf, bir küçük harf ve bir rakam içermelidir';
         }
 
         if (!confirmPassword.trim()) {
@@ -101,9 +109,10 @@ export default function Register({ navigation }) {
                 }]
             );
         } catch (error) {
+            const errorMessage = error.message || 'Kayıt Olunamadı';
             Alert.alert(
                 'Hata',
-                'Kayıt Olunamadı',
+                errorMessage,
                 [{ text: 'Tamam' }]
             );
             console.error("Kayıt Hatası:", error);
@@ -258,23 +267,57 @@ export default function Register({ navigation }) {
 
                                     {/* Password Requirements */}
                                     <View style={styles.requirementsContainer}>
-                                        <View style={styles.requirementItem}>
-                                            <Ionicons
-                                                name={password.length >= 6 ? 'checkmark-circle' : 'close-circle'}
-                                                size={16}
-                                                color={password.length >= 6 ? '#4CAF50' : '#f44336'}
-                                            />
-                                            <Text style={[styles.requirementText, { color: password.length >= 6 ? '#4CAF50' : '#f44336' }]}>
-                                                En az 6 karakter
-                                            </Text>
+                                        <View style={{ flexDirection: "row" }}>
+                                            <View style={styles.requirementItem}>
+                                                <Ionicons
+                                                    name={hasMinLength(password) ? 'checkmark-circle' : 'close-circle'}
+                                                    size={16}
+                                                    color={hasMinLength(password) ? '#4CAF50' : '#f44336'}
+                                                />
+                                                <Text style={[styles.requirementText, { color: hasMinLength(password) ? '#4CAF50' : '#f44336' }]}>
+                                                    En az 6 karakter
+                                                </Text>
+                                            </View>
+                                            <View style={styles.requirementItem}>
+                                                <Ionicons
+                                                    name={hasUpperCase(password) ? 'checkmark-circle' : 'close-circle'}
+                                                    size={16}
+                                                    color={hasUpperCase(password) ? '#4CAF50' : '#f44336'}
+                                                />
+                                                <Text style={[styles.requirementText, { color: hasUpperCase(password) ? '#4CAF50' : '#f44336' }]}>
+                                                    En az bir büyük harf
+                                                </Text>
+                                            </View>
+                                        </View>
+                                        <View style={{ flexDirection: "row" }}>
+                                            <View style={styles.requirementItem}>
+                                                <Ionicons
+                                                    name={hasLowerCase(password) ? 'checkmark-circle' : 'close-circle'}
+                                                    size={16}
+                                                    color={hasLowerCase(password) ? '#4CAF50' : '#f44336'}
+                                                />
+                                                <Text style={[styles.requirementText, { color: hasLowerCase(password) ? '#4CAF50' : '#f44336' }]}>
+                                                    En az bir küçük harf
+                                                </Text>
+                                            </View>
+                                            <View style={[styles.requirementItem]}>
+                                                <Ionicons
+                                                    name={hasNumber(password) ? 'checkmark-circle' : 'close-circle'}
+                                                    size={16}
+                                                    color={hasNumber(password) ? '#4CAF50' : '#f44336'}
+                                                />
+                                                <Text style={[styles.requirementText, { color: hasNumber(password) ? '#4CAF50' : '#f44336' }]}>
+                                                    En az bir rakam
+                                                </Text>
+                                            </View>
                                         </View>
                                         <View style={styles.requirementItem}>
                                             <Ionicons
-                                                name={password === confirmPassword && password.length > 0 ? 'checkmark-circle' : 'close-circle'}
+                                                name={passwordsMatch(password, confirmPassword) ? 'checkmark-circle' : 'close-circle'}
                                                 size={16}
-                                                color={password === confirmPassword && password.length > 0 ? '#4CAF50' : '#f44336'}
+                                                color={passwordsMatch(password, confirmPassword) ? '#4CAF50' : '#f44336'}
                                             />
-                                            <Text style={[styles.requirementText, { color: password === confirmPassword && password.length > 0 ? '#4CAF50' : '#f44336' }]}>
+                                            <Text style={[styles.requirementText, { color: passwordsMatch(password, confirmPassword) ? '#4CAF50' : '#f44336' }]}>
                                                 Şifreler eşleşiyor
                                             </Text>
                                         </View>
@@ -417,6 +460,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 5,
+        marginRight: 60
     },
     requirementText: {
         fontSize: 12,

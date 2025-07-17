@@ -1,11 +1,9 @@
-import axios from 'axios';
-
-const API_BASE_URL = 'http://10.241.64.12:5207/api';
+import apiClient, { API_ENDPOINTS } from './apiClient';
 
 export const productApi = {
     getAllProducts: async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/Product`);
+            const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching all products:', error);
@@ -15,7 +13,7 @@ export const productApi = {
 
     getProductById: async (id) => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/Product/${id}`);
+            const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}/${id}`);
             return response.data;
         } catch (error) {
             console.error(`Error fetching product ${id}:`, error);
@@ -25,7 +23,7 @@ export const productApi = {
 
     getProductsByCategory: async (categoryId) => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/Product/category/${categoryId}`);
+            const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}/category/${categoryId}`);
             return response.data;
         } catch (error) {
             console.error(`Error fetching products for category ${categoryId}:`, error);
@@ -35,12 +33,12 @@ export const productApi = {
 
     getBestSellers: async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/Product`);
+            const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}`);
             return (response.data || []).filter(p => p.badge_BestSelling);
         } catch (error) {
             console.error('Error fetching best sellers:', error);
             try {
-                const response = await axios.get(`${API_BASE_URL}/Product`);
+                const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}`);
                 return response.data || [];
             } catch (fallbackError) {
                 console.error('Fallback also failed:', fallbackError);
@@ -51,12 +49,12 @@ export const productApi = {
 
     getFlashSaleProducts: async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/Product`);
+            const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}`);
             return (response.data || []).filter(p => p.badge_FlashSale);
         } catch (error) {
             console.error('Error fetching flash sale products:', error);
             try {
-                const response = await axios.get(`${API_BASE_URL}/Product`);
+                const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}`);
                 return response.data || [];
             } catch (fallbackError) {
                 console.error('Fallback also failed:', fallbackError);
@@ -67,12 +65,12 @@ export const productApi = {
 
     getFastDeliveryProducts: async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/Product`);
+            const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}`);
             return (response.data || []).filter(p => p.label_FastDelivery);
         } catch (error) {
             console.error('Error fetching fast delivery products:', error);
             try {
-                const response = await axios.get(`${API_BASE_URL}/Product`);
+                const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}`);
                 return response.data || [];
             } catch (fallbackError) {
                 console.error('Fallback also failed:', fallbackError);
@@ -83,7 +81,7 @@ export const productApi = {
 
     filterProducts: async (filters) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/Product/filter`, filters);
+            const response = await apiClient.post(`${API_ENDPOINTS.PRODUCT}/filter`, filters);
             return response.data;
         } catch (error) {
             console.error('Error filtering products:', error);
@@ -93,7 +91,7 @@ export const productApi = {
 
     createProduct: async (productData) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/Product`, productData);
+            const response = await apiClient.post(`${API_ENDPOINTS.PRODUCT}`, productData);
             return response.data;
         } catch (error) {
             console.error('Error creating product:', error);
@@ -103,7 +101,7 @@ export const productApi = {
 
     updateProduct: async (id, productData) => {
         try {
-            const response = await axios.put(`${API_BASE_URL}/Product/${id}`, productData);
+            const response = await apiClient.put(`${API_ENDPOINTS.PRODUCT}/${id}`, productData);
             return response.data;
         } catch (error) {
             console.error(`Error updating product ${id}:`, error);
@@ -113,7 +111,7 @@ export const productApi = {
 
     deleteProduct: async (id) => {
         try {
-            const response = await axios.delete(`${API_BASE_URL}/Product/${id}`);
+            const response = await apiClient.delete(`${API_ENDPOINTS.PRODUCT}/${id}`);
             return response.data;
         } catch (error) {
             console.error(`Error deleting product ${id}:`, error);
@@ -123,7 +121,7 @@ export const productApi = {
 
     toggleFavorite: async (productId, isFavorite) => {
         try {
-            const response = await axios.put(`${API_BASE_URL}/Product/${productId}`, { isFavorite });
+            const response = await apiClient.put(`${API_ENDPOINTS.PRODUCT}/${productId}`, { isFavorite });
             return response.data;
         } catch (error) {
             console.error(`Error toggling favorite for product ${productId}:`, error);
@@ -133,7 +131,7 @@ export const productApi = {
 
     updateProductCategory: async (productId, categoryId) => {
         try {
-            const response = await axios.put(`${API_BASE_URL}/Product/${productId}`, { categoryId });
+            const response = await apiClient.put(`${API_ENDPOINTS.PRODUCT}/${productId}`, { categoryId });
             return response.data;
         } catch (error) {
             console.error(`Error updating product category for ${productId}:`, error);
@@ -143,7 +141,7 @@ export const productApi = {
 
     updateProductSizes: async (productId, sizeIds) => {
         try {
-            const response = await axios.put(`${API_BASE_URL}/Product/${productId}/sizes`, { sizeIds });
+            const response = await apiClient.put(`${API_ENDPOINTS.PRODUCT}/${productId}/sizes`, { sizeIds });
             return response.data;
         } catch (error) {
             console.error(`Error updating product sizes for ${productId}:`, error);
@@ -153,7 +151,7 @@ export const productApi = {
 
     updateProductSizesGeneral: async (productId, sizeIds) => {
         try {
-            const response = await axios.put(`${API_BASE_URL}/Product/${productId}`, { sizeIds });
+            const response = await apiClient.put(`${API_ENDPOINTS.PRODUCT}/${productId}`, { sizeIds });
             return response.data;
         } catch (error) {
             console.error(`Error updating product sizes (general) for ${productId}:`, error);
@@ -163,7 +161,7 @@ export const productApi = {
 
     updateProductCategoryAndSizes: async (productId, categoryId, sizeIds) => {
         try {
-            const response = await axios.put(`${API_BASE_URL}/Product/${productId}`, { categoryId, sizeIds });
+            const response = await apiClient.put(`${API_ENDPOINTS.PRODUCT}/${productId}`, { categoryId, sizeIds });
             return response.data;
         } catch (error) {
             console.error(`Error updating product category and sizes for ${productId}:`, error);
@@ -190,7 +188,7 @@ export const productApi = {
 
             if (sizeIds.length === 0) throw new Error('No valid size IDs provided');
 
-            const response = await axios.put(`${API_BASE_URL}/Product/${productId}/sizes`, { sizeIds });
+            const response = await apiClient.put(`${API_ENDPOINTS.PRODUCT}/${productId}/sizes`, { sizeIds });
             return response.data;
         } catch (error) {
             console.error(`Error updating product sizes from JSON for ${productId}:`, error);

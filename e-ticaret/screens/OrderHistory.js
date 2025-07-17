@@ -1,80 +1,73 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal, ScrollView, Alert, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { OrderContext } from '../contexts/OrderContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useProduct } from '../contexts/ProductContext';
 
 export default function OrderHistory() {
     const navigation = useNavigation();
+    const route = useRoute();
     const { orderHistory, loadOrderHistory, clearOrderHistory } = useContext(OrderContext);
-    const { theme, isDarkMode } = useTheme();
+    const { theme } = useTheme();
     const { getImageUrl } = useProduct();
-    const [selectedOrder, setSelectedOrder] = useState(null); {/* Modal'da gosterilecek secili siparis */ }
-    const [modalVisible, setModalVisible] = useState(false); {/* View Details a basildiginda modal in acik/kapali kontrolu */ }
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [fadeAnim] = useState(new Animated.Value(0));
+
+    // Route params'tan gelinen sayfayı al
+    const { fromScreen } = route.params || {};
+
+    const handleBackPress = () => {
+        if (fromScreen === 'Account') {
+            // Account'tan gelindiyse normal goBack
+            navigation.goBack();
+        } else {
+            // Diğer sayfalardan (Cart, Payment vb.) gelindiyse Account tab'ına git
+            navigation.navigate('HomeScreen', { screen: 'Account' });
+        }
+    };
 
     useEffect(() => {
         loadOrderHistory();
+        Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+        }).start();
     }, []);
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('tr-TR', {
+    const formatDate = (item) => {
+        const timestamp = item.date ? new Date(item.date) : new Date(parseInt(item.id));
+        return timestamp.toLocaleDateString('tr-TR', {
             day: '2-digit',
-            month: '2-digit',
+            month: 'long',
             year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
         });
     };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'Completed': return '#E88A35';
-            case 'Processing': return '#FF9800';
-            case 'Shipped': return '#2196F3';
-            case 'Delivered': return '#4CAF50';
-            default: return '#999';
-        }
-    };
 
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case 'Completed': return 'checkmark-circle';
-            case 'Processing': return 'time';
-            case 'Shipped': return 'car';
-            case 'Delivered': return 'checkmark-done-circle';
-            default: return 'help-circle';
-        }
-    };
+    const STATUS_COLOR = '#F59E0B';
+    const STATUS_ICON = 'time';
+    const STATUS_TEXT = 'Hazırlanıyor';
 
-    // Clear order history fonksiyonu
     const handleClearHistory = () => {
         Alert.alert(
             'Geçmişi Temizle',
             'Tüm sipariş geçmişini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
             [
-                {
-                    text: 'İptal',
-                    style: 'cancel',
-                },
+                { text: 'İptal', style: 'cancel' },
                 {
                     text: 'Temizle',
                     style: 'destructive',
                     onPress: async () => {
                         try {
                             await clearOrderHistory();
-                            Alert.alert(
-                                'Başarılı',
-                                'Sipariş geçmişi başarıyla temizlendi.'
-                            );
+                            Alert.alert('Başarılı', 'Sipariş geçmişi başarıyla temizlendi.');
                         } catch (error) {
-                            Alert.alert(
-                                'Hata',
-                                'Sipariş geçmişi temizlenemedi. Lütfen tekrar deneyin.'
-                            );
-                            console.error('Error clearing order history:', error);
+                            Alert.alert('Hata', 'Sipariş geçmişi temizlenemedi. Lütfen tekrar deneyin.');
+                            console.error('Silme Hatasi:', error);
                         }
                     },
                 },
@@ -83,319 +76,326 @@ export default function OrderHistory() {
     };
 
     const renderOrderItem = ({ item, index }) => (
-        <View style={[styles.orderCard, { marginTop: index === 0 ? 0 : 16, backgroundColor: isDarkMode ? '#333' : '#fff' }]}>
-            <View style={styles.cardHeader}>
-                <View style={styles.orderNumberContainer}>
-                    <Ionicons name="receipt" size={16} color={isDarkMode ? '#b3b3b3' : '#666'} />
-                    <Text style={[styles.orderNumber, { color: isDarkMode ? '#fff' : '#333' }]}>#{item.id}</Text>
+        <Animated.View style={[
+            styles.orderCard,
+            {
+                backgroundColor: theme.cardBackground,
+                opacity: fadeAnim,
+                transform: [{
+                    translateY: fadeAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [50, 0],
+                    }),
+                }],
+            }
+        ]}>
+            {/* Order Header */}
+            <View style={styles.orderHeader}>
+                <View style={styles.orderInfo}>
+                    <View style={styles.orderIdContainer}>
+                        <Ionicons name="receipt" size={18} color={theme.primary} />
+                        <Text style={[styles.orderId, { color: theme.text }]}>#{item.id}</Text>
+                    </View>
+                    <Text style={[styles.orderDate, { color: theme.textSecondary }]}>
+                        {formatDate(item)}
+                    </Text>
                 </View>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                    <Ionicons name={getStatusIcon(item.status)} size={14} color="#fff" />
-                    <Text style={styles.statusText}>{item.status}</Text>
+                <View style={[styles.statusContainer, { backgroundColor: STATUS_COLOR }]}>
+                    <Ionicons name={STATUS_ICON} size={16} color="#fff" />
+                    <Text style={styles.statusText}>{STATUS_TEXT}</Text>
                 </View>
             </View>
 
-            <View style={styles.orderMeta}>
-                <View style={styles.metaItem}>
-                    <Ionicons name="calendar" size={16} color={isDarkMode ? '#b3b3b3' : '#666'} />
-                    <Text style={[styles.metaText, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{formatDate(item.date)}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                    <Ionicons name="cube" size={16} color={isDarkMode ? '#b3b3b3' : '#666'} />
-                    <Text style={[styles.metaText, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>{item.items?.length || 0} Ürün</Text>
-                </View>
-            </View>
-
-            <View style={[styles.cardFooter, { borderTopColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
-                <View style={styles.totalSection}>
-                    <Text style={[styles.totalLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>Toplam</Text>
-                    <Text style={[styles.totalAmount, { color: isDarkMode ? '#fff' : '#333' }]}>{item.totalAmount} ₺</Text>
-                </View>
-                <TouchableOpacity
-                    style={[styles.detailsButton, { backgroundColor: isDarkMode ? '#1a2a3a' : '#f0f8ff' }]}
-                    onPress={() => {
-                        setSelectedOrder(item);
-                        setModalVisible(true);
-                    }}
-                >
-                    <Text style={styles.detailsButtonText}>Detayları Göster</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#E88A35" />
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
-
-    const renderOrderModal = () => {
-        if (!modalVisible) return null;
-
-        return (
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <View style={[styles.bottomSheetOverlay, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.5)' }]}>
-                    <TouchableOpacity
-                        style={styles.overlayBackground}
-                        onPress={() => setModalVisible(false)}
-                        activeOpacity={1}
+            {/* Products Preview */}
+            <View style={styles.productsPreview}>
+                {item.items?.slice(0, 3).map((product, idx) => (
+                    <Image
+                        key={idx}
+                        source={{ uri: getImageUrl(product.frontImagePath || product.frontImageUrl || product.imageUrl || product.image) }}
+                        style={[styles.productPreviewImage, { marginLeft: idx * -8 }]}
                     />
+                ))}
+                {/* 3 den fazla urun olursa */}
+                {item.items?.length > 3 && (
+                    <View style={[styles.moreProductsIndicator, { backgroundColor: theme.primary }]}>
+                        <Text style={styles.moreProductsText}>+{item.items.length - 3}</Text>
+                    </View>
+                )}
+            </View>
 
-                    <View style={[styles.bottomSheetContainer, { backgroundColor: isDarkMode ? '#2d2d2d' : '#fff' }]}>
-                        {/* Drag Handle */}
-                        <View style={[styles.dragHandle, { backgroundColor: isDarkMode ? '#444' : '#e0e0e0' }]} />
-
-                        {/* Modal Header */}
-                        <View style={[styles.bottomSheetHeader, { borderBottomColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
-                            <View style={styles.headerLeft}>
-                                <Ionicons name="receipt" size={24} color="#ce6302" />
-                                <Text style={[styles.bottomSheetTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                    Sipariş Detayları
-                                </Text>
-                            </View>
-                            <TouchableOpacity
-                                onPress={() => setModalVisible(false)}
-                                style={[styles.bottomSheetCloseButton, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa' }]}
-                            >
-                                <Ionicons name="close" size={24} color={isDarkMode ? '#b3b3b3' : '#666'} />
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Order Info Card */}
-                        <View style={[styles.orderInfoCard, { backgroundColor: isDarkMode ? '#444' : '#f8f9fa', borderLeftColor: '#FF6B35' }]}>
-                            <View style={styles.orderInfoHeader}>
-                                <Text style={[styles.orderNumber, { color: isDarkMode ? '#fff' : '#333' }]}>#{selectedOrder?.id}</Text>
-                                <View style={[styles.miniStatusBadge, { backgroundColor: getStatusColor(selectedOrder?.status) }]}>
-                                    <Text style={styles.miniStatusText}>{selectedOrder?.status}</Text>
-                                </View>
-                            </View>
-                            <Text style={[styles.orderDate, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-                                {selectedOrder && formatDate(selectedOrder.date)}
-                            </Text>
-                        </View>
-
-                        <ScrollView style={[styles.bottomSheetContent, { backgroundColor: isDarkMode ? '#2d2d2d' : '#fff' }]} showsVerticalScrollIndicator={false}>
-
-                            {/* Order Summary Card */}
-                            <View style={[styles.orderSummaryCard, { backgroundColor: isDarkMode ? '#333' : '#f8f9ff', borderColor: '#FF6B35' }]}>
-                                <View style={styles.summaryHeader}>
-                                    <View style={[styles.summaryIcon, { backgroundColor: '#FF6B35' }]}>
-                                        <Ionicons name="receipt" size={20} color="#fff" />
-                                    </View>
-                                    <View style={styles.summaryInfo}>
-                                        <Text style={[styles.summaryTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                            'Sipariş Özeti'
-                                        </Text>
-                                        <Text style={[styles.summarySubtitle, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-                                            {selectedOrder?.items?.length || 0} Ürün • {selectedOrder?.totalAmount} ₺
-                                        </Text>
-                                    </View>
-                                </View>
-                            </View>
-
-                            {/* Status Timeline */}
-                            <View style={[styles.statusSection, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}>
-                                <View style={styles.statusHeader}>
-                                    <Ionicons name="time" size={18} color="#FF6B35" />
-                                    <Text style={[styles.statusTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                        Sipariş Durumu
-                                    </Text>
-                                </View>
-                                <View style={[styles.statusBadgeContainer, { backgroundColor: getStatusColor(selectedOrder?.status) }]}>
-                                    <Ionicons name={getStatusIcon(selectedOrder?.status)} size={16} color="#fff" />
-                                    <Text style={styles.statusBadgeText}>{selectedOrder?.status}</Text>
-                                </View>
-                            </View>
-
-                            {/* Products Section */}
-                            <View style={[styles.productsSection, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}>
-                                <View style={styles.productsSectionHeader}>
-                                    <View style={styles.productsHeaderLeft}>
-                                        <Ionicons name="bag-handle" size={18} color="#FF6B35" />
-                                        <Text style={[styles.productsTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                            Sipariş Edilmiş Ürünler
-                                        </Text>
-                                    </View>
-                                    <View style={[styles.productsCount, { backgroundColor: '#FF6B35' }]}>
-                                        <Text style={styles.productsCountText}>
-                                            {selectedOrder?.items?.length || 0}
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                {selectedOrder?.items?.map((item, index) => (
-                                    <View key={index} style={[styles.productCard, {
-                                        backgroundColor: isDarkMode ? '#2a2a2a' : '#f8f9fa',
-                                        borderBottomWidth: index === selectedOrder.items.length - 1 ? 0 : 1,
-                                        borderBottomColor: isDarkMode ? '#444' : '#e0e0e0'
-                                    }]}>
-                                        <Image
-                                            source={{ uri: getImageUrl(item.frontImagePath || item.frontImageUrl || item.imageUrl || item.image) }}
-                                            style={[styles.productImage, { backgroundColor: isDarkMode ? '#444' : '#fff' }]}
-                                            defaultSource={require('../assets/images/icon.png')}
-                                        />
-                                        <View style={styles.productInfo}>
-                                            <Text style={[styles.productName, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                                {item.name}
-                                            </Text>
-                                            <Text style={[styles.productCategory, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-                                                {item.category}
-                                            </Text>
-                                            <View style={styles.productDetails}>
-                                                <View style={[styles.productDetailChip, { backgroundColor: isDarkMode ? '#444' : '#e3f2fd' }]}>
-                                                    <Ionicons name="resize" size={12} color="#FF6B35" />
-                                                    <Text style={[styles.chipText, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                                        {item.size}
-                                                    </Text>
-                                                </View>
-                                                <View style={[styles.productDetailChip, { backgroundColor: isDarkMode ? '#444' : '#e3f2fd' }]}>
-                                                    <Ionicons name="duplicate" size={12} color="#FF6B35" />
-                                                    <Text style={[styles.chipText, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                                        {item.amount}x
-                                                    </Text>
-                                                </View>
-                                            </View>
-                                        </View>
-                                        <View style={styles.productPricing}>
-                                            <Text style={[styles.productPrice, { color: '#FF6B35' }]}>
-                                                {((typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace('₺', '').replace(',', '.')) || 0) * item.amount).toFixed(2)} ₺
-                                            </Text>
-                                        </View>
-                                    </View>
-                                ))}
-                            </View>
-
-                            {/* Payment & Delivery Info */}
-                            <View style={[styles.infoSection, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}>
-                                <View style={styles.infoHeader}>
-                                    <Ionicons name="information-circle" size={18} color="#FF6B35" />
-                                    <Text style={[styles.infoTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                        Sipariş Detayları
-                                    </Text>
-                                </View>
-
-                                <View style={styles.infoGrid}>
-                                    <View style={[styles.infoCard, { backgroundColor: isDarkMode ? '#2a2a2a' : '#f8f9fa' }]}>
-                                        <View style={[styles.infoCardIcon, { backgroundColor: '#4CAF50' }]}>
-                                            <Ionicons name="card" size={16} color="#fff" />
-                                        </View>
-                                        <Text style={[styles.infoCardLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-                                            Ödeme
-                                        </Text>
-                                        <Text style={[styles.infoCardValue, { color: isDarkMode ? '#fff' : '#333' }]} numberOfLines={2}>
-                                            {selectedOrder?.paymentMethod || 'Kart Bulunamadı'}
-                                        </Text>
-                                    </View>
-
-                                    <View style={[styles.infoCard, { backgroundColor: isDarkMode ? '#2a2a2a' : '#f8f9fa' }]}>
-                                        <View style={[styles.infoCardIcon, { backgroundColor: '#2196F3' }]}>
-                                            <Ionicons name="location" size={16} color="#fff" />
-                                        </View>
-                                        <Text style={[styles.infoCardLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-                                            Teslimat
-                                        </Text>
-                                        <Text style={[styles.infoCardValue, { color: isDarkMode ? '#fff' : '#333' }]} numberOfLines={3}>
-                                            {selectedOrder?.shippingAddress || 'Adres Bulunamadı'}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </View>
-
-                            {/* Total Amount */}
-                            <View style={[styles.totalSection, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}>
-                                <View style={styles.totalContainer}>
-                                    <View style={styles.totalLeft}>
-                                        <Text style={[styles.totalLabel, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-                                            Toplam Miktar
-                                        </Text>
-                                        <Text style={[styles.totalAmount, { color: isDarkMode ? '#fff' : '#333' }]}>
-                                            {selectedOrder?.totalAmount} ₺
-                                        </Text>
-                                    </View>
-                                    <View style={[styles.totalIcon, { backgroundColor: '#FF6B35' }]}>
-                                        <Ionicons name="checkmark" size={24} color="#fff" />
-                                    </View>
-                                </View>
-                            </View>
-
-                        </ScrollView>
+            {/* Order Footer */}
+            <View style={[styles.orderFooter, { borderTopColor: theme.border }]}>
+                <View style={styles.orderSummary}>
+                    <View style={styles.summaryItem}>
+                        <Ionicons name="cube-outline" size={16} color={theme.textSecondary} />
+                        <Text style={[styles.summaryText, { color: theme.textSecondary }]}>
+                            {item.items?.length || 0} Ürün
+                        </Text>
                     </View>
                 </View>
-            </Modal>
-        );
-    };
+                <View style={styles.orderActions}>
+                    <Text style={[styles.totalAmount, { color: theme.primary }]}>
+                        ₺{item.totalAmount}
+                    </Text>
+                    <TouchableOpacity
+                        style={[styles.detailButton, { backgroundColor: theme.primary }]}
+                        onPress={() => {
+                            setSelectedOrder(item);
+                            setModalVisible(true);
+                        }}
+                    >
+                        <Text style={styles.detailButtonText}>Detaylar</Text>
+                        <Ionicons name="chevron-forward" size={16} color="#fff" />
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </Animated.View>
+    );
+
+    const renderEmptyState = () => (
+        <Animated.View style={[styles.emptyContainer, { opacity: fadeAnim }]}>
+            <View style={[styles.emptyIconContainer, { backgroundColor: theme.cardBackground }]}>
+                <Ionicons name="receipt-outline" size={64} color={theme.primary} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>Henüz Sipariş Yok</Text>
+            <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+                İlk siparişinizi vererek alışveriş deneyiminizi başlatın
+            </Text>
+            <TouchableOpacity
+                style={[styles.shopButton, { backgroundColor: theme.primary }]}
+                onPress={() => navigation.navigate('HomeScreen', { screen: 'Home' })}
+            >
+                <Ionicons name="storefront" size={20} color="#fff" />
+                <Text style={styles.shopButtonText}>Alışverişe Başla</Text>
+            </TouchableOpacity>
+        </Animated.View>
+    );
+
+    const renderOrderModal = () => (
+        <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+        >
+            <View style={styles.modalOverlay}>
+                <TouchableOpacity
+                    style={styles.modalBackground}
+                    onPress={() => setModalVisible(false)}
+                    activeOpacity={1}
+                />
+                <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+                    {/* Modal Header */}
+                    <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+                        <View style={styles.modalTitleContainer}>
+                            <Ionicons name="receipt" size={24} color={theme.primary} />
+                            <Text style={[styles.modalTitle, { color: theme.text }]}>
+                                Sipariş Detayları
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            style={[styles.closeButton, { backgroundColor: theme.cardBackground }]}
+                            onPress={() => setModalVisible(false)}
+                        >
+                            <Ionicons name="close" size={24} color={theme.text} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <ScrollView
+                        style={styles.modalContent}
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={{ paddingBottom: 20 }}
+                    >
+                        {/* Order Info Card */}
+                        <View style={[styles.orderInfoCard, { backgroundColor: theme.cardBackground, borderLeftColor: theme.primary }]}>
+                            <View style={styles.orderInfoHeader}>
+                                <Text style={[styles.orderNumber, { color: theme.text }]}>
+                                    Sipariş #{selectedOrder?.id}
+                                </Text>
+                                <View style={[styles.statusBadge, { backgroundColor: STATUS_COLOR }]}>
+                                    <Ionicons name={STATUS_ICON} size={14} color="#fff" />
+                                    <Text style={styles.statusBadgeText}>{STATUS_TEXT}</Text>
+                                </View>
+                            </View>
+
+                        </View>
+
+                        {/* Products Section */}
+                        <View style={[styles.productsSection, { backgroundColor: theme.cardBackground }]}>
+                            <View style={[styles.sectionHeader, { borderBottomColor: theme.border }]}>
+                                <View style={styles.sectionTitleContainer}>
+                                    <Ionicons name="bag-handle" size={20} color={theme.primary} />
+                                    <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                                        Sipariş Edilen Ürünler
+                                    </Text>
+                                </View>
+                                <View style={[styles.itemCountBadge, { backgroundColor: theme.primary }]}>
+                                    <Text style={styles.itemCountText}>
+                                        {selectedOrder?.items?.length || 0}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {selectedOrder?.items?.map((item, index) => (
+                                <View
+                                    key={index}
+                                    style={[
+                                        styles.productItem,
+                                        {
+                                            borderBottomColor: theme.border,
+                                            borderBottomWidth: index === selectedOrder.items.length - 1 ? 0 : 1
+                                        }
+                                    ]}
+                                >
+                                    <Image
+                                        source={{ uri: getImageUrl(item.frontImagePath || item.frontImageUrl || item.imageUrl || item.image) }}
+                                        style={styles.productImage}
+
+                                    />
+                                    <View style={styles.productDetails}>
+                                        <Text style={[styles.productName, { color: theme.text }]}>
+                                            {item.name}
+                                        </Text>
+                                        <Text style={[styles.productCategory, { color: theme.textSecondary }]}>
+                                            {item.category}
+                                        </Text>
+                                        <View style={styles.productMeta}>
+                                            <View style={[styles.metaChip, { backgroundColor: theme.primary + '20' }]}>
+                                                <Text style={[styles.metaText, { color: theme.primary }]}>
+                                                    Beden: {item.size}
+                                                </Text>
+                                            </View>
+                                            <View style={[styles.metaChip, { backgroundColor: theme.primary + '20' }]}>
+                                                <Text style={[styles.metaText, { color: theme.primary }]}>
+                                                    Adet: {item.amount}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                    <View style={styles.productPricing}>
+                                        <Text style={[styles.productPrice, { color: theme.primary }]}>
+                                            ₺{((typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace('₺', '').replace(',', '.')) || 0) * item.amount).toFixed(2)}
+                                        </Text>
+                                    </View>
+                                </View>
+                            ))}
+                        </View>
+
+                        {/* Order Summary */}
+                        <View style={[styles.summarySection, { backgroundColor: theme.cardBackground }]}>
+                            <View style={[styles.sectionHeader, { borderBottomColor: theme.border }]}>
+                                <View style={styles.sectionTitleContainer}>
+                                    <Ionicons name="calculator" size={20} color={theme.primary} />
+                                    <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                                        Sipariş Özeti
+                                    </Text>
+                                </View>
+                            </View>
+                            <View style={styles.summaryContent}>
+                                <View style={styles.summaryRow}>
+                                    <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>
+                                        Ürün Adedi
+                                    </Text>
+                                    <Text style={[styles.summaryValue, { color: theme.text }]}>
+                                        {selectedOrder?.items?.length || 0} Adet
+                                    </Text>
+                                </View>
+                                <View style={styles.summaryRow}>
+                                    <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>
+                                        Ödeme Yöntemi
+                                    </Text>
+                                    <Text style={[styles.summaryValue, { color: theme.text }]}>
+                                        Kredi Kartı
+                                    </Text>
+                                </View>
+                                <View style={styles.summaryRow}>
+                                    <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>
+                                        Teslimat Adresi
+                                    </Text>
+                                    <Text style={[styles.summaryValue, { color: theme.text }]} numberOfLines={2}>
+                                        {selectedOrder?.shippingAddress || 'Adres Bulunamadı'}
+                                    </Text>
+                                </View>
+                                <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: theme.border }]}>
+                                    <Text style={[styles.totalLabel, { color: theme.text }]}>
+                                        Toplam Tutar
+                                    </Text>
+                                    <Text style={[styles.totalValue, { color: theme.primary }]}>
+                                        ₺{selectedOrder?.totalAmount}
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
+                    </ScrollView>
+                </View>
+            </View>
+        </Modal>
+    );
 
     if (orderHistory.length === 0) {
         return (
-            <View style={[styles.container, { backgroundColor: isDarkMode ? theme.background : '#f8f9fa' }]}>
-                <TouchableOpacity
-                    style={styles.backButtonTopLeft}
-                    onPress={() => navigation.goBack()}
-                >
-                    <Ionicons name="arrow-back" size={24} color={isDarkMode ? '#fff' : '#333'} />
-                </TouchableOpacity>
-
-                {/* Empty State */}
-                <View style={styles.emptyContainer}>
-                    <View style={[styles.emptyIconContainer, { backgroundColor: isDarkMode ? '#444' : '#f5f5f5' }]}>
-                        <Ionicons name="receipt-outline" size={80} color={isDarkMode ? '#ce6302' : '#ce6302'} />
-                    </View>
-                    <Text style={[styles.emptyTitle, { color: isDarkMode ? '#fff' : '#333' }]}>Henüz Sipariş Yok</Text>
-                    <Text style={[styles.emptySubtitle, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>Herhangi bir sipariş vermediniz.</Text>
+            <View style={[styles.container, { backgroundColor: theme.background }]}>
+                {/* Header */}
+                <View style={[styles.header, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
                     <TouchableOpacity
-                        style={styles.shopButton}
-                        onPress={() => navigation.navigate('HomeScreen', { screen: 'Home' })}
+                        style={[styles.backButton, { backgroundColor: theme.background }]}
+                        onPress={handleBackPress}
                     >
-                        <Ionicons name="storefront" size={20} color="#fff" />
-                        <Text style={styles.shopButtonText}>Alışverişe Başla</Text>
+                        <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </TouchableOpacity>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>Sipariş Geçmişi</Text>
+                    <View style={styles.headerSpacer} />
                 </View>
+                {renderEmptyState()}
             </View>
         );
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: isDarkMode ? theme.background : '#f8f9fa' }]}>
-            {/* Header with Close button only */}
-            <View style={styles.headerContainer}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            {/* Header */}
+            <View style={[styles.header, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
                 <TouchableOpacity
-                    style={styles.closeButtonTopLeft}
-                    onPress={() => navigation.navigate('HomeScreen', { screen: 'Account' })}
+                    style={[styles.backButton, { backgroundColor: theme.background }]}
+                    onPress={handleBackPress}
                 >
-                    <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#333'} />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-
-                <Text style={[styles.headerTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-                    Sipariş Geçmişi
-                </Text>
-
-                <View style={styles.placeholder} />
+                <Text style={[styles.headerTitle, { color: theme.text }]}>Sipariş Geçmişi</Text>
+                <TouchableOpacity
+                    style={[styles.clearButton, { backgroundColor: '#EF4444' }]}
+                    onPress={handleClearHistory}
+                >
+                    <Ionicons name="trash-outline" size={20} color="#fff" />
+                </TouchableOpacity>
             </View>
 
-            {/* Clear button section */}
-            {orderHistory.length > 0 && (
-                <View style={styles.clearButtonSection}>
-                    <TouchableOpacity
-                        style={[
-                            styles.clearButtonModern,
-                            {
-                                backgroundColor: '#ce6302',
-                                borderColor: '#ce6302'
-                            }
-                        ]}
-                        onPress={handleClearHistory}
-                        activeOpacity={0.8}
-                    >
-                        <View style={styles.clearButtonContent}>
-                            <Ionicons name="trash-outline" size={18} color="#000" />
-                            <Text style={[styles.clearButtonTextModern, { color: '#000' }]}>
-                                Temizle
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
+            {/* Stats Card */}
+            <Animated.View style={[
+                styles.statsCard,
+                {
+                    backgroundColor: theme.cardBackground,
+                    opacity: fadeAnim,
+                    transform: [{
+                        translateY: fadeAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [-20, 0],
+                        }),
+                    }],
+                }
+            ]}>
+                <View style={styles.statItem}>
+                    <Text style={[styles.statValue, { color: theme.primary }]}>{orderHistory.length}</Text>
+                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Toplam Sipariş</Text>
                 </View>
-            )}
+                <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
+                <View style={styles.statItem}>
+                    <Text style={[styles.statValue, { color: theme.primary }]}>
+                        ₺{orderHistory.reduce((total, order) => total + parseFloat(order.totalAmount), 0).toFixed(2)}
+                    </Text>
+                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Toplam Harcama</Text>
+                </View>
+            </Animated.View>
 
             {/* Orders List */}
             <FlatList
@@ -406,7 +406,6 @@ export default function OrderHistory() {
                 showsVerticalScrollIndicator={false}
             />
 
-            {/* Modal - En altta render et */}
             {renderOrderModal()}
         </View>
     );
@@ -415,124 +414,123 @@ export default function OrderHistory() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
     },
-    headerContainer: {
+    header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
         paddingTop: 50,
         paddingBottom: 20,
-        elevation: 2,
+        borderBottomWidth: 1,
+        elevation: 3,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
     },
-    closeButtonTopLeft: {
-        padding: 8,
-        borderRadius: 8,
-        backgroundColor: 'rgba(0,0,0,0.1)',
-    },
-    backButtonTopLeft: {
-        position: 'absolute',
-        top: 50,
-        left: 20,
-        zIndex: 1,
-        padding: 8,
+    backButton: {
+        width: 40,
+        height: 40,
         borderRadius: 20,
-        backgroundColor: 'rgba(0,0,0,0.1)',
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        flex: 1,
-        textAlign: 'center',
-        marginHorizontal: 10,
-    },
-    clearButton: {
-        flexDirection: 'row',
+        justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 8,
-        elevation: 1,
+        elevation: 2,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
     },
-    clearButtonText: {
-        color: '#ff6b6b',
-        fontSize: 14,
-        fontWeight: '600',
-        marginLeft: 4,
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        flex: 1,
+        textAlign: 'center',
     },
-    clearButtonSection: {
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        backgroundColor: 'transparent',
-        alignItems: 'flex-end',
+    headerSpacer: {
+        width: 40,
     },
-    clearButtonModern: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    clearButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         justifyContent: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 16,
-        borderWidth: 1.5,
-        elevation: 3,
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-        alignSelf: 'flex-end',
-    },
-    clearButtonContent: {
-        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
     },
-    clearButtonTextModern: {
-        fontSize: 14,
-        fontWeight: '600',
-        letterSpacing: 0.3,
-        marginLeft: 6,
+    statsCard: {
+        flexDirection: 'row',
+        marginHorizontal: 20,
+        marginTop: 20,
+        marginBottom: 10,
+        padding: 20,
+        borderWidth: 2,
+        borderRadius: 20
     },
-
+    statItem: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    statValue: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    statLabel: {
+        fontSize: 12,
+        fontWeight: '500',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    statDivider: {
+        width: 1,
+        height: '100%',
+        marginHorizontal: 20,
+    },
     listContainer: {
         padding: 20,
+        paddingTop: 10,
     },
     orderCard: {
-        backgroundColor: '#fff',
         borderRadius: 16,
         padding: 20,
+        marginBottom: 16,
         elevation: 3,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
         borderLeftWidth: 4,
-        borderLeftColor: '#ce6302',
+        borderLeftColor: '#10B981',
     },
-    cardHeader: {
+    orderHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginBottom: 16,
     },
-    orderNumberContainer: {
+    orderInfo: {
+        flex: 1,
+    },
+    orderIdContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        marginBottom: 4,
     },
-    orderNumber: {
-        fontSize: 16,
+    orderId: {
+        fontSize: 18,
         fontWeight: 'bold',
-        color: '#333',
         marginLeft: 8,
     },
-    statusBadge: {
+    orderDate: {
+        fontSize: 14,
+        opacity: 0.7,
+    },
+    statusContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 12,
@@ -543,55 +541,90 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 12,
         fontWeight: 'bold',
-        marginLeft: 4,
-    },
-    orderMeta: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-    },
-    metaItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    metaText: {
-        fontSize: 14,
-        color: '#666',
         marginLeft: 6,
     },
-    cardFooter: {
+    productsPreview: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+        paddingLeft: 8,
+    },
+    productPreviewImage: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: '#fff',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+    },
+    moreProductsIndicator: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: -8,
+        borderWidth: 2,
+        borderColor: '#fff',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+    },
+    moreProductsText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    orderFooter: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingTop: 16,
         borderTopWidth: 1,
-        borderTopColor: '#f0f0f0',
     },
-    totalSection: {
-        alignItems: 'flex-start',
+    orderSummary: {
+        flexDirection: 'row',
+        gap: 16,
     },
-    totalLabel: {
+    summaryItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    summaryText: {
         fontSize: 12,
-        color: '#666',
-        marginBottom: 4,
+        marginLeft: 6,
+    },
+    orderActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
     },
     totalAmount: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#333',
     },
-    detailsButton: {
+    detailButton: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
         paddingVertical: 8,
-        borderRadius: 8,
-        backgroundColor: '#f0f8ff',
+        borderRadius: 20,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
     },
-    detailsButtonText: {
-        fontSize: 14,
-        color: '#E88A35',
-        fontWeight: '600',
+    detailButtonText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: 'bold',
         marginRight: 4,
     },
     emptyContainer: {
@@ -603,33 +636,43 @@ const styles = StyleSheet.create({
     emptyIconContainer: {
         width: 120,
         height: 120,
-        backgroundColor: '#f5f5f5',
         borderRadius: 60,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 24,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
     emptyTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#333',
         marginBottom: 12,
+        textAlign: 'center',
     },
     emptySubtitle: {
         fontSize: 16,
-        color: '#666',
         textAlign: 'center',
         lineHeight: 24,
         marginBottom: 32,
+        opacity: 0.7,
+    },
+    emptySubtitle: {
+        fontSize: 16,
+        textAlign: 'center',
+        lineHeight: 24,
+        marginBottom: 32,
+        opacity: 0.7,
     },
     shopButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#ce6302',
         paddingHorizontal: 24,
-        paddingVertical: 12,
+        paddingVertical: 14,
         borderRadius: 25,
-        elevation: 2,
+        elevation: 3,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
@@ -641,62 +684,69 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginLeft: 8,
     },
-    bottomSheetOverlay: {
+    modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.6)',
         justifyContent: 'flex-end',
     },
-    overlayBackground: {
+    modalBackground: {
         flex: 1,
     },
-    bottomSheetContainer: {
-        backgroundColor: '#fff',
+    modalContainer: {
         borderTopLeftRadius: 25,
         borderTopRightRadius: 25,
-        height: '75%',
-        paddingBottom: 20,
+        height: '85%',
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -5 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
     },
-    dragHandle: {
-        width: 40,
-        height: 4,
-        backgroundColor: '#e0e0e0',
-        borderRadius: 2,
-        alignSelf: 'center',
-        marginTop: 12,
-        marginBottom: 20,
-    },
-    bottomSheetHeader: {
+    modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingBottom: 20,
+        paddingVertical: 20,
         borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
     },
-    headerLeft: {
+    modalTitleContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        flex: 1,
     },
-    bottomSheetTitle: {
+    modalTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#333',
         marginLeft: 12,
     },
-    bottomSheetCloseButton: {
-        padding: 8,
+    closeButton: {
+        width: 40,
+        height: 40,
         borderRadius: 20,
-        backgroundColor: '#f8f9fa',
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+    },
+    modalContent: {
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingBottom: 20,
     },
     orderInfoCard: {
-        backgroundColor: '#f8f9fa',
-        marginHorizontal: 20,
-        marginTop: 20,
-        padding: 16,
-        borderRadius: 12,
+        marginVertical: 20,
+        padding: 20,
+        borderRadius: 16,
         borderLeftWidth: 4,
-        borderLeftColor: '#007BFF',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
     },
     orderInfoHeader: {
         flexDirection: 'row',
@@ -707,566 +757,61 @@ const styles = StyleSheet.create({
     orderNumber: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#333',
     },
-    miniStatusBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
+    statusBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 15,
     },
-    miniStatusText: {
+    statusBadgeText: {
         color: '#fff',
         fontSize: 12,
         fontWeight: 'bold',
+        marginLeft: 6,
     },
-    orderDate: {
+    orderDateTime: {
         fontSize: 14,
-        color: '#666',
+        opacity: 0.7,
     },
-    bottomSheetContent: {
-        flex: 1,
-        paddingHorizontal: 20,
-    },
-    quickInfoRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 20,
+    productsSection: {
         marginBottom: 20,
+        borderRadius: 16,
+        borderColor: 'black',
+        borderWidth: 2,
+        borderRadius: 20
+
     },
-    quickInfoItem: {
-        flex: 1,
-        alignItems: 'center',
-        padding: 16,
-        backgroundColor: '#f8f9fa',
-        borderRadius: 12,
-        marginHorizontal: 4,
-        minHeight: 85,
-        justifyContent: 'center',
-    },
-    quickInfoLabel: {
-        fontSize: 11,
-        color: '#666',
-        marginTop: 6,
-        marginBottom: 4,
-        textAlign: 'center',
-    },
-    quickInfoValue: {
-        fontSize: 13,
-        fontWeight: 'bold',
-        color: '#333',
-        textAlign: 'center',
-        lineHeight: 16,
-    },
-    sectionHeaderWithIcon: {
+    sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        padding: 20,
+        borderBottomWidth: 1,
     },
     sectionTitleContainer: {
         flexDirection: 'row',
         alignItems: 'center',
     },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginLeft: 12,
+    },
     itemCountBadge: {
-        backgroundColor: '#FF6B35',
-        borderRadius: 12,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        minWidth: 24,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    itemCountText: {
-        color: '#fff',
-        fontSize: 12,
-        fontWeight: 'bold',
-    },
-    modernItemCard: {
-        flexDirection: 'column',
-        backgroundColor: '#fff',
-        padding: 20,
-        borderRadius: 16,
-        marginBottom: 16,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        borderWidth: 1,
-        borderColor: '#f0f0f0',
-    },
-    modernItemImage: {
-        width: 100,
-        height: 100,
-        borderRadius: 12,
-        marginRight: 16,
-        backgroundColor: '#f8f9fa',
-    },
-    modernItemInfo: {
-        flex: 1,
-    },
-    modernItemName: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 4,
-    },
-    modernItemCategory: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 12,
-        fontStyle: 'italic',
-    },
-    itemDetailsContainer: {
-        marginTop: 8,
-    },
-    detailGroup: {
-        marginBottom: 12,
-    },
-    detailGroupTitle: {
-        textAlign: "center",
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#007BFF',
-        marginBottom: 6,
-        textTransform: 'uppercase',
-    },
-    detailRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    detailItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#f8f9fa',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 8,
-        flex: 0.48,
-    },
-    detailText: {
-        fontSize: 14,
-        color: '#333',
-        marginLeft: 8,
-        fontWeight: '500',
-    },
-    priceContainer: {
-        backgroundColor: '#e3f2fd',
-        padding: 12,
-        borderRadius: 8,
-        borderLeftWidth: 4,
-        borderLeftColor: '#007BFF'
-
-    },
-    unitPrice: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 4,
-        textAlign: 'center',
-    },
-    totalPrice: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#007BFF',
-        textAlign: 'center',
-    },
-    totalSummaryCard: {
-        backgroundColor: '#f8f9fa',
-        padding: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
-        marginBottom: 20,
-    },
-    totalSummaryRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    totalSummaryLabel: {
-        fontSize: 14,
-        color: 'black',
-        fontWeight: '500',
-    },
-    totalSummaryValue: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#007BFF',
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.7)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000,
-    },
-    modalContainer: {
-        backgroundColor: '#fff',
-        borderRadius: 20,
-        width: '90%',
-        maxHeight: '80%',
-        overflow: 'hidden',
-        elevation: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-    },
-    testContent: {
-        padding: 20,
-        alignItems: 'center',
-    },
-    testTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 20,
-    },
-    testText: {
-        fontSize: 16,
-        color: '#666',
-        marginBottom: 10,
-        textAlign: 'center',
-    },
-    testCloseButton: {
-        backgroundColor: '#007BFF',
-        paddingHorizontal: 30,
-        paddingVertical: 15,
-        borderRadius: 25,
-        marginTop: 30,
-    },
-    testCloseText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    debugOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(255,0,0,0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 9999,
-    },
-    debugText: {
-        color: '#fff',
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 20,
-    },
-    debugButton: {
-        backgroundColor: '#fff',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 10,
-    },
-    debugButtonText: {
-        color: '#000',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    simpleModalContainer: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    simpleModalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 20,
-        paddingTop: 50,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
-    },
-    simpleModalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    simpleCloseButton: {
-        padding: 8,
-    },
-    simpleModalContent: {
-        flex: 1,
-        padding: 20,
-    },
-    simpleDetailRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-    },
-    simpleLabel: {
-        fontSize: 16,
-        color: '#666',
-    },
-    simpleValue: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    simpleSubtitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-        marginTop: 20,
-        marginBottom: 15,
-    },
-    simpleItemCard: {
-        flexDirection: 'row',
-        marginBottom: 15,
-        padding: 15,
-        backgroundColor: '#f8f9fa',
-        borderRadius: 10,
-    },
-    simpleItemImage: {
-        width: 60,
-        height: 60,
-        borderRadius: 8,
-        marginRight: 15,
-    },
-    simpleItemInfo: {
-        flex: 1,
-    },
-    simpleItemName: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 5,
-    },
-    simpleItemMeta: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 5,
-    },
-    simpleItemPrice: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#007BFF',
-    },
-    modalContent: {
-        flex: 1,
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
-        backgroundColor: '#f8f9fa',
-    },
-    modalTitleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-        marginLeft: 12,
-    },
-    closeButton: {
-        padding: 8,
-        borderRadius: 8,
-    },
-
-    itemCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
-        padding: 12,
-        backgroundColor: '#f8f9fa',
-        borderRadius: 12,
-    },
-    itemImage: {
-        width: 60,
-        height: 60,
-        borderRadius: 8,
-        marginRight: 12,
-    },
-    itemDetails: {
-        flex: 1,
-    },
-    itemName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 4,
-    },
-    itemMeta: {
-        fontSize: 12,
-        color: '#666',
-        marginBottom: 4,
-    },
-    itemPrice: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#007BFF',
-    },
-
-
-    // Payment Details Styles
-    paymentSection: {
-        marginVertical: 20,
-        paddingHorizontal: 16,
-    },
-    paymentDetailsCard: {
-        borderRadius: 12,
-        borderWidth: 1,
-        marginTop: 12,
-        overflow: 'hidden',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-    },
-    paymentDetailRow: {
-        paddingVertical: 16,
-        paddingHorizontal: 16,
-    },
-    paymentDetailItem: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-    },
-    paymentDetailInfo: {
-        marginLeft: 12,
-        flex: 1,
-    },
-    paymentDetailLabel: {
-        fontSize: 14,
-        marginBottom: 4,
-        fontWeight: '500',
-    },
-    paymentDetailValue: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        lineHeight: 22,
-    },
-
-    // New Modern Redesign Styles
-    orderSummaryCard: {
-        marginHorizontal: 20,
-        marginTop: 20,
-        padding: 20,
-        borderRadius: 16,
-        borderLeftWidth: 4,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-    },
-    summaryHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    summaryIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
-    summaryInfo: {
-        flex: 1,
-    },
-    summaryTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 4,
-    },
-    summarySubtitle: {
-        fontSize: 14,
-        opacity: 0.8,
-    },
-
-    statusSection: {
-        marginHorizontal: 20,
-        marginTop: 16,
-        padding: 20,
-        borderRadius: 16,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-    },
-    statusHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    statusTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginLeft: 8,
-    },
-    statusBadgeContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        alignSelf: 'flex-start',
-    },
-    statusBadgeText: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: 'bold',
-        marginLeft: 6,
-    },
-
-    productsSection: {
-        marginHorizontal: 20,
-        marginTop: 16,
-        borderRadius: 16,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        overflow: 'hidden',
-    },
-    productsSectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-    },
-    productsHeaderLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    productsTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginLeft: 8,
-    },
-    productsCount: {
-        backgroundColor: '#FF6B35',
         borderRadius: 12,
         paddingHorizontal: 10,
         paddingVertical: 4,
         minWidth: 24,
         alignItems: 'center',
     },
-    productsCountText: {
+    itemCountText: {
         color: '#fff',
         fontSize: 12,
         fontWeight: 'bold',
     },
-
-    productCard: {
+    productItem: {
         flexDirection: 'row',
         padding: 16,
         alignItems: 'center',
@@ -1277,7 +822,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         marginRight: 16,
     },
-    productInfo: {
+    productDetails: {
         flex: 1,
     },
     productName: {
@@ -1290,21 +835,18 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         opacity: 0.7,
     },
-    productDetails: {
+    productMeta: {
         flexDirection: 'row',
         gap: 8,
     },
-    productDetailChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    metaChip: {
         paddingHorizontal: 8,
         paddingVertical: 4,
-        borderRadius: 6,
+        borderRadius: 8,
     },
-    chipText: {
+    metaText: {
         fontSize: 12,
-        fontWeight: '500',
-        marginLeft: 4,
+        fontWeight: '600',
     },
     productPricing: {
         alignItems: 'flex-end',
@@ -1313,96 +855,43 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
     },
-
-    infoSection: {
-        marginHorizontal: 20,
-        marginTop: 16,
-        borderRadius: 16,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        overflow: 'hidden',
-    },
-    infoHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-    },
-    infoTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginLeft: 8,
-    },
-    infoGrid: {
-        padding: 20,
-        gap: 16,
-    },
-    infoCard: {
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 8,
-    },
-    infoCardIcon: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    infoCardLabel: {
-        fontSize: 12,
-        fontWeight: '500',
-        marginBottom: 6,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-    },
-    infoCardValue: {
-        fontSize: 14,
-        fontWeight: '600',
-        lineHeight: 20,
-    },
-
-    totalSection: {
-        marginHorizontal: 20,
-        marginTop: 16,
+    summarySection: {
         marginBottom: 20,
         borderRadius: 16,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
+        borderWidth: 2,
+        borderColor: "black",
+        borderRadius: 20
     },
-    totalContainer: {
+    summaryContent: {
+        padding: 20,
+    },
+    summaryRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 24,
+        paddingVertical: 12,
     },
-    totalLeft: {
+    summaryLabel: {
+        fontSize: 14,
         flex: 1,
     },
-    totalLabel: {
+    summaryValue: {
         fontSize: 14,
-        fontWeight: '500',
-        marginBottom: 4,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        fontWeight: '600',
+        textAlign: 'right',
+        flex: 1,
     },
-    totalAmount: {
-        fontSize: 24,
+    totalRow: {
+        borderTopWidth: 1,
+        marginTop: 12,
+        paddingTop: 16,
+    },
+    totalLabel: {
+        fontSize: 16,
         fontWeight: 'bold',
     },
-    totalIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
+    totalValue: {
+        fontSize: 20,
+        fontWeight: 'bold',
     },
 });

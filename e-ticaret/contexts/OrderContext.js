@@ -23,7 +23,6 @@ export const OrderProvider = ({ children }) => {
         try {
             const newOrder = {
                 id: Date.now().toString(),
-                date: new Date().toLocaleDateString('tr-TR'),
                 status: 'Hazırlanıyor',
                 ...orderData
             };

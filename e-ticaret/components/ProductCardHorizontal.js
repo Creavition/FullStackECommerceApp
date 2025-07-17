@@ -25,12 +25,10 @@ const ProductCardHorizontal = memo(({
     }, [item.id, onFavoritePress]);
 
     // API'den gelen verilerden badge ve label bilgilerini al
-    // Favori durumunu hem context'ten hem de item'den kontrol et - her ikisini de gözlemle
-    const contextFavorite = favoriteItems[item.id];
-    const apiFavorite = item.isFavorite;
-
-    // Önce context'i kontrol et (daha güncel), sonra API'den gelen veri
-    const isFavorite = contextFavorite !== undefined ? contextFavorite : (apiFavorite || false);
+    // Eğer prop olarak favoriteItems geçilmişse onu kullan, yoksa item.isFavorite'ı kullan
+    const isFavorite = propFavoriteItems
+        ? (favoriteItems[item.id] || false)
+        : (item.isFavorite !== undefined ? item.isFavorite : (favoriteItems[item.id] || false));
 
     const isFlashSale = item.badge_FlashSale || false;
     const isBestSelling = item.badge_BestSelling || false;
@@ -118,7 +116,7 @@ const ProductCardHorizontal = memo(({
 });
 
 const Badge = memo(({ isFlashSale, isBestSelling }) => {
-    // Priority: Flash sale badge öncelikli
+    //Flash sale badge öncelikli
     if (isFlashSale) {
         return (
             <View style={styles.flashSaleBadge}>
@@ -138,7 +136,7 @@ const Badge = memo(({ isFlashSale, isBestSelling }) => {
 });
 
 const Label = memo(({ hasFastDelivery, hasLabelBestSeller }) => {
-    // Priority: Fast delivery label öncelikli
+    // Fast delivery label öncelikli
     if (hasFastDelivery) {
         return (
             <View style={styles.fastDeliveryBadge}>
@@ -168,6 +166,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         marginLeft: 6,
         borderRadius: 16,
+        borderWidth: 2,
         padding: 12,
         alignItems: 'center',
         position: 'relative',

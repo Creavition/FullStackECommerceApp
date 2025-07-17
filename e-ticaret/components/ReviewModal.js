@@ -11,11 +11,13 @@ import {
     Dimensions,
 } from 'react-native';
 import StarRating from './StarRating';
-import { getAuthToken } from '../utils/authStorage';
+import { reviewApi } from '../utils/reviewApi';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
 const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
+    const { theme } = useTheme();
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,78 +46,40 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
         setIsSubmitting(true);
 
         try {
-            // Token'ı authStorage utility'sinden al
-            const token = await getAuthToken();
-
-            console.log('Token found:', token ? 'Yes' : 'No');
-            console.log('Token value:', token ? token.substring(0, 50) + '...' : 'null');
-
-            if (!token) {
-                Alert.alert('Hata', 'Lütfen giriş yapın ve tekrar deneyin.');
-                setIsSubmitting(false);
-                return;
-            }
-
-            // Token formatını kontrol et
-            if (typeof token !== 'string' || token.length < 10) {
-                Alert.alert('Hata', 'Geçersiz oturum. Lütfen tekrar giriş yapın.');
-                setIsSubmitting(false);
-                return;
-            }
-
-            console.log('Making review request to:', 'http://10.241.64.12:5207/api/Review');
-            console.log('Request body:', {
+            const reviewData = {
                 productId: product.id,
                 rating: rating,
                 comment: comment.trim(),
-            });
+            };
 
-            const response = await fetch('http://10.241.64.12:5207/api/Review', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    productId: product.id,
-                    rating: rating,
-                    comment: comment.trim(),
-                }),
-            });
+            await reviewApi.addReview(reviewData);
 
-            console.log('Response status:', response.status);
-            console.log('Response ok:', response.ok);
-
-            if (response.ok) {
-                Alert.alert(
-                    'Başarılı',
-                    'Yorumunuz başarıyla gönderildi!',
-                    [
-                        {
-                            text: 'Tamam',
-                            onPress: () => {
-                                resetForm();
-                                onClose();
-                                if (onReviewSubmitted) {
-                                    onReviewSubmitted();
-                                }
-                            },
+            Alert.alert(
+                'Başarılı',
+                'Yorumunuz başarıyla gönderildi!',
+                [
+                    {
+                        text: 'Tamam',
+                        onPress: () => {
+                            resetForm();
+                            onClose();
+                            if (onReviewSubmitted) {
+                                onReviewSubmitted();
+                            }
                         },
-                    ]
-                );
-            } else {
-                const errorData = await response.json();
-                console.log('Error response:', errorData);
-
-                if (response.status === 401) {
-                    Alert.alert('Hata', 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
-                } else {
-                    Alert.alert('Hata', 'Yorum gönderilemedi.');
-                }
-            }
+                    },
+                ]
+            );
         } catch (error) {
             console.error('Review submission error:', error);
-            Alert.alert('Hata', 'Bir hata oluştu. Lütfen tekrar deneyin.');
+
+            if (error.response?.status === 401) {
+                Alert.alert('Hata', 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+            } else if (error.response?.data) {
+                Alert.alert('Hata', error.response.data.message || 'Yorum gönderilemedi.');
+            } else {
+                Alert.alert('Hata', 'Bir hata oluştu. Lütfen tekrar deneyin.');
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -133,23 +97,23 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
             presentationStyle="pageSheet"
             onRequestClose={handleClose}
         >
-            <View style={styles.container}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>Ürünü Değerlendir</Text>
-                    <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-                        <Text style={styles.closeButtonText}>✕</Text>
+            <View style={[styles.container, { backgroundColor: theme.surface }]}>
+                <View style={[styles.header, { borderBottomColor: theme.border }]}>
+                    <Text style={[styles.title, { color: theme.text }]}>Ürünü Değerlendir</Text>
+                    <TouchableOpacity onPress={handleClose} style={[styles.closeButton, { backgroundColor: theme.borderLight }]}>
+                        <Text style={[styles.closeButtonText, { color: theme.textSecondary }]}>✕</Text>
                     </TouchableOpacity>
                 </View>
 
                 <ScrollView style={styles.content}>
                     {product && (
-                        <View style={styles.productInfo}>
-                            <Text style={styles.productName}>{product.name}</Text>
+                        <View style={[styles.productInfo, { backgroundColor: theme.background }]}>
+                            <Text style={[styles.productName, { color: theme.text }]}>{product.name}</Text>
                         </View>
                     )}
 
                     <View style={styles.ratingSection}>
-                        <Text style={styles.sectionTitle}>'Puanınız'</Text>
+                        <Text style={[styles.sectionTitle, { color: theme.text }]}>Puanınız</Text>
                         <View style={styles.starRatingContainer}>
                             <StarRating
                                 rating={rating}
@@ -157,7 +121,7 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
                                 size={36}
                                 showRating={false}
                             />
-                            <Text style={styles.ratingDescription}>
+                            <Text style={[styles.ratingDescription, { color: theme.textSecondary }]}>
                                 {rating === 0 && 'Puan verin'}
                                 {rating === 1 && 'Çok Kötü'}
                                 {rating === 2 && 'Kötü'}
@@ -169,10 +133,15 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
                     </View>
 
                     <View style={styles.commentSection}>
-                        <Text style={styles.sectionTitle}>Yorumunuz</Text>
+                        <Text style={[styles.sectionTitle, { color: theme.text }]}>Yorumunuz</Text>
                         <TextInput
-                            style={styles.commentInput}
+                            style={[styles.commentInput, {
+                                borderColor: "black",
+                                backgroundColor: theme.background,
+                                color: theme.text
+                            }]}
                             placeholder={'Bu ürün hakkındaki düşüncelerinizi paylaşın...'}
+                            placeholderTextColor={theme.textTertiary}
                             value={comment}
                             onChangeText={setComment}
                             multiline
@@ -180,29 +149,30 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
                             maxLength={1000}
                             textAlignVertical="top"
                         />
-                        <Text style={styles.characterCount}>
+                        <Text style={[styles.characterCount, { color: theme.textTertiary }]}>
                             {comment.length}/1000 karakter
                         </Text>
                     </View>
                 </ScrollView>
 
-                <View style={styles.footer}>
+                <View style={[styles.footer, { borderTopColor: theme.border }]}>
                     <TouchableOpacity
-                        style={[styles.button, styles.cancelButton]}
+                        style={[styles.button, styles.cancelButton, { backgroundColor: theme.borderLight }]}
                         onPress={handleClose}
                     >
-                        <Text style={styles.cancelButtonText}>İptal</Text>
+                        <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>İptal</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[
                             styles.button,
                             styles.submitButton,
-                            (rating === 0 || comment.trim().length === 0 || isSubmitting) && styles.disabledButton,
+                            { backgroundColor: theme.primary },
+                            (rating === 0 || comment.trim().length === 0 || isSubmitting) && [styles.disabledButton, { backgroundColor: theme.textTertiary }],
                         ]}
                         onPress={handleSubmit}
                         disabled={rating === 0 || comment.trim().length === 0 || isSubmitting}
                     >
-                        <Text style={styles.submitButtonText}>
+                        <Text style={[styles.submitButtonText, { color: theme.surface }]}>
                             {isSubmitting ? 'Gönderiliyor' : 'Gönder'}
                         </Text>
                     </TouchableOpacity>
@@ -215,7 +185,6 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
     },
     header: {
         flexDirection: 'row',
@@ -223,24 +192,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
         borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
     },
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#000000',
     },
     closeButton: {
         width: 30,
         height: 30,
         borderRadius: 15,
-        backgroundColor: '#F0F0F0',
         justifyContent: 'center',
         alignItems: 'center',
     },
     closeButtonText: {
         fontSize: 16,
-        color: '#666666',
     },
     content: {
         flex: 1,
@@ -249,13 +214,11 @@ const styles = StyleSheet.create({
     productInfo: {
         marginBottom: 30,
         padding: 15,
-        backgroundColor: '#F8F8F8',
         borderRadius: 8,
     },
     productName: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#000000',
         textAlign: 'center',
     },
     ratingSection: {
@@ -264,7 +227,6 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#000000',
         marginBottom: 15,
     },
     starRatingContainer: {
@@ -272,7 +234,6 @@ const styles = StyleSheet.create({
     },
     ratingDescription: {
         fontSize: 16,
-        color: '#666666',
         marginTop: 10,
         fontWeight: '500',
     },
@@ -281,16 +242,13 @@ const styles = StyleSheet.create({
     },
     commentInput: {
         borderWidth: 2,
-        borderColor: '#000000',
         borderRadius: 8,
         padding: 15,
         fontSize: 16,
         height: 120,
-        backgroundColor: '#FAFAFA',
     },
     characterCount: {
         fontSize: 12,
-        color: '#999999',
         textAlign: 'right',
         marginTop: 5,
     },
@@ -298,7 +256,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         padding: 20,
         borderTopWidth: 1,
-        borderTopColor: '#E0E0E0',
         gap: 15,
     },
     button: {
@@ -308,23 +265,21 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     cancelButton: {
-        backgroundColor: '#F0F0F0',
+        // backgroundColor dinamik olarak ayarlanacak
     },
     cancelButtonText: {
-        color: '#666666',
         fontSize: 16,
         fontWeight: '600',
     },
     submitButton: {
-        backgroundColor: '#FF8C00',
+        // backgroundColor dinamik olarak ayarlanacak
     },
     submitButtonText: {
-        color: '#FFFFFF',
         fontSize: 16,
         fontWeight: '600',
     },
     disabledButton: {
-        backgroundColor: '#CCCCCC',
+        // backgroundColor dinamik olarak ayarlanacak
     },
 });
 

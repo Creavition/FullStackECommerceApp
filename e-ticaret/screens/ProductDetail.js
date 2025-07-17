@@ -126,14 +126,14 @@ export default function ProductDetail({ route }) {
                 if (category) {
                     console.log(`Found category data:`, category);
 
-                    // Kategori için TÜM mevcut bedenler (allSizes - kategoriden gelir)
+                    // Kategori için TÜM mevcut bedenler (allSizes)
                     const categorySizes = category.sizes && Array.isArray(category.sizes)
                         ? category.sizes
                             .filter(size => size && size.sizeName)
                             .map(size => size.sizeName)
                         : [];
 
-                    // Ürünün SADECE mevcut bedenleri (availableSizes - üründen gelir)
+                    // Ürünün SADECE mevcut bedenleri (availableSizes)
                     const productAvailableSizes = extractProductAvailableSizes(currentProduct);
 
                     console.log(`Category all sizes (${category.categoryName}):`, categorySizes);
@@ -151,7 +151,6 @@ export default function ProductDetail({ route }) {
                     }
                 } else {
                     console.log('No category found, using fallback data');
-                    // Kategori bulunamadıysa fallback
                     const fallbackAvailableSizes = extractProductAvailableSizes(currentProduct);
                     setAllSizes(fallbackAvailableSizes);
                     setAvailableSizes(fallbackAvailableSizes);
@@ -185,7 +184,6 @@ export default function ProductDetail({ route }) {
         }
     };
 
-    // Swipe gesture handler
     const panResponder = PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: (evt, gestureState) => {
@@ -193,14 +191,14 @@ export default function ProductDetail({ route }) {
             return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10;
         },
         onPanResponderRelease: (evt, gestureState) => {
-            const swipeThreshold = 50; // Minimum swipe mesafesi
+            const swipeThreshold = 50; 
 
             if (Math.abs(gestureState.dx) > swipeThreshold) {
                 if (gestureState.dx > 0) {
-                    // Sağdan sola swipe (sağa kaydırma) - önceki fotoğrafa git
+                
                     goToPreviousImage();
                 } else {
-                    // Soldan sağa swipe (sola kaydırma) - sonraki fotoğrafa git
+                   
                     goToNextImage();
                 }
             }
@@ -208,14 +206,13 @@ export default function ProductDetail({ route }) {
     });
 
     const showToast = (message) => {
-        // Toast'ı göster
         Animated.sequence([
             Animated.timing(toastOpacity, {
                 toValue: 1,
                 duration: 300,
                 useNativeDriver: true,
             }),
-            Animated.delay(2000), // 2 saniye bekle
+            Animated.delay(2000), 
             Animated.timing(toastOpacity, {
                 toValue: 0,
                 duration: 300,
@@ -262,7 +259,7 @@ export default function ProductDetail({ route }) {
         if (isAvailable) {
             setSelectedSize(size);
         } else {
-            // Mevcut olmayan beden için uyarı toast'ı
+            // Mevcut olmayan beden için uyarı
             showToast('Bu beden mevcut değil');
         }
     };
@@ -323,7 +320,7 @@ export default function ProductDetail({ route }) {
                     style={styles.image}
                 />
 
-                {/* Fotoğraf İndikatörleri */}
+                {/* Fotoğraf */}
                 {availableImages.length > 1 && (
                     <View style={styles.imageIndicatorContainer}>
                         {availableImages.map((_, index) => (
@@ -364,7 +361,7 @@ export default function ProductDetail({ route }) {
                     onPress={handleRateProduct}
                 >
                     <Ionicons name="star" size={20} color="#FF8C00" />
-                    <Text style={styles.rateButtonText}>Ürünü Değerlendir'</Text>
+                    <Text style={styles.rateButtonText}>Ürünü Değerlendir</Text>
                 </TouchableOpacity>
 
             </View>
@@ -418,7 +415,7 @@ export default function ProductDetail({ route }) {
                                 {size}
                             </Text>
 
-                            {/* Mevcut olmayan bedenler için belirgin çarpı işareti */}
+                            {/* Mevcut olmayan bedenler için çarpı işareti */}
                             {!isAvailable && (
                                 <View style={[
                                     styles.crossContainer,
@@ -439,9 +436,9 @@ export default function ProductDetail({ route }) {
                 })}
             </View>
 
-            {/* Buton Container - Yan yana butonlar */}
+            
             <View style={styles.buttonContainer}>
-                {/* Sepete Ekle Butonu - Her zaman görünür */}
+                {/* Sepete Ekle Butonu */}
                 <TouchableOpacity
                     style={[styles.cartButton, showGoToCart && styles.halfWidthButton]}
                     onPress={handleAddToCart}

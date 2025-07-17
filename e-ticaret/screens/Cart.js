@@ -66,7 +66,7 @@ export default function Cart() {
 
     categories.forEach(category => {
       const categoryProducts = allProducts
-        .filter(product => product.category === category && product.price) // price kontrolü ekle
+        .filter(product => product.category === category && product.price) 
         .sort((a, b) => parsePrice(a.price) - parsePrice(b.price))
         .slice(0, 6);
 
@@ -76,7 +76,7 @@ export default function Cart() {
     return flashSaleIds;
   }, [allProducts]);
 
-  // Fast Delivery ürünlerini belirle (sabit seed ile tutarlı sonuçlar)
+  // Fast Delivery ürünlerini belirle 
   const fastDeliveryProducts = useMemo(() => {
     const fastDeliveryIds = new Set();
     allProducts.forEach((product, index) => {
@@ -144,7 +144,7 @@ export default function Cart() {
           ) : (
             <View style={styles.bestSellerBadge}>
               <Ionicons name="star" size={12} color="white" style={styles.deliveryIcon} />
-              <Text style={styles.bestSellerText}>En Çok Satan Satıcı</Text>
+              <Text style={styles.bestSellerText}>En Çok Satan</Text>
             </View>
           )}
 

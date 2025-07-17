@@ -32,11 +32,11 @@ export default function EditCreditCard() {
         try {
             const card = await creditCardApi.getCreditCardById(cardId);
             setCardData({
-                cardNumber: '', // Kullanıcı tekrar girsin
+                cardNumber: '', // Kullanıcı tekrar girer
                 cardHolderName: card.cardHolderName || '',
                 expiryMonth: card.expiryMonth || '',
                 expiryYear: card.expiryYear || '',
-                cvv: '', // CVV'yi de tekrar girsin
+                cvv: '', // CVV'yi de tekrar girere
                 cardTitle: card.cardTitle || ''
             });
         } catch (error) {
@@ -146,17 +146,23 @@ export default function EditCreditCard() {
                 <View style={styles.placeholder} />
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollViewContent}
+            >
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Kart Başlığı</Text>
                 <TextInput
-                    style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                    style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: isDarkMode ? '#fff' : '#000' }]}
                     placeholder="Kart Başlığı"
                     placeholderTextColor={theme.textSecondary}
                     value={cardData.cardTitle}
                     onChangeText={(text) => setCardData(prev => ({ ...prev, cardTitle: text }))}
                 />
 
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Kart Numarası *</Text>
                 <TextInput
-                    style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                    style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: isDarkMode ? '#fff' : '#000' }]}
                     placeholder="Kart Numarası *"
                     placeholderTextColor={theme.textSecondary}
                     value={cardData.cardNumber}
@@ -165,17 +171,19 @@ export default function EditCreditCard() {
                     maxLength={19}
                 />
 
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Kart Sahibi Adı *</Text>
                 <TextInput
-                    style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                    style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: isDarkMode ? '#fff' : '#000' }]}
                     placeholder="Kart Sahibi Adı *"
                     placeholderTextColor={theme.textSecondary}
                     value={cardData.cardHolderName}
                     onChangeText={(text) => setCardData(prev => ({ ...prev, cardHolderName: text }))}
                 />
 
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Son Kullanma Tarihi *</Text>
                 <View style={styles.rowInput}>
                     <TextInput
-                        style={[styles.input, styles.halfInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                        style={[styles.input, styles.halfInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: isDarkMode ? '#fff' : '#000' }]}
                         placeholder="MM *"
                         placeholderTextColor={theme.textSecondary}
                         value={cardData.expiryMonth}
@@ -194,7 +202,7 @@ export default function EditCreditCard() {
                     />
 
                     <TextInput
-                        style={[styles.input, styles.halfInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                        style={[styles.input, styles.halfInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: isDarkMode ? '#fff' : '#000' }]}
                         placeholder="YY *"
                         placeholderTextColor={theme.textSecondary}
                         value={cardData.expiryYear}
@@ -216,8 +224,9 @@ export default function EditCreditCard() {
                     />
                 </View>
 
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>CVV Kodu *</Text>
                 <TextInput
-                    style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                    style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: isDarkMode ? '#fff' : '#000' }]}
                     placeholder="CVV *"
                     placeholderTextColor={theme.textSecondary}
                     value={cardData.cvv}
@@ -289,8 +298,11 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
     },
+    scrollViewContent: {
+        paddingBottom: 100,
+    },
     input: {
-        borderWidth: 1,
+        borderWidth: 2,
         borderRadius: 8,
         padding: 15,
         marginBottom: 15,
@@ -331,5 +343,11 @@ const styles = StyleSheet.create({
     helpText: {
         fontSize: 14,
         marginBottom: 15,
+    },
+    fieldLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 8,
+        marginTop: 10,
     },
 });

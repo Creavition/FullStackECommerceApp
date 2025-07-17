@@ -80,7 +80,6 @@ export default function Login({ navigation }) {
             const response = await loginUser(email.trim(), password);
             navigation.replace('HomeScreen');
         } catch (err) {
-            // Console error mesajını kaldırdık
             Alert.alert(
                 'Hata',
                 err.message || 'Bir şeyler yanlış gitti',
@@ -131,7 +130,7 @@ export default function Login({ navigation }) {
                                 </View>
 
                                 {/* Welcome Slogan */}
-                                <Text style={styles.sloganText}>Gardırobunuz sadece bir tık uzakta.</Text>
+                                <Text style={styles.sloganText}>Gardırobunuza bir adım kaldı</Text>
 
                                 {/* Form Card */}
                                 <View style={styles.formCard}>

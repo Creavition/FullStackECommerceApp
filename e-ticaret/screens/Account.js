@@ -7,6 +7,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { OrderContext } from '../contexts/OrderContext';
 
 export default function Account() {
+    // Tüm hook'lar en üstte tanımlanmalı
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const navigation = useNavigation();
@@ -18,11 +19,11 @@ export default function Account() {
             try {
                 setLoading(true);
                 const userData = await getCurrentUser();
-                console.log('User data from Account:', userData); // Debug log
+                console.log('User data from Account:', userData); 
                 if (userData) {
                     setUser(userData);
                 } else {
-                    // Kullanıcı giriş yapmamış, login sayfasına yönlendir
+                    // Kullanıcı giriş yapmamışsa login sayfasına yönlendirir
                     navigation.replace('Login');
                 }
             } catch (error) {
@@ -33,7 +34,7 @@ export default function Account() {
             }
         };
         fetchUser();
-    }, []);
+    }, [navigation]);
 
     const handleLogout = () => {
         Alert.alert(
@@ -48,8 +49,13 @@ export default function Account() {
                     text: 'Çıkış Yap',
                     style: 'destructive',
                     onPress: async () => {
-                        await clearCurrentUser();
-                        navigation.replace('Login');
+                        try {
+                            await clearCurrentUser();
+                            navigation.replace('Login');
+                        } catch (error) {
+                            console.error('Error during logout:', error);
+                            Alert.alert('Hata', 'Çıkış yapılırken bir hata oluştu.');
+                        }
                     },
                 },
             ]

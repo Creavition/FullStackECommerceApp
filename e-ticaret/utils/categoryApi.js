@@ -1,12 +1,10 @@
-import axios from 'axios';
-
-const API_BASE_URL = 'http://10.241.64.12:5207/api/Category';
+import apiClient, { API_ENDPOINTS } from './apiClient';
 
 export const categoryApi = {
     // Tüm kategorileri getir (bedenler dahil)
     getAllCategories: async () => {
         try {
-            const response = await axios.get(API_BASE_URL);
+            const response = await apiClient.get(API_ENDPOINTS.CATEGORY);
             return response.data;
         } catch (error) {
             console.error('Error fetching categories:', error);
@@ -17,7 +15,7 @@ export const categoryApi = {
     // Tek kategori getir
     getCategory: async (id) => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/${id}`);
+            const response = await apiClient.get(`${API_ENDPOINTS.CATEGORY}/${id}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching category:', error);
@@ -28,7 +26,7 @@ export const categoryApi = {
     // Kategori oluştur
     createCategory: async (categoryName) => {
         try {
-            const response = await axios.post(API_BASE_URL, { categoryName });
+            const response = await apiClient.post(API_ENDPOINTS.CATEGORY, { categoryName });
             return response.data;
         } catch (error) {
             console.error('Error creating category:', error);
@@ -39,7 +37,7 @@ export const categoryApi = {
     // Kategori güncelle
     updateCategory: async (id, categoryName) => {
         try {
-            const response = await axios.put(`${API_BASE_URL}/${id}`, { categoryName });
+            const response = await apiClient.put(`${API_ENDPOINTS.CATEGORY}/${id}`, { categoryName });
             return response.data;
         } catch (error) {
             console.error('Error updating category:', error);
@@ -50,7 +48,7 @@ export const categoryApi = {
     // Kategori sil
     deleteCategory: async (id) => {
         try {
-            const response = await axios.delete(`${API_BASE_URL}/${id}`);
+            const response = await apiClient.delete(`${API_ENDPOINTS.CATEGORY}/${id}`);
             return response.data;
         } catch (error) {
             console.error('Error deleting category:', error);
@@ -61,7 +59,7 @@ export const categoryApi = {
     // Kategoriye beden ekle
     addSizeToCategory: async (categoryId, sizeName) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/${categoryId}/sizes`, {
+            const response = await apiClient.post(`${API_ENDPOINTS.CATEGORY}/${categoryId}/sizes`, {
                 sizeName,
                 categoryId
             });
@@ -75,7 +73,7 @@ export const categoryApi = {
     // Kategori bedenlerini getir
     getCategorySizes: async (categoryId) => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/${categoryId}/sizes`);
+            const response = await apiClient.get(`${API_ENDPOINTS.CATEGORY}/${categoryId}/sizes`);
             return response.data;
         } catch (error) {
             console.error('Error fetching category sizes:', error);
@@ -86,7 +84,7 @@ export const categoryApi = {
     // Beden sil
     deleteSize: async (sizeId) => {
         try {
-            const response = await axios.delete(`${API_BASE_URL}/sizes/${sizeId}`);
+            const response = await apiClient.delete(`${API_ENDPOINTS.CATEGORY}/sizes/${sizeId}`);
             return response.data;
         } catch (error) {
             console.error('Error deleting size:', error);
@@ -97,7 +95,7 @@ export const categoryApi = {
     // Varsayılan kategorileri ekle
     seedCategories: async () => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/seed`);
+            const response = await apiClient.post(`${API_ENDPOINTS.CATEGORY}/seed`);
             return response.data;
         } catch (error) {
             console.error('Error seeding categories:', error);

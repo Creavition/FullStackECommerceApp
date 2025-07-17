@@ -15,6 +15,11 @@ import BestSeller from './screens/BestSeller';
 import FlashSale from './screens/FlashSale';
 import FastDelivery from './screens/FastDelivery';
 import ChangePassword from './screens/ChangePassword';
+import ProductReviews from './screens/ProductReviews';
+import AddCreditCard from './screens/AddCreditCard';
+import AddAddress from './screens/AddAddress';
+import EditCreditCard from './screens/EditCreditCard';
+import EditAddress from './screens/EditAddress';
 
 // Splash Screen
 import SplashScreen
@@ -89,6 +94,31 @@ function AppNavigator() {
           name="ChangePassword"
           component={ChangePassword}
           options={{ title: 'Şifre Değiştir', headerShown: false }}
+        />
+        <Stack.Screen
+          name="ProductReviews"
+          component={ProductReviews}
+          options={{ title: 'Ürün Değerlendirmeleri', headerShown: false }}
+        />
+        <Stack.Screen
+          name="AddCreditCard"
+          component={AddCreditCard}
+          options={{ title: 'Kredi Kartı Ekle', headerShown: false }}
+        />
+        <Stack.Screen
+          name="AddAddress"
+          component={AddAddress}
+          options={{ title: 'Adres Ekle', headerShown: false }}
+        />
+        <Stack.Screen
+          name="EditCreditCard"
+          component={EditCreditCard}
+          options={{ title: 'Kredi Kartı Düzenle', headerShown: false }}
+        />
+        <Stack.Screen
+          name="EditAddress"
+          component={EditAddress}
+          options={{ title: 'Adres Düzenle', headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

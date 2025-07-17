@@ -38,7 +38,7 @@ export default function Filter() {
         loadInitialData();
     }, []);
 
-    // Context'teki filtreleri local state ile senkronize et
+    
     // Context'teki filtreleri local state ile senkronize et
     useEffect(() => {
         if (filters) {

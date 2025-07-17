@@ -26,13 +26,23 @@ export default function FastDelivery() {
         try {
             // API'den Fast Delivery ürünlerini al
             const products = await productUtils.getFastDeliveryProducts();
-            setAllProducts(products);
+            // FavoritesContext ile senkronize et
+            const syncedProducts = products.map(product => ({
+                ...product,
+                isFavorite: favoriteItems[product.id] || false
+            }));
+            setAllProducts(syncedProducts);
         } catch (e) {
             console.error('Error loading fast delivery products:', e);
             // Fallback: tüm ürünleri al ve filtrele
             try {
                 const allProds = await getAllProducts();
-                setAllProducts(allProds);
+                // FavoritesContext ile senkronize et
+                const syncedProducts = allProds.map(product => ({
+                    ...product,
+                    isFavorite: favoriteItems[product.id] || false
+                }));
+                setAllProducts(syncedProducts);
             } catch (fallbackError) {
                 console.error('Fallback failed:', fallbackError);
                 setAllProducts([]);
@@ -46,16 +56,19 @@ export default function FastDelivery() {
         loadProducts();
     }, [loadProducts]);
 
-    // Sayfa odaklandığında yeniden yükle (favorite durumlarını güncellemek için)
-    useFocusEffect(
-        useCallback(() => {
-            loadProducts();
-        }, [loadProducts])
-    );
+    // FavoriteItems değiştiğinde ürünlerin isFavorite durumunu güncelle
+    useEffect(() => {
+        setAllProducts(prevProducts =>
+            prevProducts.map(product => ({
+                ...product,
+                isFavorite: favoriteItems[product.id] || false
+            }))
+        );
+    }, [favoriteItems]);
 
-    // Fast Delivery ürünlerini al - API'den gelenler zaten fast delivery
+
     const fastDeliveryFilteredProducts = useMemo(() => {
-        // API'den gelen ürünler zaten fast delivery olarak işaretlenmiş
+
         return allProducts.filter(item =>
             item.name.toLowerCase().includes(searchText.toLowerCase())
         );
@@ -66,31 +79,17 @@ export default function FastDelivery() {
     }, [navigation]);
 
     const handleFavoritePress = useCallback(async (productId) => {
-        const currentProduct = allProducts.find(p => p.id === productId);
-        if (currentProduct) {
-            // Önce UI'yi güncelle (optimistic update)
-            setAllProducts(prevProducts =>
-                prevProducts.map(p =>
-                    p.id === productId
-                        ? { ...p, isFavorite: !p.isFavorite }
-                        : p
-                )
-            );
+        console.log(`FastDelivery: Toggling favorite for product ${productId}`);
 
-            const success = await toggleProductFavorite(productId, currentProduct.isFavorite);
-            if (!success) {
-                // API başarısızsa eski duruma geri al
-                setAllProducts(prevProducts =>
-                    prevProducts.map(p =>
-                        p.id === productId
-                            ? { ...p, isFavorite: currentProduct.isFavorite }
-                            : p
-                    )
-                );
-                // Fallback context'i de güncelle
-                toggleFavorite(productId);
-            }
+        const currentProduct = allProducts.find(p => p.id === productId);
+        if (!currentProduct) {
+            return;
         }
+
+        // Context'teki toggle fonksiyonunu kullan - bu zaten optimistic update yapıyor
+        const newFavoriteStatus = await toggleFavorite(productId);
+
+        console.log(`FastDelivery: Product ${productId} favorite status updated to: ${newFavoriteStatus}`);
     }, [allProducts, toggleFavorite]);
 
     const renderItem = useCallback(({ item }) => (
@@ -99,8 +98,9 @@ export default function FastDelivery() {
             onProductPress={handleProductPress}
             onFavoritePress={handleFavoritePress}
             isDarkMode={isDarkMode}
+            favoriteItems={favoriteItems}
         />
-    ), [handleProductPress, handleFavoritePress, isDarkMode]);
+    ), [handleProductPress, handleFavoritePress, isDarkMode, favoriteItems]);
 
     const keyExtractor = useCallback((item) => item.id, []);
 
@@ -137,7 +137,7 @@ export default function FastDelivery() {
                 </TouchableOpacity>
                 <View style={styles.headerContent}>
                     <Ionicons name="flash" size={24} color="#FF6B35" />
-                    <Text style={[styles.headerTitle, { color: theme.text }]}>Fast Delivery</Text>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>Hızlı Teslimat</Text>
                 </View>
                 <View style={styles.placeholder} />
             </View>
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flex: 1,
         justifyContent: 'center',
-        marginLeft: -29, // Compensate for back button width
+        marginLeft: -29,
     },
     headerTitle: {
         fontSize: 18,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     placeholder: {
-        width: 29, // Same width as back button for centering
+        width: 29,
     },
     searchContainer: {
         paddingHorizontal: 20,

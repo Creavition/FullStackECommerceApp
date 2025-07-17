@@ -17,6 +17,13 @@ export default function ChangePassword() {
     const navigation = useNavigation();
     const { theme, isDarkMode } = useTheme();
 
+    // Password validation helper functions
+    const hasMinLength = (password) => password.length >= 6;
+    const hasUpperCase = (password) => /[A-Z]/.test(password);
+    const hasLowerCase = (password) => /[a-z]/.test(password);
+    const hasNumber = (password) => /\d/.test(password);
+    const passwordsMatch = (password, confirmPassword) => password === confirmPassword && password.length > 0;
+
     const handleChangePassword = async () => {
         if (!currentPassword || !newPassword || !confirmPassword) {
             Alert.alert('Hata', 'Lütfen tüm alanları doldurun');
@@ -29,7 +36,12 @@ export default function ChangePassword() {
         }
 
         if (newPassword.length < 6) {
-            Alert.alert('Şifre en az 6 karakter olmalı');
+            Alert.alert('Hata', 'Şifre en az 6 karakter olmalı');
+            return;
+        }
+
+        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
+            Alert.alert('Hata', 'Şifre en az bir büyük harf, bir küçük harf ve bir rakam içermelidir');
             return;
         }
 
@@ -40,10 +52,13 @@ export default function ChangePassword() {
 
             Alert.alert(
                 'Başarılı',
-                'Şifre başarıyla değiştirildi',
+                'Şifre başarıyla değiştirildi. Güvenlik nedeniyle tekrar giriş yapmanız gerekmektedir.',
                 [{
                     text: 'Tamam',
-                    onPress: () => navigation.goBack()
+                    onPress: () => navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'Login' }],
+                    })
                 }]
             );
 
@@ -53,8 +68,8 @@ export default function ChangePassword() {
             setConfirmPassword('');
 
         } catch (error) {
-            console.error('Password change error:', error);
-            Alert.alert('Hata', error.message || 'Bir şeyler yanlış gitti');
+            const errorMessage = error.message || 'Bir şeyler yanlış gitti';
+            Alert.alert('Hata', errorMessage);
         } finally {
             setLoading(false);
         }
@@ -72,13 +87,13 @@ export default function ChangePassword() {
             <View style={styles.content}>
                 <View style={[styles.infoCard, { backgroundColor: isDarkMode ? '#1a2a3a' : '#e3f2fd' }]}>
                     <Ionicons name="information-circle" size={20} color="#ce6302" />
-                    <Text style={[styles.infoText, { color: isDarkMode ? '#ce6302' : '#ce6302' }]}>'Güvenlik nedeniyle, yeni şifreye geçmek için mevcut şifrenizi girin.'</Text>
+                    <Text style={[styles.infoText, { color: isDarkMode ? '#ce6302' : '#ce6302' }]}>Güvenlik nedeniyle, yeni şifreye geçmek için mevcut şifrenizi girin.</Text>
                 </View>
 
                 <View style={[styles.form, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}>
                     {/* Current Password */}
-                    <Text style={[styles.label, { color: isDarkMode ? '#fff' : '#333' }]}>'Mevcut Şifre'</Text>
-                    <View style={[styles.passwordContainer, { borderColor: isDarkMode ? '#555' : '#ddd', backgroundColor: isDarkMode ? '#444' : '#f9f9f9' }]}>
+                    <Text style={[styles.label, { color: isDarkMode ? '#fff' : '#333' }]}>Mevcut Şifre</Text>
+                    <View style={[styles.passwordContainer, { borderColor: isDarkMode ? '#555' : 'black', backgroundColor: isDarkMode ? '#444' : '#f9f9f9' }]}>
                         <TextInput
                             style={[styles.passwordInput, { color: isDarkMode ? '#fff' : '#333' }]}
                             placeholder={'Mevcut şifrenizi girin'}
@@ -100,8 +115,8 @@ export default function ChangePassword() {
                     </View>
 
                     {/* New Password */}
-                    <Text style={[styles.label, { color: isDarkMode ? '#fff' : '#333' }]}>Yeni Şifre</Text>
-                    <View style={[styles.passwordContainer, { borderColor: isDarkMode ? '#555' : '#ddd', backgroundColor: isDarkMode ? '#444' : '#f9f9f9' }]}>
+                    <Text style={[styles.label, { color: isDarkMode ? '#fff' : 'black' }]}>Yeni Şifre</Text>
+                    <View style={[styles.passwordContainer, { borderColor: isDarkMode ? '#555' : 'black', backgroundColor: isDarkMode ? '#444' : '#f9f9f9' }]}>
                         <TextInput
                             style={[styles.passwordInput, { color: isDarkMode ? '#fff' : '#333' }]}
                             placeholder={'Yeni şifre girin'}
@@ -124,7 +139,7 @@ export default function ChangePassword() {
 
                     {/* Confirm Password */}
                     <Text style={[styles.label, { color: isDarkMode ? '#fff' : '#333' }]}>Yeni Şifreyi Onayla</Text>
-                    <View style={[styles.passwordContainer, { borderColor: isDarkMode ? '#555' : '#ddd', backgroundColor: isDarkMode ? '#444' : '#f9f9f9' }]}>
+                    <View style={[styles.passwordContainer, { borderColor: isDarkMode ? '#555' : 'black', backgroundColor: isDarkMode ? '#444' : '#f9f9f9' }]}>
                         <TextInput
                             style={[styles.passwordInput, { color: isDarkMode ? '#fff' : '#333' }]}
                             placeholder={'Yeni Şifreyi Onayla'}
@@ -150,28 +165,70 @@ export default function ChangePassword() {
                         <Text style={[styles.requirementsTitle, { color: isDarkMode ? '#fff' : '#333' }]}>Şifre Gereksinimleri:</Text>
                         <View style={styles.requirement}>
                             <Ionicons
-                                name={newPassword.length >= 6 ? "checkmark-circle" : "ellipse-outline"}
+                                name={hasMinLength(newPassword) ? "checkmark-circle" : "ellipse-outline"}
                                 size={16}
-                                color={newPassword.length >= 6 ? "#4CAF50" : isDarkMode ? "#666" : "#ccc"}
+                                color={hasMinLength(newPassword) ? "#4CAF50" : isDarkMode ? "#666" : "#ccc"}
                             />
                             <Text style={[
                                 styles.requirementText,
                                 { color: isDarkMode ? '#b3b3b3' : '#666' },
-                                newPassword.length >= 6 && styles.requirementMet
+                                hasMinLength(newPassword) && styles.requirementMet
                             ]}>
                                 En az 6 karakter
                             </Text>
                         </View>
                         <View style={styles.requirement}>
                             <Ionicons
-                                name={newPassword === confirmPassword && newPassword.length > 0 ? "checkmark-circle" : "ellipse-outline"}
+                                name={hasUpperCase(newPassword) ? "checkmark-circle" : "ellipse-outline"}
                                 size={16}
-                                color={newPassword === confirmPassword && newPassword.length > 0 ? "#4CAF50" : isDarkMode ? "#666" : "#ccc"}
+                                color={hasUpperCase(newPassword) ? "#4CAF50" : isDarkMode ? "#666" : "#ccc"}
                             />
                             <Text style={[
                                 styles.requirementText,
                                 { color: isDarkMode ? '#b3b3b3' : '#666' },
-                                newPassword === confirmPassword && newPassword.length > 0 && styles.requirementMet
+                                hasUpperCase(newPassword) && styles.requirementMet
+                            ]}>
+                                En az bir büyük harf
+                            </Text>
+                        </View>
+                        <View style={styles.requirement}>
+                            <Ionicons
+                                name={hasLowerCase(newPassword) ? "checkmark-circle" : "ellipse-outline"}
+                                size={16}
+                                color={hasLowerCase(newPassword) ? "#4CAF50" : isDarkMode ? "#666" : "#ccc"}
+                            />
+                            <Text style={[
+                                styles.requirementText,
+                                { color: isDarkMode ? '#b3b3b3' : '#666' },
+                                hasLowerCase(newPassword) && styles.requirementMet
+                            ]}>
+                                En az bir küçük harf
+                            </Text>
+                        </View>
+                        <View style={styles.requirement}>
+                            <Ionicons
+                                name={hasNumber(newPassword) ? "checkmark-circle" : "ellipse-outline"}
+                                size={16}
+                                color={hasNumber(newPassword) ? "#4CAF50" : isDarkMode ? "#666" : "#ccc"}
+                            />
+                            <Text style={[
+                                styles.requirementText,
+                                { color: isDarkMode ? '#b3b3b3' : '#666' },
+                                hasNumber(newPassword) && styles.requirementMet
+                            ]}>
+                                En az bir rakam
+                            </Text>
+                        </View>
+                        <View style={styles.requirement}>
+                            <Ionicons
+                                name={passwordsMatch(newPassword, confirmPassword) ? "checkmark-circle" : "ellipse-outline"}
+                                size={16}
+                                color={passwordsMatch(newPassword, confirmPassword) ? "#4CAF50" : isDarkMode ? "#666" : "#ccc"}
+                            />
+                            <Text style={[
+                                styles.requirementText,
+                                { color: isDarkMode ? '#b3b3b3' : '#666' },
+                                passwordsMatch(newPassword, confirmPassword) && styles.requirementMet
                             ]}>
                                 Şifreler eşleşiyor
                             </Text>
@@ -189,7 +246,7 @@ export default function ChangePassword() {
                         ) : (
                             <>
                                 <Ionicons name="lock-closed" size={20} color="#fff" style={{ marginRight: 8 }} />
-                                <Text style={styles.buttonText}>Mevcut Şifre</Text>
+                                <Text style={styles.buttonText}>Şifreyi Değiştir</Text>
                             </>
                         )}
                     </TouchableOpacity>
@@ -229,6 +286,18 @@ const styles = StyleSheet.create({
     content: {
         padding: 20,
     },
+    closeButtonTopLeft: {
+        position: 'absolute',
+        top: 50,
+        right: 20,
+        zIndex: 1,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(0,0,0,0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     infoCard: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -264,8 +333,8 @@ const styles = StyleSheet.create({
     passwordContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#ddd',
+        borderWidth: 2,
+        borderColor: 'black',
         borderRadius: 8,
         backgroundColor: '#f9f9f9',
     },

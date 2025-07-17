@@ -10,11 +10,11 @@ import ProductCard from '../components/ProductCard';
 
 export default function Favorites() {
     const navigation = useNavigation();
-    const { favoriteItems, toggleFavorite, isFavorite } = useFavorites(); // ✅ isFavorite helper eklendi
+    const { favoriteItems, toggleFavorite, isFavorite } = useFavorites(); 
     const { products, loading, fetchProducts, updateProductFavoriteStatus } = useProduct();
     const { theme, isDarkMode } = useTheme();
 
-    // ✅ DÜZELTME: Hem ProductContext hem FavoritesContext'i dinle
+    //  Hem ProductContext hem FavoritesContext'i dinle
     const favoriteProducts = useMemo(() => {
         return products.filter(product => {
             // Hem ProductContext hem FavoritesContext'ten kontrol et
@@ -28,8 +28,6 @@ export default function Favorites() {
             fetchProducts();
         }
     }, []);
-
-    // ✅ Sayfa focus olduğunda favoriteItems'ı sync et
     useFocusEffect(
         useCallback(() => {
             console.log('Favorites screen focused - syncing data');
@@ -53,7 +51,7 @@ export default function Favorites() {
     const handleFavoritePress = useCallback(async (productId) => {
         console.log(`Favorites: Toggling favorite for product ${productId}`);
 
-        // ✅ DÜZELTME: Daha basit kontrol
+    
         const currentProduct = favoriteProducts.find(p => p.id === productId);
         if (!currentProduct) {
             console.log('Product not found in favoriteProducts');
@@ -69,7 +67,7 @@ export default function Favorites() {
         }
     }, [favoriteProducts, toggleFavorite, updateProductFavoriteStatus]);
 
-    // ✅ DÜZELTME: favoriteItems'ı da geç
+   
     const renderItem = useCallback(({ item }) => {
         return (
             <ProductCard
@@ -77,7 +75,7 @@ export default function Favorites() {
                 onProductPress={handleProductPress}
                 onFavoritePress={handleFavoritePress}
                 isDarkMode={isDarkMode}
-                favoriteItems={favoriteItems} // ✅ Eksik prop eklendi
+                favoriteItems={favoriteItems} 
             />
         );
     }, [handleProductPress, handleFavoritePress, isDarkMode, favoriteItems]);

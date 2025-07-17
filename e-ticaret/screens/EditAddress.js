@@ -135,17 +135,23 @@ export default function EditAddress() {
                 <View style={styles.placeholder} />
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollViewContent}
+            >
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Adres Başlığı *</Text>
                 <TextInput
-                    style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                    style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: isDarkMode ? '#fff' : '#000' }]}
                     placeholder="Adres Başlığı *"
                     placeholderTextColor={theme.textSecondary}
                     value={addressData.title}
                     onChangeText={(text) => setAddressData(prev => ({ ...prev, title: text }))}
                 />
 
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Telefon Numarası *</Text>
                 <TextInput
-                    style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                    style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: isDarkMode ? '#fff' : '#000' }]}
                     placeholder="05325674356"
                     placeholderTextColor={theme.textSecondary}
                     value={addressData.phoneNumber}
@@ -153,8 +159,9 @@ export default function EditAddress() {
                     keyboardType="phone-pad"
                 />
 
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Adres Satırı 1 *</Text>
                 <TextInput
-                    style={[styles.input, styles.textArea, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                    style={[styles.input, styles.textArea, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: isDarkMode ? '#fff' : '#000' }]}
                     placeholder="Adres Satırı 1 *"
                     placeholderTextColor={theme.textSecondary}
                     value={addressData.addressLine1}
@@ -163,8 +170,9 @@ export default function EditAddress() {
                     numberOfLines={3}
                 />
 
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Adres Satırı 2</Text>
                 <TextInput
-                    style={[styles.input, styles.textArea, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                    style={[styles.input, styles.textArea, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: isDarkMode ? '#fff' : '#000' }]}
                     placeholder="Adres Satırı 2"
                     placeholderTextColor={theme.textSecondary}
                     value={addressData.addressLine2}
@@ -173,9 +181,10 @@ export default function EditAddress() {
                     numberOfLines={2}
                 />
 
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>İl ve İlçe *</Text>
                 <View style={styles.rowInput}>
                     <TextInput
-                        style={[styles.input, styles.halfInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                        style={[styles.input, styles.halfInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: isDarkMode ? '#fff' : '#000' }]}
                         placeholder="İl *"
                         placeholderTextColor={theme.textSecondary}
                         value={addressData.city}
@@ -183,7 +192,7 @@ export default function EditAddress() {
                     />
 
                     <TextInput
-                        style={[styles.input, styles.halfInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                        style={[styles.input, styles.halfInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: isDarkMode ? '#fff' : '#000' }]}
                         placeholder="İlçe *"
                         placeholderTextColor={theme.textSecondary}
                         value={addressData.district}
@@ -191,8 +200,9 @@ export default function EditAddress() {
                     />
                 </View>
 
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Posta Kodu</Text>
                 <TextInput
-                    style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                    style={[styles.input, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: isDarkMode ? '#fff' : '#000' }]}
                     placeholder="Posta Kodu"
                     placeholderTextColor={theme.textSecondary}
                     value={addressData.postalCode}
@@ -263,8 +273,11 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
     },
+    scrollViewContent: {
+        paddingBottom: 100,
+    },
     input: {
-        borderWidth: 1,
+        borderWidth: 2,
         borderRadius: 8,
         padding: 15,
         marginBottom: 15,
@@ -305,5 +318,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginLeft: 8,
+    },
+    fieldLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 8,
+        marginTop: 10,
     },
 });

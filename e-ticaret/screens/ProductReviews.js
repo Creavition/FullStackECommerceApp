@@ -13,6 +13,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import StarRating from '../components/StarRating';
 import { useTheme } from '../contexts/ThemeContext';
+import { reviewApi } from '../utils/reviewApi';
 
 const ProductReviews = () => {
     const navigation = useNavigation();
@@ -27,23 +28,16 @@ const ProductReviews = () => {
 
     const fetchReviews = async () => {
         try {
-            const response = await fetch(`http://10.241.64.12:5207/api/Review/Product/${productId}`);
-
-            if (response.ok) {
-                const data = await response.json();
-                setReviews(data.reviews || []);
-                setReviewStats({
-                    averageRating: data.averageRating || 0,
-                    totalReviews: data.totalReviews || 0,
-                    productName: data.productName || product?.name || 'Ürün',
-                });
-            } else {
-                console.error('Failed to fetch reviews');
-                Alert.alert('Hata', 'Değerlendirmeler yüklenemedi.');
-            }
+            const data = await reviewApi.getProductReviews(productId);
+            setReviews(data.reviews || []);
+            setReviewStats({
+                averageRating: data.averageRating || 0,
+                totalReviews: data.totalReviews || 0,
+                productName: data.productName || product?.name || 'Ürün',
+            });
         } catch (error) {
             console.error('Error fetching reviews:', error);
-            Alert.alert('Hata', 'Bir hata oluştu. Lütfen tekrar deneyin.');
+            Alert.alert('Hata', 'Değerlendirmeler yüklenemedi.');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -52,16 +46,12 @@ const ProductReviews = () => {
 
     const fetchReviewStats = async () => {
         try {
-            const response = await fetch(`http://10.241.64.12:5207/api/Review/Stats/${productId}`);
-
-            if (response.ok) {
-                const data = await response.json();
-                setReviewStats(prev => ({
-                    ...prev,
-                    ...data,
-                    ratingDistribution: data.ratingDistribution || {},
-                }));
-            }
+            const data = await reviewApi.getProductReviewStats(productId);
+            setReviewStats(prev => ({
+                ...prev,
+                ...data,
+                ratingDistribution: data.ratingDistribution || {},
+            }));
         } catch (error) {
             console.error('Error fetching review stats:', error);
         }

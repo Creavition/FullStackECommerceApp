@@ -17,7 +17,6 @@ import { logProductDetails } from '../utils/productUtils';
 
 export default function Home() {
     const navigation = useNavigation();
-    const isMounted = useRef(true);
     const scrollViewRef = useRef(null); // ScrollView için ref
 
     const { favoriteItems, toggleFavorite } = useFavorites();
@@ -25,66 +24,52 @@ export default function Home() {
     const { updateFilters } = useFilter() || {};
     const { products, loading, fetchProducts, updateProductFavoriteStatus } = useProduct();
 
-    const [categories] = useState(['Jacket', 'Pants', 'Shoes', 'T-Shirt']); // Static categories for now
-    const [isInitialLoad, setIsInitialLoad] = useState(true);
+    const [categories] = useState(['Jacket', 'Pants', 'Shoes', 'T-Shirt']);
 
-    // Show loading only for initial load - performance optimization
-    const isLoading = useMemo(() => isInitialLoad && loading, [isInitialLoad, loading]);
-
-    // Component mount/unmount tracking
     useEffect(() => {
-        isMounted.current = true;
-        return () => {
-            isMounted.current = false;
-        };
-    }, []);
+        fetchProducts();
+    }, [fetchProducts]);
 
-    // Initial data loading - sadece bir kez çalışsın
+    // FavoriteItems değiştiğinde ProductContext'teki ürünlerin isFavorite durumunu güncelle
     useEffect(() => {
-        if (isInitialLoad) {
-            fetchProducts().finally(() => {
-                if (isMounted.current) {
-                    setIsInitialLoad(false);
+        if (products && products.length > 0) {
+            products.forEach(product => {
+                const isFavoriteInContext = favoriteItems[product.id] || false;
+                if (product.isFavorite !== isFavoriteInContext) {
+                    updateProductFavoriteStatus(product.id, isFavoriteInContext);
                 }
             });
         }
-    }, [isInitialLoad, fetchProducts]);
+    }, [favoriteItems, products, updateProductFavoriteStatus]);
 
-    // Memoized products - sadece products değiştiğinde hesaplanır ve stable array döndürür
     const flashSaleProducts = useMemo(() => {
         if (!products || products.length === 0) return [];
         const filtered = products.filter(p => p?.badge_FlashSale);
-        return filtered.slice(0, 10); // Slice'ı burada yap
+        return filtered.slice(0, 10);
     }, [products]);
 
     const fastDeliveryProducts = useMemo(() => {
         if (!products || products.length === 0) return [];
         const filtered = products.filter(p => p?.label_FastDelivery);
-        return filtered.slice(0, 10); // Slice'ı burada yap
+        return filtered.slice(0, 10);
     }, [products]);
 
-    const bestSellerProducts = useMemo(() => {
-        if (!products || products.length === 0) return [];
-        const filtered = products.filter(p => p?.label_BestSeller);
-        return filtered.slice(0, 10); // Slice'ı burada yap
-    }, [products]);
 
     const bestSellingProducts = useMemo(() => {
         if (!products || products.length === 0) return [];
         const filtered = products.filter(p => p?.badge_BestSelling);
-        return filtered.slice(0, 10); // Slice'ı burada yap
+        return filtered.slice(0, 10);
     }, [products]);
 
-    // Categories listesi - başına "All" seçeneği eklenir
+
     const categoriesWithAll = useMemo(() => {
         const allOption = 'Tümü';
         return [allOption, ...(categories || [])];
     }, [categories]);
 
     const handleProductPress = useCallback((product) => {
-        if (__DEV__) {
-            logProductDetails(product);
-        }
+        logProductDetails(product);
+
         // Tab navigator'ın parent navigation'ını kullan
         const parentNavigation = navigation.getParent();
         if (parentNavigation) {
@@ -110,7 +95,7 @@ export default function Home() {
         }
     }, [products, toggleFavorite, updateProductFavoriteStatus]); // favoriteItems dependency'sini kaldırdık
 
-    // Kategori basma fonksiyonu - Filter context'i de güncelleıyor. Fıltrele sayfasında gozukmesı ıcın
+    // Kategori basma fonksiyonu
     const handleCategoryPress = useCallback((category) => {
         console.log(`Home: Category pressed: ${category}`);
 
@@ -183,7 +168,7 @@ export default function Home() {
         return data;
     }, [categoriesWithAll, flashSaleProducts, bestSellingProducts, fastDeliveryProducts]);
 
-    // Ana render item function
+    // Ana render item fonksiyonu
     const renderMainItem = useCallback(({ item, index }) => {
         if (item.type === 'categories') {
             return (
@@ -234,7 +219,7 @@ export default function Home() {
                             </Text>
                         </View>
                         <TouchableOpacity onPress={() => {
-                            // Tab navigator'ın parent navigation'ını kullan
+
                             const parentNavigation = navigation.getParent();
                             if (parentNavigation) {
                                 parentNavigation.navigate(item.seeAllRoute);
@@ -282,16 +267,6 @@ export default function Home() {
         return unsubscribe;
     }, [navigation]);
 
-    // useFocusEffect yerine navigation listener kullan - sadece gerektiğinde data refresh
-    useFocusEffect(
-        useCallback(() => {
-            // Sadece favoriler güncellensin, tüm ürünler yeniden yüklenmesin
-            console.log('Home screen focused - skipping full product refresh');
-            return () => {
-                // Cleanup function
-            };
-        }, [])
-    );
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -300,7 +275,7 @@ export default function Home() {
                 barStyle={isDarkMode ? "light-content" : "dark-content"}
             />
 
-            {isLoading ? (
+            {loading ? (
                 <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
                     <Text style={[styles.loadingText, { color: theme.text }]}>
                         Yükleniyor

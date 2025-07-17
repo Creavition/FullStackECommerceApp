@@ -1,12 +1,10 @@
-import axios from 'axios';
-
-const API_BASE_URL = 'http://10.241.64.12:5207/api';
+import apiClient, { API_ENDPOINTS } from './apiClient';
 
 export const creditCardApi = {
     // Tüm kredi kartlarını getir
     getAllCreditCards: async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/CreditCard`);
+            const response = await apiClient.get(`${API_ENDPOINTS.CREDIT_CARD}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching credit cards:', error);
@@ -17,7 +15,7 @@ export const creditCardApi = {
     // Belirli bir kredi kartını getir
     getCreditCardById: async (id) => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/CreditCard/${id}`);
+            const response = await apiClient.get(`${API_ENDPOINTS.CREDIT_CARD}/${id}`);
             return response.data;
         } catch (error) {
             console.error(`Error fetching credit card ${id}:`, error);
@@ -28,7 +26,7 @@ export const creditCardApi = {
     // Yeni kredi kartı ekle
     addCreditCard: async (cardData) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/CreditCard`, cardData);
+            const response = await apiClient.post(`${API_ENDPOINTS.CREDIT_CARD}`, cardData);
             return response.data;
         } catch (error) {
             console.error('Error adding credit card:', error);
@@ -39,7 +37,7 @@ export const creditCardApi = {
     // Kredi kartı güncelle
     updateCreditCard: async (id, cardData) => {
         try {
-            const response = await axios.put(`${API_BASE_URL}/CreditCard/${id}`, cardData);
+            const response = await apiClient.put(`${API_ENDPOINTS.CREDIT_CARD}/${id}`, cardData);
             return response.data;
         } catch (error) {
             console.error(`Error updating credit card ${id}:`, error);
@@ -50,7 +48,7 @@ export const creditCardApi = {
     // Kredi kartı sil
     deleteCreditCard: async (id) => {
         try {
-            const response = await axios.delete(`${API_BASE_URL}/CreditCard/${id}`);
+            const response = await apiClient.delete(`${API_ENDPOINTS.CREDIT_CARD}/${id}`);
             return response.status === 204;
         } catch (error) {
             console.error(`Error deleting credit card ${id}:`, error);
@@ -61,7 +59,7 @@ export const creditCardApi = {
     // Varsayılan kredi kartını ayarla
     setDefaultCreditCard: async (id) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/CreditCard/${id}/SetDefault`);
+            const response = await apiClient.post(`${API_ENDPOINTS.CREDIT_CARD}/${id}/SetDefault`);
             return response.data;
         } catch (error) {
             console.error(`Error setting default credit card ${id}:`, error);

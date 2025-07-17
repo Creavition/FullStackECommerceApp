@@ -23,8 +23,10 @@ const ProductCard = memo(({
     const handleFavoritePress = useCallback(() => onFavoritePress(item.id), [item.id, onFavoritePress]);
 
     // API'den gelen verilerden badge ve label bilgilerini al
-    // Basit boolean dönüşümü - gereksiz false fallback'leri kaldırıldı
-    const isFavorite = item.isFavorite !== undefined ? item.isFavorite : (favoriteItems[item.id] || false);
+    // Eğer prop olarak favoriteItems geçilmişse onu kullan, yoksa item.isFavorite'ı kullan
+    const isFavorite = propFavoriteItems
+        ? (favoriteItems[item.id] || false)
+        : (item.isFavorite !== undefined ? item.isFavorite : (favoriteItems[item.id] || false));
     const isFlashSale = !!item.badge_FlashSale;
     const isBestSelling = !!item.badge_BestSelling;
     const hasLabelBestSeller = !!item.label_BestSeller;
@@ -115,7 +117,7 @@ const ProductCard = memo(({
 });
 
 const Badge = memo(({ isFlashSale, isBestSelling }) => {
-    // Priority: Flash sale badge öncelikli
+    // Flash sale badge öncelikli
     if (isFlashSale) {
         return (
             <View style={styles.flashSaleBadge}>
@@ -135,7 +137,7 @@ const Badge = memo(({ isFlashSale, isBestSelling }) => {
 });
 
 const Label = memo(({ hasFastDelivery, hasLabelBestSeller }) => {
-    // Priority: Fast delivery label öncelikli
+    //Fast delivery label öncelikli
     if (hasFastDelivery) {
         return (
             <View style={styles.fastDeliveryBadge}>
@@ -164,6 +166,7 @@ const styles = StyleSheet.create({
         width: '48%',
         marginBottom: 20,
         borderRadius: 16,
+        borderWidth: 2,
         padding: 12,
         alignItems: 'center',
         position: 'relative',

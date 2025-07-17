@@ -53,7 +53,7 @@ export default function SelectableOptions({ onSelect, categories = [], sizeOptio
                     </Text>
                 </TouchableOpacity>
 
-                {/* Dropdown - Sort butonunun tam altında */}
+                {/* Dropdown menu - Sort butonunun tam altında */}
                 {open && (
                     <View style={[
                         styles.dropdown,
@@ -143,10 +143,10 @@ const styles = StyleSheet.create({
     },
     dropdown: {
         position: 'absolute',
-        top: 52, // Sort butonunun hemen altında (button height + 2px spacing)
+        top: 52, 
         left: 0,
-        zIndex: 3001, // En yüksek z-index
-        width: 160, // Sort butonu ile aynı genişlik
+        zIndex: 3001, 
+        width: 160, 
         backgroundColor: '#fff',
         borderColor: '#999',
         borderWidth: 1,
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 10, // Android için çok yüksek elevation
+        elevation: 10, 
     },
     option: {
         paddingVertical: 12,

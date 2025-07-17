@@ -65,9 +65,9 @@ export default function Payment() {
   };
 
 
-  // Price parsing fonksiyonu - Cart.js'den alındı
+  
   const parsePrice = (priceValue) => {
-    // Null/undefined kontrolü
+
     if (!priceValue && priceValue !== 0) {
       return 0;
     }
@@ -101,7 +101,6 @@ export default function Payment() {
 
   // Ödeme işlemi
   const handlePayment = async () => {
-    // Sepet boşluk kontrolü
     if (cartItems.length === 0) {
       Alert.alert('Hata', 'Sepetiniz boş!');
       return;
@@ -122,7 +121,7 @@ export default function Payment() {
     setIsProcessing(true);
 
     try {
-      // Sipariş verilerini hazırla
+      // Sipariş verileri
       const orderData = {
         items: cartItems.map(item => ({
           id: item.id,
@@ -150,7 +149,6 @@ export default function Payment() {
       // Sepeti temizle
       clearCart();
 
-      // Başarı mesajı göster
       Alert.alert(
         'Başarılı',
         'Ödeme başarıyla tamamlandı',
@@ -185,7 +183,7 @@ export default function Payment() {
           {item.name || 'Ürün Adı'}
         </Text>
         <Text style={[styles.itemDetails, { color: isDarkMode ? '#b3b3b3' : '#666' }]}>
-          'Boyut': {item.size || 'N/A'} | 'Adet': {item.amount || 1}
+          Beden: {item.size || 'N/A'}   |   Adet: {item.amount || 1}
         </Text>
       </View>
       <Text style={[styles.itemPrice, { color: '#FF6B35' }]}>
@@ -256,7 +254,7 @@ export default function Payment() {
                   ]}
                   onPress={() => setSelectedCard(card)}
                 >
-                  {/* Simple Blue Credit Card */}
+                  {/*Credit Card */}
                   <View style={[
                     styles.creditCardView,
                     { backgroundColor: selectedCard?.id === card.id ? '#4A90E2' : '#5BA4F2' }
@@ -314,13 +312,8 @@ export default function Payment() {
                   style={[
                     styles.addressItem,
                     {
-                      backgroundColor: theme.cardBackground,
-                      borderColor: selectedAddress?.id === address.id ? '#FF6B35' : (isDarkMode ? '#444' : '#f0f0f0'),
+                      borderColor: selectedAddress?.id === address.id ? '#FF6B35' : (isDarkMode ? '#444' : 'black'),
                       borderWidth: selectedAddress?.id === address.id ? 2 : 1,
-                      shadowColor: selectedAddress?.id === address.id ? '#FF6B35' : '#000',
-                      shadowOpacity: selectedAddress?.id === address.id ? 0.15 : 0.05,
-                      shadowRadius: selectedAddress?.id === address.id ? 8 : 3,
-                      elevation: selectedAddress?.id === address.id ? 4 : 2,
                     }
                   ]}
                   onPress={() => setSelectedAddress(address)}
@@ -403,7 +396,7 @@ export default function Payment() {
               <Ionicons name="receipt" size={16} color="white" />
             </View>
             <Text style={[styles.summaryTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
-              'Sipariş Özeti'
+              Sipariş Özeti
             </Text>
           </View>
 
@@ -412,7 +405,6 @@ export default function Payment() {
             {cartItems.map(renderOrderItem)}
           </View>
 
-          {/* Toplam Tutar - Artık border içerisinde */}
           <View style={[
             styles.totalRow,
             {
@@ -607,11 +599,7 @@ const styles = StyleSheet.create({
   addressItem: {
     padding: 16,
     borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+
   },
   addressHeader: {
     flexDirection: 'row',

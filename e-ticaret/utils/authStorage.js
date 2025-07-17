@@ -1,9 +1,7 @@
 // utils/authStorage.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import { decode as base64Decode } from 'base-64';
-
-const API_BASE_URL = 'http://10.241.64.12:5207/Auth';
+import apiClient, { API_ENDPOINTS } from './apiClient';
 
 // Auth token'ı al
 export const getAuthToken = async () => {
@@ -46,10 +44,10 @@ export const clearCurrentUser = async () => {
     await AsyncStorage.removeItem('authToken');
 };
 
-// Login user via API
+// API ile kullanici girisi
 export const loginUser = async (email, password) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/login`, { email, password });
+        const response = await apiClient.post(`${API_ENDPOINTS.AUTH}/login`, { email, password });
 
         const { token } = response.data;
         if (!token) {
@@ -83,13 +81,13 @@ export const loginUser = async (email, password) => {
     }
 };
 
-// Register user via API
+// API ile kayit olma
 export const registerUser = async (name, email, password, rePassword) => {
     try {
-        console.log('API Request URL:', `${API_BASE_URL}/register`);
+        console.log('API Request URL:', `${API_ENDPOINTS.AUTH}/register`);
         console.log('Request Data:', { name, email, password, rePassword });
 
-        const response = await axios.post(`${API_BASE_URL}/register`, {
+        const response = await apiClient.post(`${API_ENDPOINTS.AUTH}/register`, {
             name,
             email,
             password,
@@ -99,9 +97,6 @@ export const registerUser = async (name, email, password, rePassword) => {
         console.log('API Response:', response.data);
         return response.data;
     } catch (error) {
-        console.error('Registration API Error:', error);
-        console.error('Error Response:', error.response?.data);
-        console.error('Error Status:', error.response?.status);
         throw new Error(error.response?.data || 'Registration failed');
     }
 };
@@ -138,13 +133,13 @@ export const getCurrentUserFromToken = async () => {
     }
 };
 
-// Check if user is authenticated
+// Token varsa useri cek
 export const isAuthenticated = async () => {
     const user = await getCurrentUserFromToken();
     return user !== null;
 };
 
-// Change password via API
+// API ile sifre degisme
 export const changePassword = async (currentPassword, newPassword, confirmPassword) => {
     try {
         const token = await AsyncStorage.getItem('authToken');
@@ -152,7 +147,7 @@ export const changePassword = async (currentPassword, newPassword, confirmPasswo
             throw new Error('No authentication token found');
         }
 
-        const response = await axios.post(`${API_BASE_URL}/change-password`, {
+        const response = await apiClient.post(`${API_ENDPOINTS.AUTH}/change-password`, {
             currentPassword,
             newPassword,
             confirmPassword
@@ -165,7 +160,6 @@ export const changePassword = async (currentPassword, newPassword, confirmPasswo
 
         return response.data;
     } catch (error) {
-        console.error('Change password API Error:', error);
         throw new Error(error.response?.data || 'Password change failed');
     }
 };

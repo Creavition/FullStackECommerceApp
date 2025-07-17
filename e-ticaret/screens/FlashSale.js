@@ -24,7 +24,7 @@ export default function FlashSale() {
     const loadProducts = useCallback(async () => {
         setLoading(true);
         try {
-            // API'den flash sale ürünlerini almaya çalış
+
             const flashSaleProducts = await productUtils.getFlashSaleProducts();
 
             if (flashSaleProducts && flashSaleProducts.length > 0) {
@@ -33,32 +33,35 @@ export default function FlashSale() {
             } else {
                 console.log('API flash sale products not available, using all products');
                 const products = await getAllProducts();
-                // Fallback: badge_FlashSale true olan ürünleri filtrele
+
                 const filteredProducts = products.filter(p => p.badge_FlashSale);
-                setAllProducts(filteredProducts.length > 0 ? filteredProducts : products);
+                const productsToUse = filteredProducts.length > 0 ? filteredProducts : products;
+                setAllProducts(productsToUse);
             }
         } catch (e) {
             console.error('Error loading flash sale products:', e);
-            // Hata durumunda tüm ürünleri yükle
+
             const products = await getAllProducts();
             setAllProducts(products);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, []); // favoriteItems dependency'sini kaldırdık
 
     useEffect(() => {
         loadProducts();
     }, [loadProducts]);
 
-    // Sayfa odaklandığında yeniden yükle (favorite durumlarını güncellemek için)
-    useFocusEffect(
-        useCallback(() => {
-            loadProducts();
-        }, [loadProducts])
-    );
+    // FavoriteItems değiştiğinde ürünlerin isFavorite durumunu güncelle
+    useEffect(() => {
+        setAllProducts(prevProducts =>
+            prevProducts.map(product => ({
+                ...product,
+                isFavorite: favoriteItems[product.id] || false
+            }))
+        );
+    }, [favoriteItems]);
 
-    // API'den gelen verilere göre ürünleri kategorize et - Flash Sale için basitleştir
     const flashSaleFilteredProducts = useMemo(() => {
         return allProducts.filter(item =>
             item.name.toLowerCase().includes(searchText.toLowerCase())
@@ -70,31 +73,17 @@ export default function FlashSale() {
     }, [navigation]);
 
     const handleFavoritePress = useCallback(async (productId) => {
-        const currentProduct = allProducts.find(p => p.id === productId);
-        if (currentProduct) {
-            // Önce UI'yi güncelle (optimistic update)
-            setAllProducts(prevProducts =>
-                prevProducts.map(p =>
-                    p.id === productId
-                        ? { ...p, isFavorite: !p.isFavorite }
-                        : p
-                )
-            );
+        console.log(`FlashSale: Toggling favorite for product ${productId}`);
 
-            const success = await toggleProductFavorite(productId, currentProduct.isFavorite);
-            if (!success) {
-                // API başarısızsa eski duruma geri al
-                setAllProducts(prevProducts =>
-                    prevProducts.map(p =>
-                        p.id === productId
-                            ? { ...p, isFavorite: currentProduct.isFavorite }
-                            : p
-                    )
-                );
-                // Fallback context'i de güncelle
-                toggleFavorite(productId);
-            }
+        const currentProduct = allProducts.find(p => p.id === productId);
+        if (!currentProduct) {
+            return;
         }
+
+        // Context'teki toggle fonksiyonunu kullan - bu zaten optimistic update yapıyor
+        const newFavoriteStatus = await toggleFavorite(productId);
+
+        console.log(`FlashSale: Product ${productId} favorite status updated to: ${newFavoriteStatus}`);
     }, [allProducts, toggleFavorite]);
 
     const renderItem = useCallback(({ item }) => (
@@ -103,8 +92,9 @@ export default function FlashSale() {
             onProductPress={handleProductPress}
             onFavoritePress={handleFavoritePress}
             isDarkMode={isDarkMode}
+            favoriteItems={favoriteItems}
         />
-    ), [handleProductPress, handleFavoritePress, isDarkMode]);
+    ), [handleProductPress, handleFavoritePress, isDarkMode, favoriteItems]);
 
     const keyExtractor = useCallback((item) => item.id, []);
 
@@ -141,7 +131,7 @@ export default function FlashSale() {
                 </TouchableOpacity>
                 <View style={styles.headerContent}>
                     <Ionicons name="pricetag" size={24} color="#FF6B35" />
-                    <Text style={[styles.headerTitle, { color: theme.text }]}>Flash Sale</Text>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>Flash İndirim</Text>
                 </View>
                 <View style={styles.placeholder} />
             </View>
@@ -226,7 +216,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flex: 1,
         justifyContent: 'center',
-        marginLeft: -29, // Compensate for back button width
+        marginLeft: -29,
     },
     headerTitle: {
         fontSize: 18,
@@ -235,7 +225,7 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     placeholder: {
-        width: 29, // Same width as back button for centering
+        width: 29,
     },
     searchContainer: {
         paddingHorizontal: 20,

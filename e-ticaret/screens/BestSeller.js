@@ -28,19 +28,35 @@ export default function BestSeller() {
 
             if (bestSellers && bestSellers.length > 0) {
                 console.log('Using API best sellers');
-                setAllProducts(bestSellers);
+                // FavoritesContext ile senkronize et
+                const syncedProducts = bestSellers.map(product => ({
+                    ...product,
+                    isFavorite: favoriteItems[product.id] || false
+                }));
+                setAllProducts(syncedProducts);
             } else {
                 console.log('API best sellers not available, using all products');
                 const products = await getAllProducts();
-                // Fallback: badge_BestSelling true olan ürünleri filtrele
+                //badge_BestSelling true olan ürünleri filtrele
                 const filteredProducts = products.filter(p => p.badge_BestSelling);
-                setAllProducts(filteredProducts.length > 0 ? filteredProducts : products);
+                // FavoritesContext ile senkronize et
+                const productsToUse = filteredProducts.length > 0 ? filteredProducts : products;
+                const syncedProducts = productsToUse.map(product => ({
+                    ...product,
+                    isFavorite: favoriteItems[product.id] || false
+                }));
+                setAllProducts(syncedProducts);
             }
         } catch (e) {
             console.error('Error loading best sellers:', e);
             // Hata durumunda tüm ürünleri yükle
             const products = await getAllProducts();
-            setAllProducts(products);
+            // FavoritesContext ile senkronize et
+            const syncedProducts = products.map(product => ({
+                ...product,
+                isFavorite: favoriteItems[product.id] || false
+            }));
+            setAllProducts(syncedProducts);
         } finally {
             setLoading(false);
         }
@@ -50,12 +66,15 @@ export default function BestSeller() {
         loadProducts();
     }, [loadProducts]);
 
-    // Sayfa odaklandığında yeniden yükle (favorite durumlarını güncellemek için)
-    useFocusEffect(
-        useCallback(() => {
-            loadProducts();
-        }, [loadProducts])
-    );
+    // FavoriteItems değiştiğinde ürünlerin isFavorite durumunu güncelle
+    useEffect(() => {
+        setAllProducts(prevProducts =>
+            prevProducts.map(product => ({
+                ...product,
+                isFavorite: favoriteItems[product.id] || false
+            }))
+        );
+    }, [favoriteItems]);
 
     // API'den gelen verilere göre ürünleri kategorize et - Best Sellers için basitleştir
     const bestSellingFilteredProducts = useMemo(() => {
@@ -69,31 +88,17 @@ export default function BestSeller() {
     }, [navigation]);
 
     const handleFavoritePress = useCallback(async (productId) => {
-        const currentProduct = allProducts.find(p => p.id === productId);
-        if (currentProduct) {
-            // Önce UI'yi güncelle (optimistic update)
-            setAllProducts(prevProducts =>
-                prevProducts.map(p =>
-                    p.id === productId
-                        ? { ...p, isFavorite: !p.isFavorite }
-                        : p
-                )
-            );
+        console.log(`BestSeller: Toggling favorite for product ${productId}`);
 
-            const success = await toggleProductFavorite(productId, currentProduct.isFavorite);
-            if (!success) {
-                // API başarısızsa eski duruma geri al
-                setAllProducts(prevProducts =>
-                    prevProducts.map(p =>
-                        p.id === productId
-                            ? { ...p, isFavorite: currentProduct.isFavorite }
-                            : p
-                    )
-                );
-                // Fallback context'i de güncelle
-                toggleFavorite(productId);
-            }
+        const currentProduct = allProducts.find(p => p.id === productId);
+        if (!currentProduct) {
+            return;
         }
+
+        // Context'teki toggle fonksiyonunu kullan - bu zaten optimistic update yapıyor
+        const newFavoriteStatus = await toggleFavorite(productId);
+
+        console.log(`BestSeller: Product ${productId} favorite status updated to: ${newFavoriteStatus}`);
     }, [allProducts, toggleFavorite]);
 
     const renderItem = useCallback(({ item }) => (
@@ -102,8 +107,9 @@ export default function BestSeller() {
             onProductPress={handleProductPress}
             onFavoritePress={handleFavoritePress}
             isDarkMode={isDarkMode}
+            favoriteItems={favoriteItems}
         />
-    ), [handleProductPress, handleFavoritePress, isDarkMode]);
+    ), [handleProductPress, handleFavoritePress, isDarkMode, favoriteItems]);
 
     const keyExtractor = useCallback((item) => item.id, []);
 
@@ -140,7 +146,7 @@ export default function BestSeller() {
                 </TouchableOpacity>
                 <View style={styles.headerContent}>
                     <Ionicons name="star" size={24} color="#FF6B35" />
-                    <Text style={[styles.headerTitle, { color: theme.text }]}>BestSeller</Text>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>En Çok Satan</Text>
                 </View>
                 <View style={styles.placeholder} />
             </View>
@@ -225,7 +231,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flex: 1,
         justifyContent: 'center',
-        marginLeft: -29, // Compensate for back button width
+        marginLeft: -29,
     },
     headerTitle: {
         fontSize: 18,
@@ -234,7 +240,7 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     placeholder: {
-        width: 29, // Same width as back button for centering
+        width: 29,
     },
     searchContainer: {
         paddingHorizontal: 20,

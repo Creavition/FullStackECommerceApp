@@ -1,23 +1,21 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { getAllProducts, getCategories } from '../utils/productUtils';
 import { productApi } from '../utils/productApi';
+import { categoryApi } from '../utils/categoryApi';
+import { API_ENDPOINTS } from '../utils/apiClient';
 
 const ProductContext = createContext();
-
-// API Base URL
-const API_BASE_URL = 'http://10.241.64.12:5207';
 
 export const ProductProvider = ({ children }) => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Fetch all products using cached version from utils
+    // Butun urunleri cekme
     const fetchProducts = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const products = await getAllProducts(); // ProductUtils'ten cached versiyon
+            const products = await productApi.getAllProducts();
             setProducts(products);
         } catch (err) {
             setError(err.message);
@@ -31,10 +29,12 @@ export const ProductProvider = ({ children }) => {
     // Get image URL helper
     const getImageUrl = (imagePath) => {
         if (!imagePath) return null;
-        return `${API_BASE_URL}/${imagePath}`;
+        // Base URL'i API_ENDPOINTS'ten al
+        const baseUrl = API_ENDPOINTS.API.replace('/api', '');
+        return `${baseUrl}/${imagePath}`;
     };
 
-    // Update product favorite status in local state
+    // Localde urun guncelleme
     const updateProductFavoriteStatus = useCallback((productId, isFavorite) => {
         setProducts(prevProducts =>
             prevProducts.map(product =>
@@ -73,7 +73,7 @@ export const ProductProvider = ({ children }) => {
     useEffect(() => {
         const loadCategories = async () => {
             try {
-                const categories = await getCategories();
+                const categories = await categoryApi.getAllCategories();
                 setCategoryNames(categories);
             } catch (error) {
                 console.error('Error fetching categories:', error);
@@ -92,7 +92,6 @@ export const ProductProvider = ({ children }) => {
         updateProductFavoriteStatus,
         updateProduct,
         categoryNames,
-        API_BASE_URL
     };
 
     return (
