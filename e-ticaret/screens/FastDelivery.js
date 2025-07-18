@@ -10,7 +10,7 @@ import { useFavorites } from '../contexts/FavoritesContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 import ProductCard from '../components/ProductCard';
-import { getAllProducts, productUtils, toggleProductFavorite } from '../utils/productUtils';
+import { getAllProducts, productUtils} from '../utils/productUtils';
 
 export default function FastDelivery() {
     const navigation = useNavigation();

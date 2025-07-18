@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     },
 });
 
-// Equality check function to prevent unnecessary re-renders
+// Gereksiz renderlari engeller
 const areEqual = (prevProps, nextProps) => {
     return (
         prevProps.item.id === nextProps.item.id &&

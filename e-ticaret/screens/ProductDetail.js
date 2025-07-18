@@ -10,23 +10,23 @@ import { productApi } from '../utils/productApi';
 import StarRating from '../components/StarRating';
 import ReviewModal from '../components/ReviewModal';
 
-// Ürünün mevcut bedenlerini özellikle availableSize field'ından çıkaran helper fonksiyon
+
 const extractProductAvailableSizes = (product) => {
-    
+
     // Öncelik sırası: availableSize -> availableSizes -> sizes -> size
     if (product.availableSize && Array.isArray(product.availableSize)) {
-                return product.availableSize;
+        return product.availableSize;
     } else if (product.availableSizes && Array.isArray(product.availableSizes)) {
-                return product.availableSizes;
+        return product.availableSizes;
     } else if (product.sizes && Array.isArray(product.sizes)) {
-                return product.sizes;
+        return product.sizes;
     } else if (product.size && typeof product.size === 'string') {
-                return [product.size];
+        return [product.size];
     } else if (product.sizeOptions && Array.isArray(product.sizeOptions)) {
-                return product.sizeOptions;
+        return product.sizeOptions;
     }
 
-        return [];
+    return [];
 };
 
 // Category bilgisini categoryId ile çek
@@ -34,22 +34,22 @@ const fetchCategoryByProductCategoryId = async (product) => {
     try {
         // Önce categoryId var mı kontrol et
         if (product.categoryId) {
-                        const category = await categoryApi.getCategory(product.categoryId);
+            const category = await categoryApi.getCategory(product.categoryId);
             return category;
         }
 
         // Eğer categoryId yoksa, category name ile arama yap
         if (product.category) {
-                        const allCategories = await categoryApi.getAllCategories();
+            const allCategories = await categoryApi.getAllCategories();
             const foundCategory = allCategories.find(cat =>
                 cat.categoryName === product.category
             );
             return foundCategory;
         }
 
-                return null;
+        return null;
     } catch (error) {
-                return null;
+        return null;
     }
 };
 
@@ -76,7 +76,7 @@ export default function ProductDetail({ route }) {
     const availableImages = [
         getImageUrl(product.frontImagePath || product.frontImageUrl || product.image),
         getImageUrl(product.backImagePath || product.backImageUrl || product.image)
-    ].filter(img => img); 
+    ].filter(img => img);
 
     // API'den ürün ve kategori verilerini çek
     useEffect(() => {
@@ -84,15 +84,15 @@ export default function ProductDetail({ route }) {
             try {
                 setLoading(true);
 
-                
+
                 // İlk olarak ürünün güncel verilerini API'den çek (isteğe bağlı)
                 let currentProduct = product;
                 if (product.id) {
                     try {
-                                                currentProduct = await productApi.getProductById(product.id);
-                                                setProductData(currentProduct); // Rating bilgisini güncellemek için
+                        currentProduct = await productApi.getProductById(product.id);
+                        setProductData(currentProduct); // Rating bilgisini güncellemek için
                     } catch (error) {
-                                                currentProduct = product;
+                        currentProduct = product;
                     }
                 }
 
@@ -101,7 +101,7 @@ export default function ProductDetail({ route }) {
                 setCategoryData(category);
 
                 if (category) {
-                    
+
                     // Kategori için TÜM mevcut bedenler (allSizes)
                     const categorySizes = category.sizes && Array.isArray(category.sizes)
                         ? category.sizes
@@ -112,7 +112,7 @@ export default function ProductDetail({ route }) {
                     // Ürünün SADECE mevcut bedenleri (availableSizes)
                     const productAvailableSizes = extractProductAvailableSizes(currentProduct);
 
-                                        
+
                     // State'leri güncelle
                     setAllSizes(categorySizes);
                     setAvailableSizes(productAvailableSizes);
@@ -124,13 +124,13 @@ export default function ProductDetail({ route }) {
                         setSelectedSize(null);
                     }
                 } else {
-                                        const fallbackAvailableSizes = extractProductAvailableSizes(currentProduct);
+                    const fallbackAvailableSizes = extractProductAvailableSizes(currentProduct);
                     setAllSizes(fallbackAvailableSizes);
                     setAvailableSizes(fallbackAvailableSizes);
                     setSelectedSize(fallbackAvailableSizes[0] || null);
                 }
             } catch (error) {
-                                // Hata durumunda fallback
+                // Hata durumunda fallback
                 const fallbackAvailableSizes = extractProductAvailableSizes(product);
                 setAllSizes(fallbackAvailableSizes);
                 setAvailableSizes(fallbackAvailableSizes);
@@ -163,14 +163,14 @@ export default function ProductDetail({ route }) {
             return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10;
         },
         onPanResponderRelease: (evt, gestureState) => {
-            const swipeThreshold = 50; 
+            const swipeThreshold = 50;
 
             if (Math.abs(gestureState.dx) > swipeThreshold) {
                 if (gestureState.dx > 0) {
-                
+
                     goToPreviousImage();
                 } else {
-                   
+
                     goToNextImage();
                 }
             }
@@ -184,7 +184,7 @@ export default function ProductDetail({ route }) {
                 duration: 300,
                 useNativeDriver: true,
             }),
-            Animated.delay(2000), 
+            Animated.delay(2000),
             Animated.timing(toastOpacity, {
                 toValue: 0,
                 duration: 300,
@@ -201,9 +201,9 @@ export default function ProductDetail({ route }) {
     };
 
     const handleAddToCart = () => {
-        
+
         if (!selectedSize) {
-            Alert.alert('Hata','Lütfen bir beden seçin');
+            Alert.alert('Hata', 'Lütfen bir beden seçin');
             return;
         }
 
@@ -213,7 +213,7 @@ export default function ProductDetail({ route }) {
             amount: 1,
         };
 
-        
+
         // CartContext'teki addToCart'a gönder
         addToCart(itemToAdd);
 
@@ -245,7 +245,7 @@ export default function ProductDetail({ route }) {
             const updatedProduct = await productApi.getProductById(product.id);
             setProductData(updatedProduct);
         } catch (error) {
-                    }
+        }
     };
 
     const handleViewReviews = () => {
@@ -405,7 +405,7 @@ export default function ProductDetail({ route }) {
                 })}
             </View>
 
-            
+
             <View style={styles.buttonContainer}>
                 {/* Sepete Ekle Butonu */}
                 <TouchableOpacity

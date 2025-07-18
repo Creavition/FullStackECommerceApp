@@ -18,14 +18,14 @@ export default function Account() {
             try {
                 setLoading(true);
                 const userData = await getCurrentUser();
-                                if (userData) {
+                if (userData) {
                     setUser(userData);
                 } else {
                     // Kullanıcı giriş yapmamışsa login sayfasına yönlendirir
                     navigation.replace('Login');
                 }
             } catch (error) {
-                                navigation.replace('Login');
+                navigation.replace('Login');
             } finally {
                 setLoading(false);
             }
@@ -50,7 +50,7 @@ export default function Account() {
                             await clearCurrentUser();
                             navigation.replace('Login');
                         } catch (error) {
-                                                        Alert.alert('Hata', 'Çıkış yapılırken bir hata oluştu.');
+                            Alert.alert('Hata', 'Çıkış yapılırken bir hata oluştu.');
                         }
                     },
                 },
@@ -200,7 +200,7 @@ export default function Account() {
                                     <Ionicons
                                         name="chevron-forward"
                                         size={20}
-                                        color={theme.border}
+                                        color="black"
                                     />
                                 </View>
                             </TouchableOpacity>

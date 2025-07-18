@@ -69,7 +69,7 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
                 ]
             );
         } catch (error) {
-            
+
             if (error.response?.status === 401) {
                 Alert.alert('Hata', 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
             } else if (error.response?.data) {
@@ -96,10 +96,11 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
         >
             <View style={[styles.container, { backgroundColor: theme.surface }]}>
                 <View style={[styles.header, { borderBottomColor: theme.border }]}>
-                    <Text style={[styles.title, { color: theme.text }]}>Ürünü Değerlendir</Text>
                     <TouchableOpacity onPress={handleClose} style={[styles.closeButton, { backgroundColor: theme.borderLight }]}>
                         <Text style={[styles.closeButtonText, { color: theme.textSecondary }]}>✕</Text>
                     </TouchableOpacity>
+                    <Text style={[styles.title, { color: theme.text }]}>Ürünü Değerlendir</Text>
+
                 </View>
 
                 <ScrollView style={styles.content}>
@@ -193,6 +194,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
+        paddingRight: 90
     },
     closeButton: {
         width: 30,

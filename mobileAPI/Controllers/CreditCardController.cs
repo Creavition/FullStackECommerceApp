@@ -21,8 +21,7 @@ namespace mobileAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetCreditCards()
         {
-            // Gerçek uygulamada JWT token'dan alınmalı
-            var userId = 1; // Demo için sabit değer
+            var userId = 1;
 
             var creditCards = await _context.CreditCards
                 .Where(c => c.UserId == userId)
@@ -97,9 +96,9 @@ namespace mobileAPI.Controllers
                 return BadRequest("Yıl 25-35 arasında olmalıdır");
             }
 
-            var userId = 1; // Demo için sabit değer
+            var userId = 1;
 
-            // Kart numarasını temizle (sadece rakamları al)
+
             var cleanCardNumber = new string(request.CardNumber.Where(char.IsDigit).ToArray());
 
             if (cleanCardNumber.Length < 13 || cleanCardNumber.Length > 19)
@@ -136,7 +135,7 @@ namespace mobileAPI.Controllers
                 CardNumber = cleanCardNumber,
                 ExpiryMonth = request.ExpiryMonth.PadLeft(2, '0'), // 2 haneli format
                 ExpiryYear = request.ExpiryYear.PadLeft(2, '0'),   // 2 haneli format
-                CVV = request.CVV, // Gerçek uygulamada encrypt edilmeli
+                CVV = request.CVV, 
                 CardTitle = request.CardTitle,
                 IsDefault = request.IsDefault,
                 CreatedAt = DateTime.Now
@@ -169,7 +168,7 @@ namespace mobileAPI.Controllers
                 return BadRequest(ModelState);
             }
 
-            // Ek doğrulamalar
+            // Doğrulamalar
             if (!string.IsNullOrEmpty(request.ExpiryMonth))
             {
                 if (!int.TryParse(request.ExpiryMonth, out int month) || month < 1 || month > 12)
@@ -186,7 +185,7 @@ namespace mobileAPI.Controllers
                 }
             }
 
-            var userId = 1; // Demo için sabit değer
+            var userId = 1; 
 
             var creditCard = await _context.CreditCards
                 .FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);

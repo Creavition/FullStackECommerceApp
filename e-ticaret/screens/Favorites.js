@@ -20,7 +20,7 @@ export default function Favorites() {
             // Hem ProductContext hem FavoritesContext'ten kontrol et
             return product.isFavorite === true || isFavorite(product.id);
         });
-    }, [products, favoriteItems]); // ✅ favoriteItems dependency eklendi
+    }, [products, favoriteItems]); 
 
     // Sayfa yüklendiğinde sadece bir kez yükle
     useEffect(() => {

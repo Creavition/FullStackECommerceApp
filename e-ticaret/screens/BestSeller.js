@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../contexts/FavoritesContext';
 import { useTheme } from '../contexts/ThemeContext';
 import ProductCard from '../components/ProductCard';
-import { getAllProducts, productUtils, toggleProductFavorite } from '../utils/productUtils';
+import { getAllProducts, productUtils} from '../utils/productUtils';
 
 export default function BestSeller() {
     const navigation = useNavigation();

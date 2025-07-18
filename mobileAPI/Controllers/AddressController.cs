@@ -22,7 +22,7 @@ namespace mobileAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Address>>> GetAddresses()
         {
-            // Gerçek uygulamada JWT token'dan alınmalı
+            
             var userId = 1; // Demo için sabit değer
 
             var addresses = await _context.Addresses
@@ -60,7 +60,7 @@ namespace mobileAPI.Controllers
                 return BadRequest(ModelState);
             }
 
-            var userId = 1; // Demo için sabit değer
+            var userId = 1; 
 
             // Eğer bu adres default olarak işaretlendiyse, diğer adreslerin default'unu kaldır
             if (request.IsDefault)
@@ -100,7 +100,7 @@ namespace mobileAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutAddress(int id, UpdateAddressRequest request)
         {
-            var userId = 1; // Demo için sabit değer
+            var userId = 1; 
 
             var address = await _context.Addresses
                 .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
@@ -166,7 +166,7 @@ namespace mobileAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAddress(int id)
         {
-            var userId = 1; // Demo için sabit değer
+            var userId = 1; 
 
             var address = await _context.Addresses
                 .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);

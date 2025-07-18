@@ -31,8 +31,8 @@ const ProductReviews = () => {
             const data = await reviewApi.getProductReviews(productId);
             setReviews(data.reviews || []);
             setReviewStats({
-                averageRating: data.averageRating || 0,
-                totalReviews: data.totalReviews || 0,
+                averageRating: data.averageRating || 0, // Ortalama puan
+                totalReviews: data.totalReviews || 0,  // Yapilan toplam yorum
                 productName: data.productName || product?.name || 'Ürün',
             });
         } catch (error) {
