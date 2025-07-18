@@ -1,4 +1,3 @@
-// ProductDetail.js
 import React, { useState, useContext, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Animated, Alert, ScrollView, PanResponder } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -8,34 +7,26 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useProduct } from '../contexts/ProductContext';
 import { categoryApi } from '../utils/categoryApi';
 import { productApi } from '../utils/productApi';
-import { logProductDetails, extractSizeInfo } from '../utils/productUtils';
 import StarRating from '../components/StarRating';
 import ReviewModal from '../components/ReviewModal';
 
 // Ürünün mevcut bedenlerini özellikle availableSize field'ından çıkaran helper fonksiyon
 const extractProductAvailableSizes = (product) => {
-    console.log('Extracting available sizes from product:', product);
-
+    
     // Öncelik sırası: availableSize -> availableSizes -> sizes -> size
     if (product.availableSize && Array.isArray(product.availableSize)) {
-        console.log('Found availableSize array:', product.availableSize);
-        return product.availableSize;
+                return product.availableSize;
     } else if (product.availableSizes && Array.isArray(product.availableSizes)) {
-        console.log('Found availableSizes array:', product.availableSizes);
-        return product.availableSizes;
+                return product.availableSizes;
     } else if (product.sizes && Array.isArray(product.sizes)) {
-        console.log('Found sizes array:', product.sizes);
-        return product.sizes;
+                return product.sizes;
     } else if (product.size && typeof product.size === 'string') {
-        console.log('Found single size string:', product.size);
-        return [product.size];
+                return [product.size];
     } else if (product.sizeOptions && Array.isArray(product.sizeOptions)) {
-        console.log('Found sizeOptions array:', product.sizeOptions);
-        return product.sizeOptions;
+                return product.sizeOptions;
     }
 
-    console.log('No available sizes found in product');
-    return [];
+        return [];
 };
 
 // Category bilgisini categoryId ile çek
@@ -43,26 +34,22 @@ const fetchCategoryByProductCategoryId = async (product) => {
     try {
         // Önce categoryId var mı kontrol et
         if (product.categoryId) {
-            console.log(`Fetching category by categoryId: ${product.categoryId}`);
-            const category = await categoryApi.getCategory(product.categoryId);
+                        const category = await categoryApi.getCategory(product.categoryId);
             return category;
         }
 
         // Eğer categoryId yoksa, category name ile arama yap
         if (product.category) {
-            console.log(`Searching category by name: ${product.category}`);
-            const allCategories = await categoryApi.getAllCategories();
+                        const allCategories = await categoryApi.getAllCategories();
             const foundCategory = allCategories.find(cat =>
                 cat.categoryName === product.category
             );
             return foundCategory;
         }
 
-        console.log('No categoryId or category found in product');
-        return null;
+                return null;
     } catch (error) {
-        console.error('Error fetching category:', error);
-        return null;
+                return null;
     }
 };
 
@@ -89,7 +76,7 @@ export default function ProductDetail({ route }) {
     const availableImages = [
         getImageUrl(product.frontImagePath || product.frontImageUrl || product.image),
         getImageUrl(product.backImagePath || product.backImageUrl || product.image)
-    ].filter(img => img); // null/undefined olanları filtrele
+    ].filter(img => img); 
 
     // API'den ürün ve kategori verilerini çek
     useEffect(() => {
@@ -97,25 +84,15 @@ export default function ProductDetail({ route }) {
             try {
                 setLoading(true);
 
-                // Debug için başlangıç product bilgilerini log'la
-                if (__DEV__) {
-                    console.log('=== ProductDetail Initial Data ===');
-                    logProductDetails(product);
-                }
-
-                console.log(`Fetching data for product: ${product?.name || product?.id}, categoryId: ${product?.categoryId || 'N/A'}`);
-
+                
                 // İlk olarak ürünün güncel verilerini API'den çek (isteğe bağlı)
                 let currentProduct = product;
                 if (product.id) {
                     try {
-                        console.log(`Fetching fresh product data for ID: ${product.id}`);
-                        currentProduct = await productApi.getProductById(product.id);
-                        console.log('Fresh product data:', currentProduct);
-                        setProductData(currentProduct); // Rating bilgisini güncellemek için
+                                                currentProduct = await productApi.getProductById(product.id);
+                                                setProductData(currentProduct); // Rating bilgisini güncellemek için
                     } catch (error) {
-                        console.log('Could not fetch fresh product data, using passed product:', error.message);
-                        currentProduct = product;
+                                                currentProduct = product;
                     }
                 }
 
@@ -124,8 +101,7 @@ export default function ProductDetail({ route }) {
                 setCategoryData(category);
 
                 if (category) {
-                    console.log(`Found category data:`, category);
-
+                    
                     // Kategori için TÜM mevcut bedenler (allSizes)
                     const categorySizes = category.sizes && Array.isArray(category.sizes)
                         ? category.sizes
@@ -136,9 +112,7 @@ export default function ProductDetail({ route }) {
                     // Ürünün SADECE mevcut bedenleri (availableSizes)
                     const productAvailableSizes = extractProductAvailableSizes(currentProduct);
 
-                    console.log(`Category all sizes (${category.categoryName}):`, categorySizes);
-                    console.log(`Product available sizes:`, productAvailableSizes);
-
+                                        
                     // State'leri güncelle
                     setAllSizes(categorySizes);
                     setAvailableSizes(productAvailableSizes);
@@ -150,15 +124,13 @@ export default function ProductDetail({ route }) {
                         setSelectedSize(null);
                     }
                 } else {
-                    console.log('No category found, using fallback data');
-                    const fallbackAvailableSizes = extractProductAvailableSizes(currentProduct);
+                                        const fallbackAvailableSizes = extractProductAvailableSizes(currentProduct);
                     setAllSizes(fallbackAvailableSizes);
                     setAvailableSizes(fallbackAvailableSizes);
                     setSelectedSize(fallbackAvailableSizes[0] || null);
                 }
             } catch (error) {
-                console.error('Error fetching product and category data:', error);
-                // Hata durumunda fallback
+                                // Hata durumunda fallback
                 const fallbackAvailableSizes = extractProductAvailableSizes(product);
                 setAllSizes(fallbackAvailableSizes);
                 setAvailableSizes(fallbackAvailableSizes);
@@ -229,8 +201,7 @@ export default function ProductDetail({ route }) {
     };
 
     const handleAddToCart = () => {
-        console.log('handleAddToCart called with selectedSize:', selectedSize);
-
+        
         if (!selectedSize) {
             Alert.alert('Hata','Lütfen bir beden seçin');
             return;
@@ -242,8 +213,7 @@ export default function ProductDetail({ route }) {
             amount: 1,
         };
 
-        console.log('Sepetinize Eklendi', itemToAdd);
-
+        
         // CartContext'teki addToCart'a gönder
         addToCart(itemToAdd);
 
@@ -275,8 +245,7 @@ export default function ProductDetail({ route }) {
             const updatedProduct = await productApi.getProductById(product.id);
             setProductData(updatedProduct);
         } catch (error) {
-            console.log('Could not refresh product data after review submission:', error);
-        }
+                    }
     };
 
     const handleViewReviews = () => {

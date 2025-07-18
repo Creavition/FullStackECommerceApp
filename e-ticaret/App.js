@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StyleSheet } from 'react-native';
@@ -35,11 +35,21 @@ import { ThemeProvider } from './contexts/ThemeContext';
 
 const Stack = createNativeStackNavigator();
 
-// Create a separate component for the navigation stack
-function AppNavigator() {
+
+const AppNavigator = React.memo(function AppNavigator() {
+  const screenOptions = React.useMemo(() => ({
+    headerShown: false,
+    gestureEnabled: true,
+    presentation: 'card',
+    animationTypeForReplace: 'push'
+  }), []);
+
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
+      <Stack.Navigator
+        initialRouteName="Login"
+        screenOptions={screenOptions}
+      >
         <Stack.Screen
           name="Login"
           component={Login}
@@ -123,10 +133,15 @@ function AppNavigator() {
       </Stack.Navigator>
     </NavigationContainer>
   );
-}
+});
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
+
+  // Splash screen callback'ini useCallback ile optimize et
+  const handleSplashEnd = useCallback(() => {
+    setShowSplash(false);
+  }, []);
 
   // Splash screen'i belirli bir süre sonra gizlemek için
   useEffect(() => {
@@ -137,6 +152,18 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Context provider'ları her zaman aynı sırada render et
+  const appContent = useMemo(() => {
+    if (showSplash) {
+      return (
+        <SplashScreen
+          onAnimationEnd={handleSplashEnd}
+        />
+      );
+    }
+    return <AppNavigator />;
+  }, [showSplash, handleSplashEnd]);
+
   return (
     <ThemeProvider>
       <OrderProvider>
@@ -144,13 +171,7 @@ export default function App() {
           <ProductProvider>
             <CartProvider>
               <FavoritesProvider>
-                {showSplash ? (
-                  <SplashScreen
-                    onAnimationEnd={() => setShowSplash(false)}
-                  />
-                ) : (
-                  <AppNavigator />
-                )}
+                {appContent}
               </FavoritesProvider>
             </CartProvider>
           </ProductProvider>

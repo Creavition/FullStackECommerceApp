@@ -17,7 +17,6 @@ export default function ChangePassword() {
     const navigation = useNavigation();
     const { theme, isDarkMode } = useTheme();
 
-    // Password validation helper functions
     const hasMinLength = (password) => password.length >= 6;
     const hasUpperCase = (password) => /[A-Z]/.test(password);
     const hasLowerCase = (password) => /[a-z]/.test(password);
@@ -62,7 +61,7 @@ export default function ChangePassword() {
                 }]
             );
 
-            // Clear form
+            
             setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');

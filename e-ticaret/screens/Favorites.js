@@ -30,13 +30,10 @@ export default function Favorites() {
     }, []);
     useFocusEffect(
         useCallback(() => {
-            console.log('Favorites screen focused - syncing data');
-
+            
             // Eğer ürünler varsa ama favoriteItems sync olmamışsa
             if (products.length > 0) {
-                console.log('Current favorite products count:', favoriteProducts.length);
-                console.log('FavoriteItems:', favoriteItems);
-            }
+                                            }
         }, [products.length, favoriteProducts.length, favoriteItems])
     );
 
@@ -49,13 +46,11 @@ export default function Favorites() {
     }, [navigation]);
 
     const handleFavoritePress = useCallback(async (productId) => {
-        console.log(`Favorites: Toggling favorite for product ${productId}`);
-
+        
     
         const currentProduct = favoriteProducts.find(p => p.id === productId);
         if (!currentProduct) {
-            console.log('Product not found in favoriteProducts');
-            return;
+                        return;
         }
 
         // Context'teki toggle fonksiyonunu kullan ve ProductContext'i güncelle
@@ -63,8 +58,7 @@ export default function Favorites() {
 
         // Eğer API'den cevap gelmişse durumu logla
         if (newFavoriteStatus !== null) {
-            console.log(`Favorites: Product ${productId} favorite status updated to: ${newFavoriteStatus}`);
-        }
+                    }
     }, [favoriteProducts, toggleFavorite, updateProductFavoriteStatus]);
 
    

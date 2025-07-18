@@ -1,10 +1,8 @@
-// Cart.js - Size debugging ile
 import { useMemo, useCallback, useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, StatusBar } from 'react-native';
 import { useCart } from '../contexts/CartContext';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { getAllProducts } from '../utils/productUtils';
 import { useTheme } from '../contexts/ThemeContext';
 import { useProduct } from '../contexts/ProductContext';
 
@@ -12,41 +10,25 @@ export default function Cart() {
   const { cartItems, removeFromCart, increaseAmount, decreaseAmount } = useCart();
   const navigation = useNavigation();
   const { theme, isDarkMode } = useTheme();
-  const { getImageUrl } = useProduct();
-  const [allProducts, setAllProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { getImageUrl, products, fetchProducts } = useProduct();
 
   // Ürünleri yükle
-  const loadProducts = useCallback(async () => {
-    try {
-      setLoading(true);
-      const products = await getAllProducts();
-      setAllProducts(products);
-    } catch (error) {
-      console.error('Error loading products:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Sayfa yüklendiğinde ürünleri yükle
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+    if (products.length === 0) {
+      fetchProducts();
+    }
+  }, [products.length, fetchProducts]);
 
 
   const parsePrice = (priceValue) => {
-    // Null/undefined kontrolü
     if (!priceValue && priceValue !== 0) {
       return 0;
     }
 
-    // Eğer zaten sayıysa direkt döndür
     if (typeof priceValue === 'number') {
       return priceValue;
     }
 
-    // String değilse 0 döndür
     if (typeof priceValue !== 'string') {
       return 0;
     }
@@ -54,56 +36,27 @@ export default function Cart() {
     try {
       return parseFloat(priceValue.replace('₺', '').replace(',', '.')) || 0;
     } catch (error) {
-      console.error('parsePrice error:', error, 'for value:', priceValue);
       return 0;
     }
   };
 
-  // Flash Sale ürünlerini belirle (her kategoriden en ucuz 6 ürün)
-  const flashSaleProducts = useMemo(() => {
-    const categories = ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
-    const flashSaleIds = new Set();
-
-    categories.forEach(category => {
-      const categoryProducts = allProducts
-        .filter(product => product.category === category && product.price) 
-        .sort((a, b) => parsePrice(a.price) - parsePrice(b.price))
-        .slice(0, 6);
-
-      categoryProducts.forEach(product => flashSaleIds.add(product.id));
+  // Sepetteki ürünlerin detaylarını API'den getir
+  const cartItemsWithDetails = useMemo(() => {
+    return cartItems.map(cartItem => {
+      const productDetail = products.find(p => p.id === cartItem.id);
+      return {
+        ...cartItem,
+        ...productDetail // API'den gelen detaylar ile birleştir
+      };
     });
-
-    return flashSaleIds;
-  }, [allProducts]);
-
-  // Fast Delivery ürünlerini belirle 
-  const fastDeliveryProducts = useMemo(() => {
-    const fastDeliveryIds = new Set();
-    allProducts.forEach((product, index) => {
-      // Product ve id güvenlik kontrolü
-      if (!product || !product.id || typeof product.id !== 'string') {
-        return; // Bu ürünü atla
-      }
-
-      const hash = product.id.split('').reduce((a, b) => {
-        a = ((a << 5) - a) + b.charCodeAt(0);
-        return a & a;
-      }, 0);
-      if (Math.abs(hash) % 10 < 3) {
-        fastDeliveryIds.add(product.id);
-      }
-    });
-    return fastDeliveryIds;
-  }, [allProducts]);
+  }, [cartItems, products]);
 
   const renderItem = useCallback(({ item, index }) => {
-    const isFlashSale = flashSaleProducts.has(item.id);
-    const hasFastDelivery = fastDeliveryProducts.has(item.id);
-
-    // Price güvenlik kontrolü
-    if (!item.price) {
-      console.warn(`Cart item ${index} has no price:`, item.name);
-    }
+    // API'den gelen badge ve label bilgilerini kullan
+    const isFlashSale = item.badge_FlashSale || false;
+    const isBestSelling = item.badge_BestSelling || false;
+    const hasFastDelivery = item.label_FastDelivery || false;
+    const isBestSeller = item.label_BestSeller || false;
 
     return (
       <View style={[styles.itemContainer, { backgroundColor: isDarkMode ? '#333' : '#fff' }]}>
@@ -119,19 +72,18 @@ export default function Cart() {
                 İNDİRİM
               </Text>
             </View>
-          ) : (
+          ) : isBestSelling ? (
             <View style={styles.bestSellingBadge}>
               <Text style={styles.bestSellingText}>EN ÇOK</Text>
               <Text style={styles.bestSellingText}>SATAN</Text>
             </View>
-          )}
+          ) : null}
 
           <View style={styles.imageContainer}>
             <Image
               source={{ uri: getImageUrl(item.frontImagePath || item.frontImageUrl || item.imageUrl || item.image) }}
               style={styles.productImage}
               defaultSource={require('../assets/images/icon.png')}
-              onError={(error) => console.log('Image load error:', error.nativeEvent.error)}
             />
           </View>
 
@@ -141,12 +93,12 @@ export default function Cart() {
               <Ionicons name="flash" size={12} color="white" style={styles.deliveryIcon} />
               <Text style={styles.fastDeliveryText}>Hızlı Teslimat</Text>
             </View>
-          ) : (
+          ) : isBestSeller ? (
             <View style={styles.bestSellerBadge}>
               <Ionicons name="star" size={12} color="white" style={styles.deliveryIcon} />
               <Text style={styles.bestSellerText}>En Çok Satan</Text>
             </View>
-          )}
+          ) : null}
 
           <Text style={[styles.productName, { color: isDarkMode ? '#fff' : '#2c3e50' }]} numberOfLines={2}>
             {item.name || 'Ürün Adı'}
@@ -170,7 +122,7 @@ export default function Cart() {
             </Text>
 
             <Text style={[styles.detailValue, { color: isDarkMode ? '#fff' : '#333' }]}>
-              {'Beden' || 'Bulunmadı'}
+              {item.size || 'Bulunmadı'}
             </Text>
           </View>
 
@@ -208,11 +160,10 @@ export default function Cart() {
         </View>
       </View>
     );
-  }, [flashSaleProducts, fastDeliveryProducts, decreaseAmount, increaseAmount, removeFromCart, isDarkMode, getImageUrl]);
+  }, [decreaseAmount, increaseAmount, removeFromCart, isDarkMode, getImageUrl]);
 
-  const total = cartItems.reduce((sum, item) => {
+  const total = cartItemsWithDetails.reduce((sum, item) => {
     if (!item.price) {
-      console.warn('Cart item has no price:', item);
       return sum;
     }
     const price = parsePrice(item.price);
@@ -220,7 +171,7 @@ export default function Cart() {
     return sum + (price * amount);
   }, 0);
 
-  if (total === 0) {
+  if (cartItems.length === 0) {
     return (
       <View style={[styles.emptyContainer, { backgroundColor: isDarkMode ? theme.background : '#f8f9fa' }]}>
         <Image style={styles.image} source={require("../assets/images/abandoned-cart.png")} />
@@ -239,7 +190,7 @@ export default function Cart() {
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.statusBarBackground} />
       <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#333' }]}>Sepet</Text>
       <FlatList
-        data={cartItems}
+        data={cartItemsWithDetails}
         keyExtractor={(item, index) => `${item.id}-${item.size || 'nosize'}-${index}`}
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 20 }}

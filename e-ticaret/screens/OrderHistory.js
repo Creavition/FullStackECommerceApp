@@ -21,10 +21,10 @@ export default function OrderHistory() {
 
     const handleBackPress = () => {
         if (fromScreen === 'Account') {
-            // Account'tan gelindiyse normal goBack
+            // Account'tan gelindiyse goBack
             navigation.goBack();
         } else {
-            // Diğer sayfalardan (Cart, Payment vb.) gelindiyse Account tab'ına git
+            // Diğer sayfalardan  gelindiyse Account tab'ına git
             navigation.navigate('HomeScreen', { screen: 'Account' });
         }
     };
@@ -67,7 +67,6 @@ export default function OrderHistory() {
                             Alert.alert('Başarılı', 'Sipariş geçmişi başarıyla temizlendi.');
                         } catch (error) {
                             Alert.alert('Hata', 'Sipariş geçmişi temizlenemedi. Lütfen tekrar deneyin.');
-                            console.error('Silme Hatasi:', error);
                         }
                     },
                 },
@@ -305,7 +304,7 @@ export default function OrderHistory() {
                                         Ödeme Yöntemi
                                     </Text>
                                     <Text style={[styles.summaryValue, { color: theme.text }]}>
-                                        Kredi Kartı
+                                        Kredi Kartı - {selectedOrder?.paymentMethod || 'Kartım'}
                                     </Text>
                                 </View>
                                 <View style={styles.summaryRow}>

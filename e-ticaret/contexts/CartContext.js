@@ -36,8 +36,7 @@ export const CartProvider = ({ children }) => {
                 setCartItems(JSON.parse(savedCart));
             }
         } catch (error) {
-            console.error('Error loading cart from storage:', error);
-        } finally {
+                    } finally {
             setIsLoaded(true);
         }
     }, []);
@@ -47,8 +46,7 @@ export const CartProvider = ({ children }) => {
         try {
             await AsyncStorage.setItem('cartItems', JSON.stringify(cartItems));
         } catch (error) {
-            console.error('Error saving cart to storage:', error);
-        }
+                    }
     }, [cartItems]);
 
     // Sepete Ekleme fonksiyonu
@@ -77,8 +75,7 @@ export const CartProvider = ({ children }) => {
             // Apideki formattan farkli ozellikler eklenmis urunler icin
             itemToAdd = createCartItem(productOrItem, productOrItem.size);
         } else {
-            console.error('Urun bedeni secilmedi');
-            return false;
+                        return false;
         }
 
         // Eklenen urunun idsi ve bedeni ayniysa miktarini arttir degilse yeni urun olarak ekle

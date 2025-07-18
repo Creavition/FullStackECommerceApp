@@ -36,8 +36,7 @@ const ProductReviews = () => {
                 productName: data.productName || product?.name || 'Ürün',
             });
         } catch (error) {
-            console.error('Error fetching reviews:', error);
-            Alert.alert('Hata', 'Değerlendirmeler yüklenemedi.');
+                        Alert.alert('Hata', 'Değerlendirmeler yüklenemedi.');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -53,8 +52,7 @@ const ProductReviews = () => {
                 ratingDistribution: data.ratingDistribution || {},
             }));
         } catch (error) {
-            console.error('Error fetching review stats:', error);
-        }
+                    }
     };
 
     useEffect(() => {

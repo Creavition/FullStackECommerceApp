@@ -49,8 +49,7 @@ export default function AddAddress() {
                 }
             ]);
         } catch (error) {
-            console.error('Error adding address:', error);
-            Alert.alert('Hata', 'Adres eklenirken bir hata oluştu');
+                        Alert.alert('Hata', 'Adres eklenirken bir hata oluştu');
         } finally {
             setIsLoading(false);
         }

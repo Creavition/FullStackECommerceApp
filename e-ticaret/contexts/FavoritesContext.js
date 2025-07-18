@@ -12,8 +12,7 @@ export const FavoritesProvider = ({ children }) => {
 
     const toggleFavorite = useCallback(async (itemId, updateProductContext = null) => {
         try {
-            console.log('Product ID:', itemId);
-
+            
             // State'i functional update ile güncelle
             let currentStatus;
             let newStatus;
@@ -22,36 +21,27 @@ export const FavoritesProvider = ({ children }) => {
                 currentStatus = Boolean(prev[itemId]);
                 newStatus = !currentStatus;
 
-                console.log('Current favoriteItems state:', prev);
-                console.log('Current status:', currentStatus);
-                console.log('New status will be:', newStatus);
-
+                                                
                 const newState = {
                     ...prev,
                     [itemId]: newStatus
                 };
-                console.log('New favoriteItems state:', newState);
-                return newState;
+                                return newState;
             });
 
             // ProductContext'i güncelle
             if (updateProductContext && typeof updateProductContext === 'function') {
-                console.log('Updating ProductContext...');
-                try {
+                                try {
                     updateProductContext(itemId, newStatus);
                 } catch (error) {
-                    console.log(error);
-                }
+                                    }
             }
 
             // API çağrısını yap
-            console.log('Making API call...');
-            const success = await toggleProductFavorite(itemId, newStatus);
+                        const success = await toggleProductFavorite(itemId, newStatus);
 
             if (success) {
-                console.log('API call successful');
-                console.log(`Product ${itemId} favorite status changed to: ${newStatus}`);
-                return newStatus;
+                                                return newStatus;
             } else {
 
                 // API başarısız olursa değişiklikleri geri al
@@ -67,13 +57,11 @@ export const FavoritesProvider = ({ children }) => {
             }
 
         } catch (error) {
-            console.error('Error in toggleFavorite:', error);
-
+            
             // Hata durumunda da geri al 
             setFavoriteItems(prev => {
                 const originalStatus = Boolean(prev[itemId]);
-                console.log('Reverting to original status:', originalStatus);
-                return {
+                                return {
                     ...prev,
                     [itemId]: originalStatus  // Orijinal duruma geri al
                 };

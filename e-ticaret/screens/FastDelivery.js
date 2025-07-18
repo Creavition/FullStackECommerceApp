@@ -1,4 +1,4 @@
-// screens/FastDelivery.js
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
@@ -33,7 +33,6 @@ export default function FastDelivery() {
             }));
             setAllProducts(syncedProducts);
         } catch (e) {
-            console.error('Error loading fast delivery products:', e);
             // Fallback: tüm ürünleri al ve filtrele
             try {
                 const allProds = await getAllProducts();
@@ -44,7 +43,6 @@ export default function FastDelivery() {
                 }));
                 setAllProducts(syncedProducts);
             } catch (fallbackError) {
-                console.error('Fallback failed:', fallbackError);
                 setAllProducts([]);
             }
         } finally {
@@ -79,7 +77,6 @@ export default function FastDelivery() {
     }, [navigation]);
 
     const handleFavoritePress = useCallback(async (productId) => {
-        console.log(`FastDelivery: Toggling favorite for product ${productId}`);
 
         const currentProduct = allProducts.find(p => p.id === productId);
         if (!currentProduct) {
@@ -89,7 +86,6 @@ export default function FastDelivery() {
         // Context'teki toggle fonksiyonunu kullan - bu zaten optimistic update yapıyor
         const newFavoriteStatus = await toggleFavorite(productId);
 
-        console.log(`FastDelivery: Product ${productId} favorite status updated to: ${newFavoriteStatus}`);
     }, [allProducts, toggleFavorite]);
 
     const renderItem = useCallback(({ item }) => (
@@ -144,7 +140,7 @@ export default function FastDelivery() {
 
             {/* Search Box */}
             <View style={styles.searchContainer}>
-                <View style={[styles.searchBox, { backgroundColor: theme.surface || '#f0f0f0', borderColor: theme.border || '#e0e0e0' }]}>
+                <View style={[styles.searchBox, { backgroundColor: theme.surface || '#f0f0f0', borderColor: 'black' }]}>
                     <Ionicons name="search" size={22} color={theme.textSecondary} style={styles.searchIcon} />
                     <TextInput
                         style={[styles.textInput, { color: theme.text }]}
@@ -244,7 +240,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         paddingHorizontal: 12,
         paddingVertical: 8,
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: '#e9ecef',
     },
     searchIcon: {

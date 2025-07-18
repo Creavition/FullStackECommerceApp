@@ -1,4 +1,3 @@
-// screens/Register.js
 import React, { useState } from 'react';
 import {
     View,
@@ -115,8 +114,7 @@ export default function Register({ navigation }) {
                 errorMessage,
                 [{ text: 'Tamam' }]
             );
-            console.error("Kayıt Hatası:", error);
-        } finally {
+                    } finally {
             setLoading(false);
         }
     };
@@ -159,8 +157,6 @@ export default function Register({ navigation }) {
                                 <View style={styles.logoContainer}>
                                     <Ionicons name="person-add" size={80} color="#fff" />
                                 </View>
-
-
 
                                 {/* Form Card */}
                                 <View style={styles.formCard}>

@@ -1,4 +1,3 @@
-// screens/Search.js
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
@@ -69,7 +68,6 @@ export default function Search() {
     useEffect(() => {
         const { selectedCategory: routeCategory, timestamp } = route.params || {};
         if (routeCategory && updateFilters && typeof updateFilters === 'function') {
-            console.log(`Search: Route params changed - Category: ${routeCategory}, Timestamp: ${timestamp}`);
 
             updateFilters({
                 selectedCategory: routeCategory,
@@ -237,14 +235,12 @@ export default function Search() {
     }, [navigation]);
 
     const handleFavoritePress = useCallback(async (productId) => {
-        console.log(`Search: Toggling favorite for product ${productId}`);
 
 
         const newFavoriteStatus = await toggleFavorite(productId, updateProductFavoriteStatus);
 
 
         if (newFavoriteStatus !== null) {
-            console.log(`Search: Product ${productId} favorite status updated to: ${newFavoriteStatus}`);
         }
     }, [toggleFavorite, updateProductFavoriteStatus]);
 
@@ -279,24 +275,13 @@ export default function Search() {
 
     const clearSearch = useCallback(() => setSearchText(''), []);
 
-    if (loading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.statusBarBackground} />
-                <Ionicons name="refresh" size={40} color="#FF6B35" />
-                <Text style={styles.loadingText}>Yükleniyor</Text>
-            </View>
-        );
-    }
-
-
     const ListHeaderComponent = useCallback(() => (
         <View>
             <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.statusBarBackground} />
 
             {/* Arama ve Sıralama */}
             <View style={[styles.headerContainer, { backgroundColor: theme.background }]}>
-                <View style={[styles.searchBox, { backgroundColor: theme.surface || '#f0f0f0', borderColor: theme.border || '#e0e0e0' }]}>
+                <View style={[styles.searchBox, { backgroundColor: theme.surface || '#f0f0f0', borderColor: 'black' }]}>
                     <Ionicons name="search" size={22} color={theme.textSecondary} style={styles.searchIcon} />
                     <TextInput
                         style={[styles.textInput, { color: theme.text }]}
@@ -330,26 +315,34 @@ export default function Search() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <FlatList
-                ref={scrollViewRef}
-                data={filteredProducts}
-                keyExtractor={keyExtractor}
-                renderItem={renderItem}
-                numColumns={2}
-                columnWrapperStyle={styles.columnWrapper}
-                contentContainerStyle={styles.productList}
-                showsVerticalScrollIndicator={false}
-                removeClippedSubviews={false}
-                maxToRenderPerBatch={20}
-                updateCellsBatchingPeriod={100}
-                initialNumToRender={20}
-                windowSize={10}
-                keyboardShouldPersistTaps="handled"
-                getItemLayout={getItemLayout}
-                ListHeaderComponent={ListHeaderComponent}
-                ListEmptyComponent={EmptyComponent}
-                onEndReachedThreshold={0.5}
-            />
+            {loading ? (
+                <View style={styles.loadingContainer}>
+                    <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.statusBarBackground} />
+                    <Ionicons name="refresh" size={40} color="#FF6B35" />
+                    <Text style={styles.loadingText}>Yükleniyor</Text>
+                </View>
+            ) : (
+                <FlatList
+                    ref={scrollViewRef}
+                    data={filteredProducts}
+                    keyExtractor={keyExtractor}
+                    renderItem={renderItem}
+                    numColumns={2}
+                    columnWrapperStyle={styles.columnWrapper}
+                    contentContainerStyle={styles.productList}
+                    showsVerticalScrollIndicator={false}
+                    removeClippedSubviews={false}
+                    maxToRenderPerBatch={20}
+                    updateCellsBatchingPeriod={100}
+                    initialNumToRender={20}
+                    windowSize={10}
+                    keyboardShouldPersistTaps="handled"
+                    getItemLayout={getItemLayout}
+                    ListHeaderComponent={ListHeaderComponent}
+                    ListEmptyComponent={EmptyComponent}
+                    onEndReachedThreshold={0.5}
+                />
+            )}
         </View>
     );
 }
@@ -414,7 +407,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         marginVertical: 15,
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: '#e9ecef',
     },
     searchIcon: {

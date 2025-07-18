@@ -8,12 +8,9 @@ export const getAuthToken = async () => {
     try {
         return await AsyncStorage.getItem('authToken');
     } catch (error) {
-        console.error('Error getting auth token:', error);
-        return null;
+                return null;
     }
 };
-
-
 
 // Giriş yapan kullanıcıyı oturumda tut
 export const setCurrentUser = async (user) => {
@@ -33,8 +30,7 @@ export const getCurrentUser = async () => {
         const data = await AsyncStorage.getItem('currentUser');
         return data ? JSON.parse(data) : null;
     } catch (error) {
-        console.error('Error getting current user:', error);
-        return null;
+                return null;
     }
 };
 
@@ -84,9 +80,7 @@ export const loginUser = async (email, password) => {
 // API ile kayit olma
 export const registerUser = async (name, email, password, rePassword) => {
     try {
-        console.log('API Request URL:', `${API_ENDPOINTS.AUTH}/register`);
-        console.log('Request Data:', { name, email, password, rePassword });
-
+                
         const response = await apiClient.post(`${API_ENDPOINTS.AUTH}/register`, {
             name,
             email,
@@ -94,8 +88,7 @@ export const registerUser = async (name, email, password, rePassword) => {
             rePassword
         });
 
-        console.log('API Response:', response.data);
-        return response.data;
+                return response.data;
     } catch (error) {
         throw new Error(error.response?.data || 'Registration failed');
     }
@@ -128,8 +121,7 @@ export const getCurrentUserFromToken = async () => {
 
         return userInfo;
     } catch (error) {
-        console.error('Error decoding token:', error);
-        return null;
+                return null;
     }
 };
 

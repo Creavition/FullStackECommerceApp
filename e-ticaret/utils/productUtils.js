@@ -27,7 +27,6 @@ export const getCategories = async () => {
 
         return categoryNames;
     } catch (error) {
-        console.error('Kategoriler Çekilemedi', error);
         return ['Jacket', 'Pants', 'Shoes', 'T-Shirt'];
     }
 };
@@ -36,10 +35,8 @@ export const getCategories = async () => {
 export const getCategoryById = async (categoryId) => {
     try {
         let category = await categoryApi.getCategory(categoryId);
-        console.log('API returned category:', category);
         return category;
     } catch (error) {
-        console.error('Idye göre kategori getirilemedi:', error);
         return null;
     }
 };
@@ -55,14 +52,12 @@ export const getAllProducts = async () => {
             if (products && products.length > 0) {
                 cachedProducts = await enrichProductsWithCategoryData(products);
             } else {
-                console.log('APIde ürün bulunamadı');
                 cachedProducts = [];
             }
         }
 
         return cachedProducts || [];
     } catch (error) {
-        console.error('Product verileri çekilemedi', error);
         return [];
     }
 };
@@ -76,11 +71,9 @@ export const getProductById = async (productId) => {
             const enrichedProduct = await enrichSingleProductWithCategoryData(product);
             return enrichedProduct;
         } else {
-            console.log('Ürün Bulunamadı');
             return null;
         }
     } catch (error) {
-        console.error('Ürün ID sine göre ürün getirilemedi:', error);
         return null;
     }
 };
@@ -91,7 +84,6 @@ export const getProductsByCategory = async (categoryId) => {
         const products = await productApi.getProductsByCategory(categoryId);
         return products ? await enrichProductsWithCategoryData(products) : [];
     } catch (error) {
-        console.error('Kategoriye Göre Ürün Getirilemedi:', error);
         return [];
     }
 };
@@ -102,7 +94,6 @@ export const getBestSellers = async () => {
         const products = await productApi.getBestSellers();
         return products ? await enrichProductsWithCategoryData(products) : [];
     } catch (error) {
-        console.error('Best Sellers ürünleri getirilemedi', error);
         return [];
     }
 };
@@ -113,7 +104,6 @@ export const getFlashSaleProducts = async () => {
         const products = await productApi.getFlashSaleProducts();
         return products ? await enrichProductsWithCategoryData(products) : [];
     } catch (error) {
-        console.error('Flash Sale ürünleri getirilemedi', error);
         return [];
     }
 };
@@ -124,7 +114,6 @@ export const getFastDeliveryProducts = async () => {
         const products = await productApi.getFastDeliveryProducts();
         return products ? await enrichProductsWithCategoryData(products) : [];
     } catch (error) {
-        console.error('Hızlı Teslimat Ürünleri Getirilemedi', error);
         return [];
     }
 };
@@ -135,7 +124,6 @@ export const filterProducts = async (filters) => {
         const products = await productApi.filterProducts(filters);
         return products ? await enrichProductsWithCategoryData(products) : [];
     } catch (error) {
-        console.error('Error filtering products:', error);
         return [];
     }
 };
@@ -145,7 +133,7 @@ export const toggleProductFavorite = async (productId, newStatus) => {
     try {
         await productApi.toggleFavorite(productId, newStatus);
 
-        
+
         if (cachedProducts) {
             const productIndex = cachedProducts.findIndex(p => p.id === productId);
             if (productIndex !== -1) {
@@ -155,12 +143,9 @@ export const toggleProductFavorite = async (productId, newStatus) => {
 
         return true;
     } catch (error) {
-        console.error('Favori durumu degiştirme hatası', error);
         return false;
     }
 };
-
-
 
 // Enrich products with category data
 const enrichProductsWithCategoryData = async (products) => {
@@ -192,16 +177,13 @@ const enrichProductsWithCategoryData = async (products) => {
                     enrichedProduct.allSizes = category.sizes.map(size => size.sizeName);
                 }
 
-                console.log(`Enriched product ${product.name || product.id} with category ${category.categoryName}`);
             }
 
             return enrichedProduct;
         });
 
-        console.log(`Enriched ${enrichedProducts.length} products with category data`);
         return enrichedProducts;
     } catch (error) {
-        console.error('Error enriching products with category data:', error);
         return products;
     }
 };
@@ -210,29 +192,22 @@ const enrichProductsWithCategoryData = async (products) => {
 const enrichSingleProductWithCategoryData = async (product) => {
     try {
         if (product.categoryId) {
-            console.log(`Fetching category with ID: ${product.categoryId}`);
             const category = await getCategoryById(product.categoryId);
-            console.log('Fetched category:', category);
 
             if (category) {
                 product.category = category.categoryName;
                 product.categoryData = category;
-                console.log(`Set category name to: ${category.categoryName}`);
 
                 if (category.sizes && Array.isArray(category.sizes)) {
                     product.allSizes = category.sizes.map(size => size.sizeName);
-                    console.log('Set allSizes to:', product.allSizes);
                 }
             } else {
-                console.log('No category found for categoryId:', product.categoryId);
             }
         } else {
-            console.log('Product has no categoryId');
         }
 
         return product;
     } catch (error) {
-        console.error('Error enriching single product:', error);
         return product;
     }
 };
@@ -247,7 +222,6 @@ export const parsePrice = (priceValue) => {
     try {
         return parseFloat(priceValue.replace('₺', '').replace(',', '.')) || 0;
     } catch (error) {
-        console.error('Error parsing price:', error);
         return 0;
     }
 };
@@ -284,23 +258,12 @@ export const extractSizeInfo = (product) => {
 
 // Urun bilgileri icin debug kodlari
 export const logProductDetails = (product) => {
-    console.log('=== Product Details ===');
-    console.log('ID:', product.id);
-    console.log('Name:', product.name);
-    console.log('CategoryID:', product.categoryId);
-    console.log('Category Name:', product.category);
-
-    const sizeInfo = extractSizeInfo(product);
-    console.log('All Sizes (from category):', sizeInfo.allSizes);
-    console.log('Available Sizes (from product):', sizeInfo.availableSizes);
-    console.log('Category Data:', sizeInfo.categoryData ? 'Available' : 'Not Available');
-    console.log('======================');
+    // Log functionality removed
 };
 
 // cachedProducts ve cachedCategories degiskenlerini temizler
 export const clearProductCache = () => {
     clearCache();
-    console.log('Product cache cleared');
 };
 
 // API den yeniden veri cekmek icin
@@ -308,12 +271,7 @@ export const refreshData = async () => {
     clearCache();
     await getAllProducts();
     await getCategories();
-    console.log('Data refreshed from API');
 };
-
-
-
-
 
 // Product yardimci fonksiyonlari
 export const productUtils = {
@@ -322,7 +280,6 @@ export const productUtils = {
         try {
             return await getBestSellers();
         } catch (error) {
-            console.error('Error getting best sellers:', error);
             return [];
         }
     },
@@ -332,7 +289,6 @@ export const productUtils = {
         try {
             return await getFlashSaleProducts();
         } catch (error) {
-            console.error('Error getting flash sale products:', error);
             return [];
         }
     },
@@ -342,7 +298,6 @@ export const productUtils = {
         try {
             return await getFastDeliveryProducts();
         } catch (error) {
-            console.error('Error getting fast delivery products:', error);
             return [];
         }
     },
@@ -352,7 +307,6 @@ export const productUtils = {
         try {
             return await getProductsByCategory(categoryId);
         } catch (error) {
-            console.error('Error getting products by category:', error);
             return [];
         }
     },
@@ -363,26 +317,20 @@ export const productUtils = {
             const allProducts = await getAllProducts();
             return allProducts.filter(product => product.isFavorite);
         } catch (error) {
-            console.error('Error getting favorite products:', error);
             return [];
         }
     }
 };
-
-
 
 // Kategori yardimci fonksiyonlar
 export const categoryUtils = {
     // Yeni kategori ekleme
     addCategory: async (categoryName) => {
         try {
-            console.log(`Adding new category: ${categoryName}`);
             await categoryApi.createCategory({ categoryName });
             clearCache();
-            console.log(`Category ${categoryName} added successfully`);
             return true;
         } catch (error) {
-            console.error('Error adding category:', error);
             return false;
         }
     },
@@ -390,13 +338,10 @@ export const categoryUtils = {
     // Kategori guncelleme
     updateCategory: async (categoryId, updateData) => {
         try {
-            console.log(`Updating category ${categoryId}`);
             await categoryApi.updateCategory(categoryId, updateData);
             clearCache();
-            console.log(`Category ${categoryId} updated successfully`);
             return true;
         } catch (error) {
-            console.error('Error updating category:', error);
             return false;
         }
     }

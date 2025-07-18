@@ -38,7 +38,7 @@ export default function Filter() {
         loadInitialData();
     }, []);
 
-    
+
     // Context'teki filtreleri local state ile senkronize et
     useEffect(() => {
         if (filters) {
@@ -65,7 +65,6 @@ export default function Filter() {
         try {
             setLoading(true);
 
-            console.log('Kategori ve Bedenler Apide Aliniyor');
 
             // API'den kategorileri al
             const categoriesFromAPI = await categoryApi.getAllCategories();
@@ -89,11 +88,8 @@ export default function Filter() {
 
             setAllSizes(Array.from(allSizesSet));
 
-            console.log(`Loaded ${categoriesFromAPI.length} categories`);
-            console.log(`Found ${allSizesSet.size} unique sizes`);
 
         } catch (error) {
-            console.error('Error loading initial data:', error);
             setError(error.message || 'Veriler yüklenirken hata oluştu');
         } finally {
             setLoading(false);
@@ -117,21 +113,17 @@ export default function Filter() {
     // Seçili kategorinin bedenlerini yükle
     const loadCategorySizes = async (category) => {
         try {
-            console.log(`Loading sizes for category: ${category.categoryName}`);
 
             if (category.sizes && Array.isArray(category.sizes)) {
                 const sizeNames = category.sizes.map(size => size.sizeName || size);
                 setCategorySizes(sizeNames);
-                console.log(`Loaded ${sizeNames.length} sizes for ${category.categoryName}`);
             } else {
                 // Kategori ID'si ile API'den bedenleri al
                 const sizes = await categoryApi.getCategorySizes(category.id);
                 const sizeNames = sizes.map(size => size.sizeName || size);
                 setCategorySizes(sizeNames);
-                console.log(`Loaded ${sizeNames.length} sizes from API for ${category.categoryName}`);
             }
         } catch (error) {
-            console.error(`Error loading sizes for category ${category.categoryName}:`, error);
             setCategorySizes([]);
         }
     };
@@ -202,7 +194,7 @@ export default function Filter() {
                 <View style={styles.loadingContent}>
                     <ActivityIndicator size="large" color="#FF6B35" />
                     <Text style={[styles.loadingText, { color: isDarkMode ? theme.text : '#000' }]}>
-                        Kategoriler yükleniyor...
+                        Kategoriler yükleniyo
                     </Text>
                 </View>
             </View>
@@ -232,7 +224,7 @@ export default function Filter() {
                         style={[
                             styles.priceInput,
                             {
-                                borderColor: isDarkMode ? theme.border : '#ddd',
+                                borderColor: isDarkMode ? theme.border : 'black',
                                 backgroundColor: isDarkMode ? theme.surface : '#fff',
                                 color: isDarkMode ? theme.text : '#000'
                             }
@@ -250,7 +242,7 @@ export default function Filter() {
                         style={[
                             styles.priceInput,
                             {
-                                borderColor: isDarkMode ? theme.border : '#ddd',
+                                borderColor: isDarkMode ? theme.border : 'black',
                                 backgroundColor: isDarkMode ? theme.surface : '#fff',
                                 color: isDarkMode ? theme.text : '#000'
                             }
@@ -277,7 +269,7 @@ export default function Filter() {
                             style={[
                                 styles.categoryButton,
                                 {
-                                    borderColor: isDarkMode ? theme.border : '#ddd',
+                                    borderColor: isDarkMode ? theme.border : 'black',
                                     backgroundColor: isDarkMode ? theme.surface : '#fff'
                                 },
                                 selectedCategory === category.categoryName && styles.selectedButton
@@ -310,7 +302,7 @@ export default function Filter() {
                             style={[
                                 styles.sizeButton,
                                 {
-                                    borderColor: isDarkMode ? theme.border : '#ddd',
+                                    borderColor: isDarkMode ? theme.border : 'black',
                                     backgroundColor: isDarkMode ? theme.surface : '#f8f8f8'
                                 },
                                 selectedSizes.includes(size) && styles.selectedButton
@@ -502,7 +494,7 @@ const styles = StyleSheet.create({
     clearButton: {
         backgroundColor: '#f0f0f0',
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: 'black',
     },
     applyButton: {
         backgroundColor: '#ce6302',

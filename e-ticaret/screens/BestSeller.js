@@ -1,4 +1,3 @@
-// screens/BestSeller.js
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
@@ -27,7 +26,6 @@ export default function BestSeller() {
             const bestSellers = await productUtils.getBestSellers();
 
             if (bestSellers && bestSellers.length > 0) {
-                console.log('Using API best sellers');
                 // FavoritesContext ile senkronize et
                 const syncedProducts = bestSellers.map(product => ({
                     ...product,
@@ -35,7 +33,6 @@ export default function BestSeller() {
                 }));
                 setAllProducts(syncedProducts);
             } else {
-                console.log('API best sellers not available, using all products');
                 const products = await getAllProducts();
                 //badge_BestSelling true olan ürünleri filtrele
                 const filteredProducts = products.filter(p => p.badge_BestSelling);
@@ -48,8 +45,6 @@ export default function BestSeller() {
                 setAllProducts(syncedProducts);
             }
         } catch (e) {
-            console.error('Error loading best sellers:', e);
-            // Hata durumunda tüm ürünleri yükle
             const products = await getAllProducts();
             // FavoritesContext ile senkronize et
             const syncedProducts = products.map(product => ({
@@ -88,7 +83,6 @@ export default function BestSeller() {
     }, [navigation]);
 
     const handleFavoritePress = useCallback(async (productId) => {
-        console.log(`BestSeller: Toggling favorite for product ${productId}`);
 
         const currentProduct = allProducts.find(p => p.id === productId);
         if (!currentProduct) {
@@ -98,7 +92,6 @@ export default function BestSeller() {
         // Context'teki toggle fonksiyonunu kullan - bu zaten optimistic update yapıyor
         const newFavoriteStatus = await toggleFavorite(productId);
 
-        console.log(`BestSeller: Product ${productId} favorite status updated to: ${newFavoriteStatus}`);
     }, [allProducts, toggleFavorite]);
 
     const renderItem = useCallback(({ item }) => (
@@ -118,7 +111,7 @@ export default function BestSeller() {
     const EmptyComponent = useCallback(() => (
         <View style={styles.emptyContainer}>
             <Ionicons name="star" size={60} color="#ccc" />
-            <Text style={styles.emptyText}>BestSeller ürünü bulunamadı</Text>
+            <Text style={styles.emptyText}>En Çok Satan Ürün Bulunamadı</Text>
         </View>
     ), []);
 
@@ -153,7 +146,7 @@ export default function BestSeller() {
 
             {/* Search Box */}
             <View style={styles.searchContainer}>
-                <View style={[styles.searchBox, { backgroundColor: theme.surface || '#f0f0f0', borderColor: theme.border || '#e0e0e0' }]}>
+                <View style={[styles.searchBox, { backgroundColor: theme.surface || '#f0f0f0', borderColor: 'black' }]}>
                     <Ionicons name="search" size={22} color={theme.textSecondary} style={styles.searchIcon} />
                     <TextInput
                         style={[styles.textInput, { color: theme.text }]}
@@ -253,7 +246,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         paddingHorizontal: 12,
         paddingVertical: 8,
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: '#e9ecef',
     },
     searchIcon: {

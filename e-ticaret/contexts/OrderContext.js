@@ -14,8 +14,7 @@ export const OrderProvider = ({ children }) => {
                 setOrderHistory(JSON.parse(orders));
             }
         } catch (error) {
-            console.error('Error loading order history:', error);
-        }
+                    }
     };
 
     // Yeni sipariş ekle
@@ -33,8 +32,7 @@ export const OrderProvider = ({ children }) => {
             await AsyncStorage.setItem('orderHistory', JSON.stringify(updatedOrders));
             return newOrder;
         } catch (error) {
-            console.error('Error adding order:', error);
-            throw error;
+                        throw error;
         }
     };
 
@@ -45,8 +43,7 @@ export const OrderProvider = ({ children }) => {
             setOrderHistory([]);
             await AsyncStorage.removeItem('orderHistory');
         } catch (error) {
-            console.error('Error clearing order history:', error);
-        }
+                    }
     };
 
     const value = {

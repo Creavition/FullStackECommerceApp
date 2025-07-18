@@ -7,8 +7,7 @@ export const categoryApi = {
             const response = await apiClient.get(API_ENDPOINTS.CATEGORY);
             return response.data;
         } catch (error) {
-            console.error('Error fetching categories:', error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -18,8 +17,7 @@ export const categoryApi = {
             const response = await apiClient.get(`${API_ENDPOINTS.CATEGORY}/${id}`);
             return response.data;
         } catch (error) {
-            console.error('Error fetching category:', error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -29,8 +27,7 @@ export const categoryApi = {
             const response = await apiClient.post(API_ENDPOINTS.CATEGORY, { categoryName });
             return response.data;
         } catch (error) {
-            console.error('Error creating category:', error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -40,8 +37,7 @@ export const categoryApi = {
             const response = await apiClient.put(`${API_ENDPOINTS.CATEGORY}/${id}`, { categoryName });
             return response.data;
         } catch (error) {
-            console.error('Error updating category:', error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -51,8 +47,7 @@ export const categoryApi = {
             const response = await apiClient.delete(`${API_ENDPOINTS.CATEGORY}/${id}`);
             return response.data;
         } catch (error) {
-            console.error('Error deleting category:', error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -65,8 +60,7 @@ export const categoryApi = {
             });
             return response.data;
         } catch (error) {
-            console.error('Error adding size:', error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -76,8 +70,7 @@ export const categoryApi = {
             const response = await apiClient.get(`${API_ENDPOINTS.CATEGORY}/${categoryId}/sizes`);
             return response.data;
         } catch (error) {
-            console.error('Error fetching category sizes:', error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -87,8 +80,7 @@ export const categoryApi = {
             const response = await apiClient.delete(`${API_ENDPOINTS.CATEGORY}/sizes/${sizeId}`);
             return response.data;
         } catch (error) {
-            console.error('Error deleting size:', error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -98,8 +90,7 @@ export const categoryApi = {
             const response = await apiClient.post(`${API_ENDPOINTS.CATEGORY}/seed`);
             return response.data;
         } catch (error) {
-            console.error('Error seeding categories:', error);
-            throw error;
+                        throw error;
         }
     }
 };

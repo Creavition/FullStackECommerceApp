@@ -7,7 +7,6 @@ import { useTheme } from '../contexts/ThemeContext';
 import { OrderContext } from '../contexts/OrderContext';
 
 export default function Account() {
-    // Tüm hook'lar en üstte tanımlanmalı
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const navigation = useNavigation();
@@ -19,16 +18,14 @@ export default function Account() {
             try {
                 setLoading(true);
                 const userData = await getCurrentUser();
-                console.log('User data from Account:', userData); 
-                if (userData) {
+                                if (userData) {
                     setUser(userData);
                 } else {
                     // Kullanıcı giriş yapmamışsa login sayfasına yönlendirir
                     navigation.replace('Login');
                 }
             } catch (error) {
-                console.error('Error fetching user:', error);
-                navigation.replace('Login');
+                                navigation.replace('Login');
             } finally {
                 setLoading(false);
             }
@@ -53,8 +50,7 @@ export default function Account() {
                             await clearCurrentUser();
                             navigation.replace('Login');
                         } catch (error) {
-                            console.error('Error during logout:', error);
-                            Alert.alert('Hata', 'Çıkış yapılırken bir hata oluştu.');
+                                                        Alert.alert('Hata', 'Çıkış yapılırken bir hata oluştu.');
                         }
                     },
                 },
@@ -63,7 +59,6 @@ export default function Account() {
     };
 
     const handleOrderHistory = () => {
-        // Tab navigator'ın parent navigation'ını kullan
         const parentNavigation = navigation.getParent();
         if (parentNavigation) {
             parentNavigation.navigate('OrderHistory');
@@ -71,7 +66,6 @@ export default function Account() {
     };
 
     const handleChangePassword = () => {
-        // Tab navigator'ın parent navigation'ını kullan
         const parentNavigation = navigation.getParent();
         if (parentNavigation) {
             parentNavigation.navigate('ChangePassword');
@@ -108,141 +102,124 @@ export default function Account() {
         },
     ];
 
-    if (loading) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-                <StatusBar
-                    barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-                    backgroundColor={theme.background}
-                    translucent={false}
-                />
-                <ActivityIndicator size="large" color={theme.primary} />
-                <Text style={[styles.loadingText, { color: theme.text }]}>Yükleniyor</Text>
-            </View>
-        );
-    }
-
-    if (!user) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-                <StatusBar
-                    barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-                    backgroundColor={theme.background}
-                    translucent={false}
-                />
-                <Text style={[styles.loadingText, { color: theme.text }]}>Kullanıcı bulunamadı</Text>
-            </View>
-        );
-    }
-
     return (
-        <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar
                 barStyle={isDarkMode ? 'light-content' : 'dark-content'}
                 backgroundColor={theme.background}
                 translucent={false}
             />
 
-            {/* Profile Section - üst padding eklendi */}
-            <View style={[styles.profileSection, { backgroundColor: theme.surface }]}>
-                <View style={styles.profileImageContainer}>
-                    {/* Icon-based profile placeholder */}
-                    <View style={[styles.profileImage, { backgroundColor: theme.border }]}>
-                        <Ionicons name="person" size={50} color={theme.textTertiary} />
-                    </View>
-                    <View style={styles.profileImageOverlay}>
-                        <Ionicons name="camera" size={20} color="#fff" />
-                    </View>
+            {loading ? (
+                <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                    <ActivityIndicator size="large" color={theme.primary} />
+                    <Text style={[styles.loadingText, { color: theme.text }]}>Yükleniyor</Text>
                 </View>
-
-                <View style={styles.profileInfo}>
-                    <Text style={[styles.userName, { color: theme.text }]}>Hoşgeldin {user.name}</Text>
+            ) : !user ? (
+                <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                    <Text style={[styles.loadingText, { color: theme.text }]}>Kullanıcı bulunamadı</Text>
                 </View>
-            </View>
-
-            {/* User Info Card */}
-            <View style={[styles.infoCard, { backgroundColor: theme.surface, shadowColor: theme.shadow }]}>
-                <View style={[styles.infoHeader, { borderBottomColor: theme.border }]}>
-                    <Ionicons name="person-outline" size={20} color={theme.textSecondary} />
-                    <Text style={[styles.infoTitle, { color: theme.text }]}>Kişisel Bilgiler</Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                    <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Ad Soyad:</Text>
-                    <Text style={[styles.infoValue, { color: theme.text }]}>{user.name}</Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                    <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>E-posta:</Text>
-                    <Text style={[styles.infoValue, { color: theme.text }]}>{user.email}</Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                    <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Uye Olma Tarihi:</Text>
-                    <Text style={[styles.infoValue, { color: theme.text }]}>{new Date().getFullYear()}</Text>
-                </View>
-            </View>
-
-            {/* Menu Items */}
-            <View style={[styles.menuContainer, { backgroundColor: theme.background }]}>
-                {menuItems.map((item) => (
-                    <TouchableOpacity
-                        key={item.id}
-                        style={[
-                            styles.menuItem,
-                            { backgroundColor: theme.surface },
-                            item.isDestructive && styles.destructiveMenuItem
-                        ]}
-                        onPress={item.onPress}
-                    >
-                        <View style={styles.menuItemLeft}>
-                            <Ionicons
-                                name={item.icon}
-                                size={24}
-                                color={item.isDestructive ? theme.error : theme.text}
-                            />
-                            <Text style={[
-                                styles.menuItemText,
-                                { color: theme.text },
-                                item.isDestructive && styles.destructiveMenuText
-                            ]}>
-                                {item.title}
-                            </Text>
+            ) : (
+                <ScrollView style={{ backgroundColor: theme.background }}>
+                    {/* Profile Section - üst padding eklendi */}
+                    <View style={[styles.profileSection, { backgroundColor: theme.surface }]}>
+                        <View style={styles.profileImageContainer}>
+                            {/* Icon-based profile placeholder */}
+                            <View style={[styles.profileImage, { backgroundColor: theme.border }]}>
+                                <Ionicons name="person" size={50} color={theme.textTertiary} />
+                            </View>
+                            <View style={styles.profileImageOverlay}>
+                                <Ionicons name="camera" size={20} color="#fff" />
+                            </View>
                         </View>
 
-                        <View style={styles.menuItemRight}>
-                            {item.badge && (
-                                <View style={[styles.badge, { backgroundColor: theme.primary }]}>
-                                    <Text style={[styles.badgeText, { color: theme.surface }]}>{item.badge}</Text>
+                        <View style={styles.profileInfo}>
+                            <Text style={[styles.userName, { color: theme.text }]}>Hoşgeldin {user.name}</Text>
+                        </View>
+                    </View>
+
+                    {/* User Info Card */}
+                    <View style={[styles.infoCard, { backgroundColor: theme.surface, shadowColor: theme.shadow }]}>
+                        <View style={[styles.infoHeader, { borderBottomColor: theme.border }]}>
+                            <Ionicons name="person-outline" size={20} color={theme.textSecondary} />
+                            <Text style={[styles.infoTitle, { color: theme.text }]}>Kişisel Bilgiler</Text>
+                        </View>
+
+                        <View style={styles.infoRow}>
+                            <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Ad Soyad:</Text>
+                            <Text style={[styles.infoValue, { color: theme.text }]}>{user.name}</Text>
+                        </View>
+
+                        <View style={styles.infoRow}>
+                            <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>E-posta:</Text>
+                            <Text style={[styles.infoValue, { color: theme.text }]}>{user.email}</Text>
+                        </View>
+
+                        <View style={styles.infoRow}>
+                            <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Uye Olma Tarihi:</Text>
+                            <Text style={[styles.infoValue, { color: theme.text }]}>{new Date().getFullYear()}</Text>
+                        </View>
+                    </View>
+
+                    {/* Menu Items */}
+                    <View style={[styles.menuContainer, { backgroundColor: theme.background }]}>
+                        {menuItems.map((item) => (
+                            <TouchableOpacity
+                                key={item.id}
+                                style={[
+                                    styles.menuItem,
+                                    { backgroundColor: theme.surface },
+                                    item.isDestructive && styles.destructiveMenuItem
+                                ]}
+                                onPress={item.onPress}
+                            >
+                                <View style={styles.menuItemLeft}>
+                                    <Ionicons
+                                        name={item.icon}
+                                        size={24}
+                                        color={item.isDestructive ? theme.error : theme.text}
+                                    />
+                                    <Text style={[
+                                        styles.menuItemText,
+                                        { color: theme.text },
+                                        item.isDestructive && styles.destructiveMenuText
+                                    ]}>
+                                        {item.title}
+                                    </Text>
                                 </View>
-                            )}
-                            {item.rightText && (
-                                <Text style={[styles.rightText, { color: theme.textSecondary }]}>{item.rightText}</Text>
-                            )}
-                            <Ionicons
-                                name="chevron-forward"
-                                size={20}
-                                color={theme.border}
-                            />
-                        </View>
-                    </TouchableOpacity>
-                ))}
-            </View>
 
-        </ScrollView>
+                                <View style={styles.menuItemRight}>
+                                    {item.badge && (
+                                        <View style={[styles.badge, { backgroundColor: theme.primary }]}>
+                                            <Text style={[styles.badgeText, { color: theme.surface }]}>{item.badge}</Text>
+                                        </View>
+                                    )}
+                                    {item.rightText && (
+                                        <Text style={[styles.rightText, { color: theme.textSecondary }]}>{item.rightText}</Text>
+                                    )}
+                                    <Ionicons
+                                        name="chevron-forward"
+                                        size={20}
+                                        color={theme.border}
+                                    />
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </ScrollView>
+            )}
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f8f9fa',
     },
     loadingText: {
         fontSize: 16,

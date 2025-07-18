@@ -19,8 +19,7 @@ export const ProductProvider = ({ children }) => {
             setProducts(products);
         } catch (err) {
             setError(err.message);
-            console.error('Error fetching products:', err);
-        } finally {
+                    } finally {
             setLoading(false);
         }
     }, []);
@@ -55,8 +54,7 @@ export const ProductProvider = ({ children }) => {
 
             return true;
         } catch (error) {
-            console.error('Error updating product:', error);
-            setError(error.message);
+                        setError(error.message);
             return false;
         }
     }, [fetchProducts]);
@@ -76,8 +74,7 @@ export const ProductProvider = ({ children }) => {
                 const categories = await categoryApi.getAllCategories();
                 setCategoryNames(categories);
             } catch (error) {
-                console.error('Error fetching categories:', error);
-                setCategoryNames([]);
+                                setCategoryNames([]);
             }
         };
         loadCategories();

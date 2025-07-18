@@ -1,4 +1,3 @@
-// screens/Login.js
 import React, { useState } from 'react';
 import {
     StyleSheet,
@@ -21,21 +20,27 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { findUser, setCurrentUser, loginUser } from '../utils/authStorage';
 
-const { width, height } = Dimensions.get('window');
-
 export default function Login({ navigation }) {
+    // Hooks sıralaması sabit tutulmalı - React hooks kuralları
+    const { width, height } = Dimensions.get('window');
+
+    // State hooks - sıralama değişmemeli
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
 
-    // Animation değerleri
-    const [fadeAnim] = useState(new Animated.Value(0));
-    const [slideAnim] = useState(new Animated.Value(50));
+    // Ref hooks - animation optimizasyonu
+    const fadeAnim = React.useRef(new Animated.Value(0)).current;
+    const slideAnim = React.useRef(new Animated.Value(50)).current;
 
+    // Performance optimization - memoized dimensions
+    const dimensions = React.useMemo(() => ({ width, height }), [width, height]);
+
+    // Effect hooks - dependency array'leri optimize edildi
     React.useEffect(() => {
-        // Sayfa yüklendiğinde animasyon
+        // Sayfa yüklendiğinde animasyon - sadece bir kez çalışır
         Animated.parallel([
             Animated.timing(fadeAnim, {
                 toValue: 1,
@@ -48,9 +53,10 @@ export default function Login({ navigation }) {
                 useNativeDriver: true,
             })
         ]).start();
-    }, []);
+    }, []); // Empty dependency array - sadece mount'ta çalışır
 
-    const validateForm = () => {
+    // Memoized validation function - performance optimization
+    const validateForm = React.useCallback(() => {
         const newErrors = {};
 
         if (!email.trim()) {
@@ -67,9 +73,9 @@ export default function Login({ navigation }) {
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
-    };
+    }, [email, password]);
 
-    const handleLogin = async () => {
+    const handleLogin = React.useCallback(async () => {
         // Klavyeyi kapat
         Keyboard.dismiss();
 
@@ -88,12 +94,43 @@ export default function Login({ navigation }) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [email, password, validateForm, navigation]);
 
     // Klavyeyi kapatma fonksiyonu
-    const dismissKeyboard = () => {
+    const dismissKeyboard = React.useCallback(() => {
         Keyboard.dismiss();
-    };
+    }, []);
+
+    // Toggle password visibility
+    const togglePasswordVisibility = React.useCallback(() => {
+        setShowPassword(prev => !prev);
+    }, []);
+
+    // Navigate to register
+    const navigateToRegister = React.useCallback(() => {
+        navigation.navigate('Register');
+    }, [navigation]);
+
+    // Memoized styles - performance optimization
+    const animatedStyle = React.useMemo(() => ({
+        opacity: fadeAnim,
+        transform: [{ translateY: slideAnim }]
+    }), [fadeAnim, slideAnim]);
+
+    const scrollContentStyle = React.useMemo(() => ({
+        ...styles.scrollContent,
+        minHeight: dimensions.height,
+    }), [dimensions.height]);
+
+    const formContainerStyle = React.useMemo(() => ({
+        ...styles.formContainer,
+        minHeight: dimensions.height - 40,
+    }), [dimensions.height]);
+
+    // KeyboardAvoidingView optimization - memoized behavior
+    const keyboardBehavior = React.useMemo(() =>
+        Platform.OS === 'ios' ? 'padding' : 'height'
+        , []);
 
     return (
         <TouchableWithoutFeedback onPress={dismissKeyboard}>
@@ -104,11 +141,12 @@ export default function Login({ navigation }) {
                 >
                     <KeyboardAvoidingView
                         style={styles.keyboardAvoidingView}
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        behavior={keyboardBehavior}
                         keyboardVerticalOffset={0}
+                        enabled={true}
                     >
                         <ScrollView
-                            contentContainerStyle={styles.scrollContent}
+                            contentContainerStyle={scrollContentStyle}
                             showsVerticalScrollIndicator={false}
                             keyboardShouldPersistTaps="handled"
                             bounces={false}
@@ -117,11 +155,8 @@ export default function Login({ navigation }) {
                         >
                             <Animated.View
                                 style={[
-                                    styles.formContainer,
-                                    {
-                                        opacity: fadeAnim,
-                                        transform: [{ translateY: slideAnim }]
-                                    }
+                                    formContainerStyle,
+                                    animatedStyle
                                 ]}
                             >
                                 {/* Logo/Icon */}
@@ -171,7 +206,7 @@ export default function Login({ navigation }) {
                                             />
                                             <TouchableOpacity
                                                 style={styles.eyeIcon}
-                                                onPress={() => setShowPassword(!showPassword)}
+                                                onPress={togglePasswordVisibility}
                                             >
                                                 <Ionicons
                                                     name={showPassword ? 'eye-off' : 'eye'}
@@ -205,7 +240,7 @@ export default function Login({ navigation }) {
                                 <View style={styles.registerContainer}>
                                     <Text style={styles.registerText}>Hesabınız yok mu?</Text>
                                     <TouchableOpacity
-                                        onPress={() => navigation.navigate('Register')}
+                                        onPress={navigateToRegister}
                                         style={styles.registerButton}
                                     >
                                         <Text style={styles.registerButtonText}>Kayıt Ol</Text>
@@ -233,7 +268,6 @@ const styles = StyleSheet.create({
     scrollContent: {
         flexGrow: 1,
         justifyContent: 'center',
-        minHeight: height,
         paddingVertical: 20,
     },
     formContainer: {
@@ -241,7 +275,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 20,
-        minHeight: height - 40,
     },
     logoContainer: {
         marginBottom: 20,

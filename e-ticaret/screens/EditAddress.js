@@ -42,8 +42,7 @@ export default function EditAddress() {
                 postalCode: address.postalCode || ''
             });
         } catch (error) {
-            console.error('Error loading address data:', error);
-            Alert.alert('Hata', 'Adres bilgileri yüklenemedi');
+                        Alert.alert('Hata', 'Adres bilgileri yüklenemedi');
         } finally {
             setIsLoadingAddress(false);
         }
@@ -77,8 +76,7 @@ export default function EditAddress() {
                 }
             ]);
         } catch (error) {
-            console.error('Error updating address:', error);
-            Alert.alert('Hata', 'Adres güncellenirken bir hata oluştu');
+                        Alert.alert('Hata', 'Adres güncellenirken bir hata oluştu');
         } finally {
             setIsLoading(false);
         }
@@ -104,8 +102,7 @@ export default function EditAddress() {
                                 }
                             ]);
                         } catch (error) {
-                            console.error('Error deleting address:', error);
-                            Alert.alert('Hata', 'Adres silinirken bir hata oluştu');
+                                                        Alert.alert('Hata', 'Adres silinirken bir hata oluştu');
                         }
                     },
                 },

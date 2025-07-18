@@ -3,12 +3,12 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 
 const StarRating = ({
-    rating = 0,
-    maxStars = 5,
-    onRatingChange = null,
-    disabled = false,
+    rating = 0, //Mevcut Puan
+    maxStars = 5, //Max yıldız sayısı
+    onRatingChange = null, //Puan degıstıgınde cagrılacak fonksıyon
+    disabled = false, // Etkileşim olup olmayacağı
     size = 24,
-    showRating = true
+    showRating = true // Puanı sayfada gosterme
 }) => {
     const [tempRating, setTempRating] = useState(0);
 

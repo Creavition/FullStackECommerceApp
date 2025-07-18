@@ -14,8 +14,6 @@ import StarRating from './StarRating';
 import { reviewApi } from '../utils/reviewApi';
 import { useTheme } from '../contexts/ThemeContext';
 
-const { width } = Dimensions.get('window');
-
 const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
     const { theme } = useTheme();
     const [rating, setRating] = useState(0);
@@ -71,8 +69,7 @@ const ReviewModal = ({ visible, onClose, product, onReviewSubmitted }) => {
                 ]
             );
         } catch (error) {
-            console.error('Review submission error:', error);
-
+            
             if (error.response?.status === 401) {
                 Alert.alert('Hata', 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
             } else if (error.response?.data) {

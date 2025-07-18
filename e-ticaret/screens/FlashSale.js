@@ -1,4 +1,3 @@
-// screens/FlashSale.js
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
@@ -28,10 +27,8 @@ export default function FlashSale() {
             const flashSaleProducts = await productUtils.getFlashSaleProducts();
 
             if (flashSaleProducts && flashSaleProducts.length > 0) {
-                console.log('Using API flash sale products');
                 setAllProducts(flashSaleProducts);
             } else {
-                console.log('API flash sale products not available, using all products');
                 const products = await getAllProducts();
 
                 const filteredProducts = products.filter(p => p.badge_FlashSale);
@@ -39,14 +36,13 @@ export default function FlashSale() {
                 setAllProducts(productsToUse);
             }
         } catch (e) {
-            console.error('Error loading flash sale products:', e);
 
             const products = await getAllProducts();
             setAllProducts(products);
         } finally {
             setLoading(false);
         }
-    }, []); // favoriteItems dependency'sini kaldırdık
+    }, []);
 
     useEffect(() => {
         loadProducts();
@@ -73,7 +69,6 @@ export default function FlashSale() {
     }, [navigation]);
 
     const handleFavoritePress = useCallback(async (productId) => {
-        console.log(`FlashSale: Toggling favorite for product ${productId}`);
 
         const currentProduct = allProducts.find(p => p.id === productId);
         if (!currentProduct) {
@@ -83,7 +78,6 @@ export default function FlashSale() {
         // Context'teki toggle fonksiyonunu kullan - bu zaten optimistic update yapıyor
         const newFavoriteStatus = await toggleFavorite(productId);
 
-        console.log(`FlashSale: Product ${productId} favorite status updated to: ${newFavoriteStatus}`);
     }, [allProducts, toggleFavorite]);
 
     const renderItem = useCallback(({ item }) => (
@@ -138,7 +132,7 @@ export default function FlashSale() {
 
             {/* Search Box */}
             <View style={styles.searchContainer}>
-                <View style={[styles.searchBox, { backgroundColor: theme.surface || '#f0f0f0', borderColor: theme.border || '#e0e0e0' }]}>
+                <View style={[styles.searchBox, { backgroundColor: theme.surface || '#f0f0f0', borderColor: 'black' }]}>
                     <Ionicons name="search" size={22} color={theme.textSecondary} style={styles.searchIcon} />
                     <TextInput
                         style={[styles.textInput, { color: theme.text }]}
@@ -238,7 +232,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         paddingHorizontal: 12,
         paddingVertical: 8,
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: '#e9ecef',
     },
     searchIcon: {

@@ -6,8 +6,7 @@ export const productApi = {
             const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}`);
             return response.data;
         } catch (error) {
-            console.error('Error fetching all products:', error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -16,8 +15,7 @@ export const productApi = {
             const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}/${id}`);
             return response.data;
         } catch (error) {
-            console.error(`Error fetching product ${id}:`, error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -26,8 +24,7 @@ export const productApi = {
             const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}/category/${categoryId}`);
             return response.data;
         } catch (error) {
-            console.error(`Error fetching products for category ${categoryId}:`, error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -36,13 +33,11 @@ export const productApi = {
             const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}`);
             return (response.data || []).filter(p => p.badge_BestSelling);
         } catch (error) {
-            console.error('Error fetching best sellers:', error);
-            try {
+                        try {
                 const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}`);
                 return response.data || [];
             } catch (fallbackError) {
-                console.error('Fallback also failed:', fallbackError);
-                throw fallbackError;
+                                throw fallbackError;
             }
         }
     },
@@ -52,13 +47,11 @@ export const productApi = {
             const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}`);
             return (response.data || []).filter(p => p.badge_FlashSale);
         } catch (error) {
-            console.error('Error fetching flash sale products:', error);
-            try {
+                        try {
                 const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}`);
                 return response.data || [];
             } catch (fallbackError) {
-                console.error('Fallback also failed:', fallbackError);
-                throw fallbackError;
+                                throw fallbackError;
             }
         }
     },
@@ -68,13 +61,11 @@ export const productApi = {
             const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}`);
             return (response.data || []).filter(p => p.label_FastDelivery);
         } catch (error) {
-            console.error('Error fetching fast delivery products:', error);
-            try {
+                        try {
                 const response = await apiClient.get(`${API_ENDPOINTS.PRODUCT}`);
                 return response.data || [];
             } catch (fallbackError) {
-                console.error('Fallback also failed:', fallbackError);
-                throw fallbackError;
+                                throw fallbackError;
             }
         }
     },
@@ -84,8 +75,7 @@ export const productApi = {
             const response = await apiClient.post(`${API_ENDPOINTS.PRODUCT}/filter`, filters);
             return response.data;
         } catch (error) {
-            console.error('Error filtering products:', error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -94,8 +84,7 @@ export const productApi = {
             const response = await apiClient.post(`${API_ENDPOINTS.PRODUCT}`, productData);
             return response.data;
         } catch (error) {
-            console.error('Error creating product:', error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -104,8 +93,7 @@ export const productApi = {
             const response = await apiClient.put(`${API_ENDPOINTS.PRODUCT}/${id}`, productData);
             return response.data;
         } catch (error) {
-            console.error(`Error updating product ${id}:`, error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -114,8 +102,7 @@ export const productApi = {
             const response = await apiClient.delete(`${API_ENDPOINTS.PRODUCT}/${id}`);
             return response.data;
         } catch (error) {
-            console.error(`Error deleting product ${id}:`, error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -124,8 +111,7 @@ export const productApi = {
             const response = await apiClient.put(`${API_ENDPOINTS.PRODUCT}/${productId}`, { isFavorite });
             return response.data;
         } catch (error) {
-            console.error(`Error toggling favorite for product ${productId}:`, error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -134,8 +120,7 @@ export const productApi = {
             const response = await apiClient.put(`${API_ENDPOINTS.PRODUCT}/${productId}`, { categoryId });
             return response.data;
         } catch (error) {
-            console.error(`Error updating product category for ${productId}:`, error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -144,8 +129,7 @@ export const productApi = {
             const response = await apiClient.put(`${API_ENDPOINTS.PRODUCT}/${productId}/sizes`, { sizeIds });
             return response.data;
         } catch (error) {
-            console.error(`Error updating product sizes for ${productId}:`, error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -154,8 +138,7 @@ export const productApi = {
             const response = await apiClient.put(`${API_ENDPOINTS.PRODUCT}/${productId}`, { sizeIds });
             return response.data;
         } catch (error) {
-            console.error(`Error updating product sizes (general) for ${productId}:`, error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -164,8 +147,7 @@ export const productApi = {
             const response = await apiClient.put(`${API_ENDPOINTS.PRODUCT}/${productId}`, { categoryId, sizeIds });
             return response.data;
         } catch (error) {
-            console.error(`Error updating product category and sizes for ${productId}:`, error);
-            throw error;
+                        throw error;
         }
     },
 
@@ -191,8 +173,7 @@ export const productApi = {
             const response = await apiClient.put(`${API_ENDPOINTS.PRODUCT}/${productId}/sizes`, { sizeIds });
             return response.data;
         } catch (error) {
-            console.error(`Error updating product sizes from JSON for ${productId}:`, error);
-            throw error;
+                        throw error;
         }
     }
 };

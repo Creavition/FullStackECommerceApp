@@ -40,8 +40,7 @@ export default function EditCreditCard() {
                 cardTitle: card.cardTitle || ''
             });
         } catch (error) {
-            console.error('Error loading card data:', error);
-            Alert.alert('Hata', 'Kart bilgileri yüklenemedi');
+                        Alert.alert('Hata', 'Kart bilgileri yüklenemedi');
         } finally {
             setIsLoadingCard(false);
         }
@@ -88,8 +87,7 @@ export default function EditCreditCard() {
                 }
             ]);
         } catch (error) {
-            console.error('Error updating credit card:', error);
-            Alert.alert('Hata', 'Kredi kartı güncellenirken bir hata oluştu');
+                        Alert.alert('Hata', 'Kredi kartı güncellenirken bir hata oluştu');
         } finally {
             setIsLoading(false);
         }
@@ -115,8 +113,7 @@ export default function EditCreditCard() {
                                 }
                             ]);
                         } catch (error) {
-                            console.error('Error deleting credit card:', error);
-                            Alert.alert('Hata', 'Kredi kartı silinirken bir hata oluştu');
+                                                        Alert.alert('Hata', 'Kredi kartı silinirken bir hata oluştu');
                         }
                     },
                 },

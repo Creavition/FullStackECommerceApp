@@ -34,8 +34,7 @@ apiClient.interceptors.request.use(
                 config.headers.Authorization = `Bearer ${token}`;
             }
         } catch (error) {
-            console.error('Error getting auth token for request:', error);
-        }
+                    }
         return config;
     },
     (error) => {
@@ -55,8 +54,7 @@ apiClient.interceptors.response.use(
                 await AsyncStorage.removeItem('authToken');
                 await AsyncStorage.removeItem('currentUser');
             } catch (storageError) {
-                console.error('Error clearing storage:', storageError);
-            }
+                            }
         }
         return Promise.reject(error);
     }

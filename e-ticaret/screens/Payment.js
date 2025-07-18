@@ -57,15 +57,12 @@ export default function Payment() {
         setSelectedAddress(addressesData[0]);
       }
     } catch (error) {
-      console.error('Ödeme bilgileri bulunamadı', error);
-      Alert.alert('Hata', 'Ödeme bilgileri yüklenemedi');
+            Alert.alert('Hata', 'Ödeme bilgileri yüklenemedi');
     } finally {
       setLoading(false);
     }
   };
 
-
-  
   const parsePrice = (priceValue) => {
 
     if (!priceValue && priceValue !== 0) {
@@ -85,8 +82,7 @@ export default function Payment() {
     try {
       return parseFloat(priceValue.replace('₺', '').replace(',', '.')) || 0;
     } catch (error) {
-      console.error('parsePrice error:', error, 'for value:', priceValue);
-      return 0;
+            return 0;
     }
   };
 
@@ -168,8 +164,7 @@ export default function Payment() {
       );
 
     } catch (error) {
-      console.error('Payment error:', error);
-      Alert.alert('Hata', 'Ödeme sırasında bir hata oluştu');
+            Alert.alert('Hata', 'Ödeme sırasında bir hata oluştu');
     } finally {
       setIsProcessing(false);
     }

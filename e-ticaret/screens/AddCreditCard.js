@@ -61,8 +61,7 @@ export default function AddCreditCard() {
                 }
             ]);
         } catch (error) {
-            console.error('Error adding credit card:', error);
-            Alert.alert('Hata', 'Kredi kartı eklenirken bir hata oluştu');
+                        Alert.alert('Hata', 'Kredi kartı eklenirken bir hata oluştu');
         } finally {
             setIsLoading(false);
         }

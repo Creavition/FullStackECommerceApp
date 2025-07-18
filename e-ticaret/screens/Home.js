@@ -20,7 +20,7 @@ export default function Home() {
     const scrollViewRef = useRef(null); // ScrollView için ref
 
     const { favoriteItems, toggleFavorite } = useFavorites();
-    const { theme, isDarkMode } = useTheme();
+    const { theme, isDarkMode, isLoading: themeLoading } = useTheme();
     const { updateFilters } = useFilter() || {};
     const { products, loading, fetchProducts, updateProductFavoriteStatus } = useProduct();
 
@@ -67,6 +67,16 @@ export default function Home() {
         return [allOption, ...(categories || [])];
     }, [categories]);
 
+    // Memoized styles to prevent unnecessary re-renders
+    const categoryItemStyle = useMemo(() => ({
+        backgroundColor: theme?.cardBackground || theme?.card || '#ffffff',
+    }), [theme?.cardBackground, theme?.card]);
+
+    const categoryTextStyle = useMemo(() => ({
+        color: theme?.text || '#333333',
+        fontWeight: '500'
+    }), [theme?.text]);
+
     const handleProductPress = useCallback((product) => {
         logProductDetails(product);
 
@@ -77,10 +87,8 @@ export default function Home() {
         }
     }, [navigation]);
 
-    // Basit favori toggle
+    // favori toggle
     const handleFavoritePress = useCallback(async (productId) => {
-        console.log(`Home: Toggling favorite for product ${productId}`);
-
         const currentProduct = products.find(p => p.id === productId);
         if (!currentProduct) {
             return;
@@ -88,17 +96,10 @@ export default function Home() {
 
         // Context'teki toggle fonksiyonunu kullan ve ProductContext'i güncelle
         const newFavoriteStatus = await toggleFavorite(productId, updateProductFavoriteStatus);
-
-        // Eğer API'den cevap gelmişse durumu logla
-        if (newFavoriteStatus !== null) {
-            console.log(`Home: Product ${productId} favorite status updated to: ${newFavoriteStatus}`);
-        }
     }, [products, toggleFavorite, updateProductFavoriteStatus]); // favoriteItems dependency'sini kaldırdık
 
     // Kategori basma fonksiyonu
     const handleCategoryPress = useCallback((category) => {
-        console.log(`Home: Category pressed: ${category}`);
-
         // "All" seçeneği secılırse bısey secmemıs gıbı olur. Dırek search sayfasına yonlendırmek ıcın
         const allOption = 'Tümü';
         const selectedCategory = category === allOption ? null : category;
@@ -126,10 +127,10 @@ export default function Home() {
     const homeData = useMemo(() => {
         const data = [];
 
-        // Categories section
+        // Categories bolumu
         data.push({ type: 'categories', data: categoriesWithAll });
 
-        // Flash Sale section
+        // Flash Sale bolumu
         if (flashSaleProducts.length > 0) {
             data.push({
                 type: 'section',
@@ -184,21 +185,11 @@ export default function Home() {
                         {item.data.map((category, catIndex) => (
                             <TouchableOpacity
                                 key={`category-${catIndex}-${category}`}
-                                style={[
-                                    styles.categoryItem,
-                                    {
-                                        backgroundColor: theme.cardBackground,
-                                    }
-                                ]}
+                                style={[styles.categoryItem, categoryItemStyle]}
                                 onPress={() => handleCategoryPress(category)}
+                                activeOpacity={0.7}
                             >
-                                <Text style={[
-                                    styles.categoryText,
-                                    {
-                                        color: theme.text,
-                                        fontWeight: '500'
-                                    }
-                                ]}>
+                                <Text style={[styles.categoryText, categoryTextStyle]}>
                                     {category}
                                 </Text>
                             </TouchableOpacity>
@@ -250,7 +241,7 @@ export default function Home() {
         }
 
         return null;
-    }, [theme, navigation, handleCategoryPress, handleProductPress, handleFavoritePress, isDarkMode, favoriteItems]);
+    }, [theme?.text, theme?.primary, categoryItemStyle, categoryTextStyle, navigation, handleCategoryPress, handleProductPress, handleFavoritePress, isDarkMode, favoriteItems]);
 
     // Home tab'a basıldığında en üste kaydır
     useEffect(() => {
@@ -275,7 +266,7 @@ export default function Home() {
                 barStyle={isDarkMode ? "light-content" : "dark-content"}
             />
 
-            {loading ? (
+            {loading || themeLoading ? (
                 <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
                     <Text style={[styles.loadingText, { color: theme.text }]}>
                         Yükleniyor
@@ -359,13 +350,16 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         marginRight: 10,
         borderRadius: 20,
-        elevation: 2,
+        borderWidth: 2,
+        elevation: 1,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.22,
-        shadowRadius: 2.22,
+        shadowOffset: { width: 0, height: 0.5 },
+        shadowOpacity: 0.1,
+        shadowRadius: 1,
         flexDirection: 'row',
         alignItems: 'center',
+        minHeight: 40,
+        justifyContent: 'center',
     },
     categoryText: {
         fontSize: 14,

@@ -10,6 +10,7 @@ const themes = {
         background: '#f8f9fa',
         surface: '#ffffff',
         card: '#ffffff',
+        cardBackground: '#ffffff',
 
         // Text colors
         text: '#333333',
@@ -45,6 +46,7 @@ const themes = {
         background: '#121212',
         surface: '#1e1e1e',
         card: '#2d2d2d',
+        cardBackground: '#2d2d2d',
 
         // Text colors
         text: '#ffffff',
@@ -92,7 +94,6 @@ export const ThemeProvider = ({ children }) => {
                 setIsDarkMode(savedTheme === 'dark');
             }
         } catch (error) {
-            console.error('Error loading theme:', error);
         } finally {
             setIsLoading(false);
         }
@@ -104,7 +105,6 @@ export const ThemeProvider = ({ children }) => {
             setIsDarkMode(newTheme);
             await AsyncStorage.setItem('selectedTheme', newTheme ? 'dark' : 'light');
         } catch (error) {
-            console.error('Error saving theme:', error);
         }
     };
 
@@ -114,7 +114,6 @@ export const ThemeProvider = ({ children }) => {
             setIsDarkMode(newIsDarkMode);
             await AsyncStorage.setItem('selectedTheme', themeName);
         } catch (error) {
-            console.error('Error saving theme:', error);
         }
     };
 
